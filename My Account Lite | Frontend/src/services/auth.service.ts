@@ -1,39 +1,58 @@
 /**
  * AuthService - Singleton for authentication state management
- * Handles login/logout with demo credentials and localStorage session
+ * Handles login/logout using the Backend Integration Layer
  */
 
-import type { Session } from '../types/index.js';
+import { AuthService as ConnectorAuth } from '../connect/services/auth';
+import type { User } from '../connect/types/domain';
+
+// Keeping the Session interface for backward compatibility if used elsewhere, 
+// but we might prefer using the User domain object.
+// For now, let's map User to a Session-like structure if needed, or just store the User.
+export interface Session {
+    email: string;
+    loginTime: string;
+    user?: User;
+}
 
 const STORAGE_KEY = 'lumberboss_session';
-const DEMO_EMAIL = 'HomeProUSA@demo.com';
-const DEMO_PASSWORD = 'MyAccountLite2026';
 
 class AuthServiceImpl {
     private listeners: Set<(isAuthenticated: boolean) => void> = new Set();
+    private currentUser: User | null = null;
 
     /**
      * Attempt login with provided credentials
-     * @returns true if credentials match demo account
+     * @returns true if login successful
      */
-    login(email: string, password: string): boolean {
-        if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+    async login(email: string, password: string): Promise<boolean> {
+        try {
+            const response = await ConnectorAuth.login(email, password);
+
+            // Store session
             const session: Session = {
-                email,
+                email: response.user.email,
                 loginTime: new Date().toISOString(),
+                user: response.user
             };
+
+            this.currentUser = response.user;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
             this.notifyListeners(true);
             return true;
+        } catch (error) {
+            console.error("Login failed:", error);
+            return false;
         }
-        return false;
     }
 
     /**
      * Clear session and log out
      */
     logout(): void {
+        ConnectorAuth.logout();
         localStorage.removeItem(STORAGE_KEY);
+        this.currentUser = null;
         this.notifyListeners(false);
     }
 
@@ -59,6 +78,15 @@ class AuthServiceImpl {
     }
 
     /**
+     * Get current user
+     */
+    getUser(): User | null {
+        if (this.currentUser) return this.currentUser;
+        const session = this.getSession();
+        return session?.user || null;
+    }
+
+    /**
      * Subscribe to authentication state changes
      */
     subscribe(listener: (isAuthenticated: boolean) => void): () => void {
@@ -68,6 +96,7 @@ class AuthServiceImpl {
 
     private notifyListeners(isAuthenticated: boolean): void {
         this.listeners.forEach(listener => listener(isAuthenticated));
+        // Force reload to clear/reset UI state if needed, or rely on listeners
     }
 }
 

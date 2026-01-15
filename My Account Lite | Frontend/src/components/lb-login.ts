@@ -11,9 +11,9 @@ import { LbToast } from './atoms/lb-toast.js';
 
 @customElement('lb-login')
 export class LbLogin extends LbBase {
-    static styles = [
-        ...LbBase.styles,
-        css`
+  static styles = [
+    ...LbBase.styles,
+    css`
       :host {
         display: flex;
         align-items: center;
@@ -182,37 +182,39 @@ export class LbLogin extends LbBase {
         color: var(--color-text);
       }
     `,
-    ];
+  ];
 
-    @state() private email = '';
-    @state() private password = '';
-    @state() private showError = false;
-    @state() private isLoading = false;
+  @state() private email = '';
+  @state() private password = '';
+  @state() private showError = false;
+  @state() private isLoading = false;
 
-    private handleSubmit(e: Event) {
-        e.preventDefault();
-        this.showError = false;
-        this.isLoading = true;
+  private async handleSubmit(e: Event) {
+    e.preventDefault();
+    this.showError = false;
+    this.isLoading = true;
 
-        // Simulate async login
-        setTimeout(() => {
-            const success = AuthService.login(this.email, this.password);
-            this.isLoading = false;
+    try {
+      const success = await AuthService.login(this.email, this.password);
 
-            if (success) {
-                LbToast.show('Welcome back!', 'success');
-                this.dispatchEvent(new CustomEvent('login-success', {
-                    bubbles: true,
-                    composed: true
-                }));
-            } else {
-                this.showError = true;
-            }
-        }, 300);
+      if (success) {
+        LbToast.show('Welcome back!', 'success');
+        this.dispatchEvent(new CustomEvent('login-success', {
+          bubbles: true,
+          composed: true
+        }));
+      } else {
+        this.showError = true;
+      }
+    } catch (e) {
+      this.showError = true;
+    } finally {
+      this.isLoading = false;
     }
+  }
 
-    render() {
-        return html`
+  render() {
+    return html`
       <div class="login-container">
         <div class="login-card">
           <div class="login-header">
@@ -286,11 +288,11 @@ export class LbLogin extends LbBase {
         </div>
       </div>
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'lb-login': LbLogin;
-    }
+  interface HTMLElementTagNameMap {
+    'lb-login': LbLogin;
+  }
 }

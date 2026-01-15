@@ -14,6 +14,7 @@ export type OrderStatus =
     | 'picking'
     | 'shipped'
     | 'delivered'
+    | 'fulfilled'
     | 'cancelled';
 
 export type InvoiceStatus =
