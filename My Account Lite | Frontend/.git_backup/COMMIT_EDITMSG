@@ -1,0 +1,6 @@
+feat: Make dashboard tiles dynamic from mock data
+
+- Balance Due now calculates from open + overdue invoices total
+- Credit Available now calculates as limit minus open invoices
+- Active Orders counts non-delivered/fulfilled/cancelled orders
+- Pending Estimates counts status='sent' with total value

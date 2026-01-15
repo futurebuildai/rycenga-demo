@@ -1,0 +1,713 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "lumber-boss-api-schema",
+    "version": "1.0.0",
+    "generatedAt": "2024-12-22T22:30:00Z",
+    "description": "API schema mapping extracted from current mock JSON structures. These are the target schemas for backend API implementation.",
+    "baseUrl": {
+        "mock": "./data",
+        "staging": "https://api.staging.lumberboss.com/v1",
+        "production": "https://api.lumberboss.com/v1"
+    },
+    "enums": {
+        "InventoryStatus": {
+            "values": [
+                "in_stock",
+                "low_stock",
+                "ship_to_store",
+                "unavailable"
+            ],
+            "descriptions": {
+                "in_stock": "Available for immediate purchase, quantity > 100",
+                "low_stock": "Available but limited, quantity 1-100",
+                "ship_to_store": "Not in store, can order from warehouse",
+                "unavailable": "Cannot be purchased"
+            }
+        },
+        "UnitOfMeasure": {
+            "values": [
+                "each",
+                "sheet",
+                "LF",
+                "BF",
+                "bundle",
+                "kit"
+            ],
+            "descriptions": {
+                "each": "Individual unit",
+                "sheet": "Sheet goods (4x8, etc.)",
+                "LF": "Linear foot",
+                "BF": "Board foot",
+                "bundle": "Bundle of multiple pieces",
+                "kit": "Complete kit with multiple components"
+            }
+        },
+        "OrderStatus": {
+            "values": [
+                "draft",
+                "submitted",
+                "confirmed",
+                "picking",
+                "shipped",
+                "delivered",
+                "cancelled"
+            ]
+        },
+        "InvoiceStatus": {
+            "values": [
+                "open",
+                "partial",
+                "paid",
+                "overdue",
+                "credited"
+            ]
+        },
+        "ProjectStatus": {
+            "values": [
+                "active",
+                "completed",
+                "archived"
+            ]
+        },
+        "EstimateStatus": {
+            "values": [
+                "draft",
+                "sent",
+                "accepted",
+                "expired",
+                "converted"
+            ]
+        },
+        "PaymentMethodType": {
+            "values": [
+                "card",
+                "ach"
+            ]
+        },
+        "TeamMemberRole": {
+            "values": [
+                "owner",
+                "admin",
+                "purchaser",
+                "viewer"
+            ]
+        },
+        "UserRole": {
+            "values": [
+                "retail",
+                "pro",
+                "admin"
+            ]
+        }
+    },
+    "schemas": {
+        "User": {
+            "description": "User account",
+            "mockFile": "Not implemented (hardcoded in account.html)",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "ref": "#/enums/UserRole"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "lastLoginAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "email",
+                "firstName",
+                "lastName",
+                "role"
+            ]
+        },
+        "ProAccount": {
+            "description": "Pro customer account with credit terms",
+            "mockFile": "Not implemented (hardcoded in account.html)",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "userId": {
+                    "type": "string",
+                    "ref": "#/schemas/User/properties/id"
+                },
+                "companyName": {
+                    "type": "string"
+                },
+                "creditLimit": {
+                    "type": "number",
+                    "format": "currency"
+                },
+                "creditAvailable": {
+                    "type": "number",
+                    "format": "currency"
+                },
+                "paymentTerms": {
+                    "type": "string",
+                    "enum": [
+                        "NET30",
+                        "NET60",
+                        "COD"
+                    ]
+                },
+                "erpCustomerId": {
+                    "type": "string",
+                    "description": "Link to ERP system"
+                },
+                "taxExempt": {
+                    "type": "boolean"
+                },
+                "taxId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "autoPayEnabled": {
+                    "type": "boolean"
+                },
+                "defaultLocationId": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "userId",
+                "companyName"
+            ]
+        },
+        "Project": {
+            "description": "Job site / project for order organization",
+            "mockFile": "Hardcoded in account.html",
+            "mockData": [
+                {
+                    "id": "proj-001",
+                    "name": "123 Oak Street Renovation",
+                    "address": "123 Oak Street, Austin, TX 78701",
+                    "status": "active",
+                    "color": "#22c55e"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "address": {
+                    "type": "object",
+                    "properties": {
+                        "street": {
+                            "type": "string"
+                        },
+                        "city": {
+                            "type": "string"
+                        },
+                        "state": {
+                            "type": "string"
+                        },
+                        "zip": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "ref": "#/enums/ProjectStatus"
+                },
+                "color": {
+                    "type": "string",
+                    "format": "hex-color"
+                },
+                "notes": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "userId",
+                "name",
+                "status"
+            ]
+        },
+        "Order": {
+            "description": "Customer order",
+            "mockFile": "Hardcoded in account.html",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "orderNumber": {
+                    "type": "string",
+                    "examples": [
+                        "ORD-2024-001234"
+                    ]
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "projectId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "locationId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "ref": "#/enums/OrderStatus"
+                },
+                "deliveryType": {
+                    "type": "string",
+                    "enum": [
+                        "pickup",
+                        "delivery"
+                    ]
+                },
+                "deliveryAddress": {
+                    "type": "object",
+                    "nullable": true
+                },
+                "requestedDate": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "estimatedDelivery": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                },
+                "poNumber": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "erpOrderId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "subtotal": {
+                    "type": "number"
+                },
+                "tax": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "ref": "#/schemas/OrderLine"
+                    }
+                }
+            },
+            "required": [
+                "id",
+                "orderNumber",
+                "userId",
+                "status",
+                "total"
+            ]
+        },
+        "OrderLine": {
+            "description": "Line item in an order",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "orderId": {
+                    "type": "string"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "unitPrice": {
+                    "type": "number"
+                },
+                "lineTotal": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "id",
+                "productId",
+                "quantity",
+                "unitPrice",
+                "lineTotal"
+            ]
+        },
+        "Invoice": {
+            "description": "Invoice from ERP",
+            "mockFile": "Hardcoded in account.html",
+            "mockData": [
+                {
+                    "invoiceNumber": "INV-336318",
+                    "date": "2024-12-15",
+                    "projectName": "123 Oak Street",
+                    "amount": 2847.50,
+                    "status": "open"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "invoiceNumber": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "orderId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "projectId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "status": {
+                    "type": "string",
+                    "ref": "#/enums/InvoiceStatus"
+                },
+                "dueDate": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "subtotal": {
+                    "type": "number"
+                },
+                "tax": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "amountPaid": {
+                    "type": "number"
+                },
+                "amountDue": {
+                    "type": "number"
+                },
+                "erpInvoiceId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "invoiceNumber",
+                "status",
+                "total",
+                "amountDue"
+            ]
+        },
+        "Estimate": {
+            "description": "Quote / estimate for customer",
+            "mockFile": "Hardcoded in account.html",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "estimateNumber": {
+                    "type": "string",
+                    "examples": [
+                        "EST-2024-001234"
+                    ]
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "projectId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "status": {
+                    "type": "string",
+                    "ref": "#/enums/EstimateStatus"
+                },
+                "validUntil": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "subtotal": {
+                    "type": "number"
+                },
+                "tax": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "markupPercentage": {
+                    "type": "number",
+                    "nullable": true
+                },
+                "convertedOrderId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "erpQuoteId": {
+                    "type": "string",
+                    "nullable": true
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "ref": "#/schemas/OrderLine"
+                    }
+                }
+            },
+            "required": [
+                "id",
+                "estimateNumber",
+                "status",
+                "total",
+                "validUntil"
+            ]
+        },
+        "Location": {
+            "description": "Store location",
+            "mockFile": "Hardcoded in HTML",
+            "mockData": [
+                {
+                    "id": "oakdale",
+                    "name": "Oakdale",
+                    "address": "1200 Timber Lane, Oakdale, TX 75001",
+                    "phone": "(555) 123-4567",
+                    "hours": "Mon-Fri 7am-5pm, Sat 8am-4pm"
+                },
+                {
+                    "id": "pinewood",
+                    "name": "Pinewood",
+                    "address": "4500 Forest Drive, Pinewood, TX 75002",
+                    "phone": "(555) 987-6543",
+                    "hours": "Mon-Fri 7am-5pm, Sat 8am-4pm"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "address": {
+                    "type": "object"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "hours": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "id",
+                "name"
+            ]
+        }
+    },
+    "endpoints": {
+        "products": {
+            "GET /products": {
+                "description": "List products with filters",
+                "mockImplementation": "fetch('data/products.json')",
+                "queryParams": {
+                    "category": "Filter by category ID",
+                    "search": "Search by name, SKU, or brand",
+                    "availability": "Comma-separated inventory statuses",
+                    "brand": "Comma-separated brand names",
+                    "priceMin": "Minimum price",
+                    "priceMax": "Maximum price",
+                    "sort": "Sort field (name, price) with direction (asc, desc)"
+                },
+                "response": {
+                    "type": "object",
+                    "properties": {
+                        "products": {
+                            "type": "array",
+                            "items": {
+                                "ref": "#/schemas/Product"
+                            }
+                        },
+                        "categories": {
+                            "type": "array",
+                            "items": {
+                                "ref": "#/schemas/Category"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        },
+                        "page": {
+                            "type": "integer"
+                        },
+                        "pageSize": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "GET /products/:sku": {
+                "description": "Get single product by SKU",
+                "mockImplementation": "Filter products.json by sku",
+                "response": {
+                    "ref": "#/schemas/Product"
+                }
+            },
+            "GET /products/:sku/inventory": {
+                "description": "Get real-time inventory by location",
+                "response": {
+                    "type": "object",
+                    "properties": {
+                        "sku": {
+                            "type": "string"
+                        },
+                        "locations": {
+                            "type": "array",
+                            "items": {
+                                "locationId": {
+                                    "type": "string"
+                                },
+                                "quantity": {
+                                    "type": "integer"
+                                },
+                                "status": {
+                                    "ref": "#/enums/InventoryStatus"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "cart": {
+            "GET /cart": {
+                "description": "Get current cart",
+                "mockImplementation": "localStorage.getItem('lumberBossCart')"
+            },
+            "POST /cart/items": {
+                "description": "Add item to cart",
+                "body": {
+                    "sku": "string",
+                    "quantity": "integer"
+                }
+            },
+            "PUT /cart/items/:sku": {
+                "description": "Update cart item quantity"
+            },
+            "DELETE /cart/items/:sku": {
+                "description": "Remove item from cart"
+            }
+        },
+        "account": {
+            "GET /account/overview": {
+                "description": "Dashboard summary",
+                "mockImplementation": "Hardcoded in account.html",
+                "response": {
+                    "balanceDue": "number",
+                    "creditAvailable": "number",
+                    "activeOrdersCount": "integer",
+                    "pendingEstimatesCount": "integer"
+                }
+            },
+            "GET /projects": {
+                "description": "List user projects"
+            },
+            "GET /orders": {
+                "description": "Order history with filters"
+            },
+            "GET /estimates": {
+                "description": "List estimates/quotes"
+            },
+            "GET /billing/invoices": {
+                "description": "List invoices"
+            }
+        }
+    },
+    "localStorage": {
+        "lumberBossCart": {
+            "description": "Shopping cart items",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "ref": "#/schemas/CartItem"
+                }
+            }
+        },
+        "lumberboss-location": {
+            "description": "Selected store location",
+            "schema": {
+                "type": "string",
+                "enum": [
+                    "oakdale",
+                    "pinewood"
+                ]
+            }
+        }
+    }
+}
