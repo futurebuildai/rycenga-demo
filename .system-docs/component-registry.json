@@ -1,0 +1,266 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "lumber-boss-component-registry",
+    "version": "1.1.0",
+    "generatedAt": "2026-01-13T04:00:00Z",
+    "description": "Registry of all UI components in the My Account Lite portal. Storefront components have been removed.",
+    "pages": [
+        {
+            "id": "account",
+            "name": "My Account Portal",
+            "file": "account.html",
+            "scripts": [
+                "account.js"
+            ],
+            "styles": [
+                "style.css",
+                "account.css"
+            ],
+            "status": "complete"
+        }
+    ],
+    "components": [
+        {
+            "id": "header",
+            "name": "Portal Header",
+            "targetTag": "lb-header",
+            "currentSelector": ".header",
+            "locations": [
+                "account.html"
+            ],
+            "props": {
+                "user": {
+                    "type": "object",
+                    "description": "Logged in user info"
+                }
+            },
+            "events": [
+                "menu-toggle"
+            ],
+            "priority": "high",
+            "migrationNotes": "Cleaned version with Account Lite branding. No search or cart."
+        },
+        {
+            "id": "footer",
+            "name": "Portal Footer",
+            "targetTag": "lb-footer",
+            "currentSelector": ".footer",
+            "locations": [
+                "account.html"
+            ],
+            "props": {},
+            "events": [],
+            "priority": "medium"
+        },
+        {
+            "id": "toast",
+            "name": "Toast Notification",
+            "targetTag": "lb-toast",
+            "currentSelector": ".toast",
+            "locations": [
+                "account.js (dynamic)"
+            ],
+            "props": {
+                "message": {
+                    "type": "string",
+                    "required": true
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "info",
+                        "success",
+                        "warning",
+                        "error"
+                    ],
+                    "default": "info"
+                }
+            },
+            "events": [
+                "dismiss"
+            ],
+            "priority": "high",
+            "migrationNotes": "Consolidated into account.js"
+        },
+        {
+            "id": "account-nav",
+            "name": "Account Portal Navigation",
+            "targetTag": "lb-account-nav",
+            "currentSelector": ".account-nav",
+            "locations": [
+                "account.html"
+            ],
+            "props": {
+                "activeSection": {
+                    "type": "string"
+                }
+            },
+            "events": [
+                "section-change"
+            ],
+            "priority": "medium"
+        },
+        {
+            "id": "invoice-row",
+            "name": "Invoice List Row",
+            "targetTag": "lb-invoice-row",
+            "currentSelector": ".invoice-row",
+            "locations": [
+                "account.html"
+            ],
+            "props": {
+                "invoiceNumber": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "open",
+                        "paid",
+                        "overdue"
+                    ]
+                },
+                "selected": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "events": [
+                "select",
+                "pay"
+            ],
+            "priority": "low"
+        },
+        {
+            "id": "order-row",
+            "name": "Order History Row",
+            "targetTag": "lb-order-row",
+            "currentSelector": ".order-row",
+            "locations": [
+                "account.html"
+            ],
+            "props": {
+                "orderNumber": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "number"
+                }
+            },
+            "events": [
+                "reorder",
+                "track"
+            ],
+            "priority": "low"
+        },
+        {
+            "id": "estimate-card",
+            "name": "Estimate/Quote Card",
+            "targetTag": "lb-estimate-card",
+            "currentSelector": ".estimate-card",
+            "locations": [
+                "account.html"
+            ],
+            "props": {
+                "estimateNumber": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "accepted",
+                        "expired"
+                    ]
+                },
+                "total": {
+                    "type": "number"
+                },
+                "validUntil": {
+                    "type": "string",
+                    "format": "date"
+                }
+            },
+            "events": [
+                "convert",
+                "markup",
+                "share"
+            ],
+            "priority": "low"
+        },
+        {
+            "id": "project-card",
+            "name": "Project Card",
+            "targetTag": "lb-project-card",
+            "currentSelector": ".project-card",
+            "locations": [
+                "account.html"
+            ],
+            "props": {
+                "projectId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "address": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "completed",
+                        "archived"
+                    ]
+                }
+            },
+            "events": [
+                "click",
+                "edit",
+                "archive"
+            ],
+            "priority": "low"
+        }
+    ],
+    "migrationPriority": [
+        "lb-header",
+        "lb-account-nav",
+        "lb-toast",
+        "lb-invoice-row",
+        "lb-footer"
+    ],
+    "functions": {
+        "account.js": [
+            {
+                "name": "showSection",
+                "description": "Shows account portal section",
+                "targetComponent": "lb-account-nav"
+            },
+            {
+                "name": "updateInvoiceSelection",
+                "description": "Updates invoice multi-select state",
+                "targetComponent": "lb-invoice-row"
+            },
+            {
+                "name": "showToast",
+                "description": "Displays toast notification (moved from main.js)",
+                "targetComponent": "lb-toast"
+            },
+            {
+                "name": "toggleSidebar",
+                "description": "Toggles mobile navigation sidebar",
+                "targetComponent": "lb-header"
+            }
+        ]
+    }
+}

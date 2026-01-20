@@ -1,0 +1,21 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://github.com/futurebuildai/my-account-lite-frontend.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+	vscode-merge-base = origin/main
+[remote "frontend"]
+	url = https://github.com/futurebuildai/my-account-lite-frontend.git
+	fetch = +refs/heads/*:refs/remotes/frontend/*
+[branch "build"]
+	vscode-merge-base = origin/main
+	remote = origin
+	merge = refs/heads/build
+[branch "stage"]
+	vscode-merge-base = origin/build
