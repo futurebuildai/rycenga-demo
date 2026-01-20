@@ -1,0 +1,31 @@
+{
+    "user": {
+        "id": "u123",
+        "firstName": "Bob",
+        "lastName": "the Builder",
+        "fullName": "Bob the Builder",
+        "initials": "BB",
+        "email": "HomeProUSA@demo.com",
+        "phone": "(555) 123-4567"
+    },
+    "company": {
+        "name": "Home Pros USA",
+        "id": "c456",
+        "limit": 50000,
+        "available": 34700,
+        "balance": 15300
+    },
+    "support": {
+        "phone": "(555) 123-4567",
+        "email": "support@bosslumber.com"
+    },
+    "team": [
+        {
+            "name": "Bob the Builder",
+            "email": "HomeProUSA@demo.com",
+            "role": "Owner",
+            "initials": "BB"
+        }
+    ],
+    "location": "Oakdale, TX"
+}
