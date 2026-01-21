@@ -21,6 +21,27 @@ class AuthServiceImpl {
     private listeners: Set<(isAuthenticated: boolean) => void> = new Set();
     private currentUser: User | null = null;
 
+    private normalizeUser(user: Record<string, unknown>): User {
+        const normalized = { ...user } as Record<string, any>;
+
+        if (normalized.accountId == null && normalized.account_id != null) {
+            normalized.accountId = normalized.account_id;
+        }
+        if (normalized.isActive == null && normalized.is_active != null) {
+            normalized.isActive = normalized.is_active;
+        }
+        if (normalized.lastLoginAt == null && normalized.last_login_at != null) {
+            normalized.lastLoginAt = normalized.last_login_at;
+        }
+
+        // Ensure id exists if passed as user_id
+        if (normalized.id == null && normalized.user_id != null) {
+            normalized.id = normalized.user_id;
+        }
+
+        return normalized as unknown as User;
+    }
+
     /**
      * Attempt login with provided credentials
      * @returns true if login successful
@@ -28,15 +49,16 @@ class AuthServiceImpl {
     async login(email: string, password: string): Promise<boolean> {
         try {
             const response = await ConnectorAuth.login(email, password);
+            const user = this.normalizeUser(response.user as unknown as Record<string, unknown>);
 
             // Store session
             const session: Session = {
-                email: response.user.email,
+                email: user.email,
                 loginTime: new Date().toISOString(),
-                user: response.user
+                user
             };
 
-            this.currentUser = response.user;
+            this.currentUser = user;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
             this.notifyListeners(true);
             return true;
@@ -71,7 +93,11 @@ class AuthServiceImpl {
         if (!data) return null;
 
         try {
-            return JSON.parse(data) as Session;
+            const session = JSON.parse(data) as Session;
+            if (session.user) {
+                session.user = this.normalizeUser(session.user as unknown as Record<string, unknown>);
+            }
+            return session;
         } catch {
             return null;
         }
@@ -83,7 +109,10 @@ class AuthServiceImpl {
     getUser(): User | null {
         if (this.currentUser) return this.currentUser;
         const session = this.getSession();
-        return session?.user || null;
+        if (!session?.user) return null;
+        const user = this.normalizeUser(session.user as unknown as Record<string, unknown>);
+        this.currentUser = user;
+        return user;
     }
 
     /**

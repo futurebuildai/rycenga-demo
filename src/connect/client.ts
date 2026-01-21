@@ -7,6 +7,13 @@ interface RequestOptions extends RequestInit {
 class ApiClient {
     private token: string | null = null;
 
+    constructor() {
+        const stored = localStorage.getItem('auth_token');
+        if (stored) {
+            this.token = stored;
+        }
+    }
+
     setToken(token: string) {
         this.token = token;
         localStorage.setItem('auth_token', token);
