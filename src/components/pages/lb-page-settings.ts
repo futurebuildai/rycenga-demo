@@ -4,17 +4,19 @@
  */
 
 import { html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
+import { AuthService } from '../../connect/services/auth.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { AccountData } from '../../types/index.js';
+import type { NotificationPreferences } from '../../connect/types/domain.js';
 
 @customElement('lb-page-settings')
 export class LbPageSettings extends LbBase {
-    static styles = [
-        ...LbBase.styles,
-        css`
+  static styles = [
+    ...LbBase.styles,
+    css`
       :host {
         display: block;
       }
@@ -159,6 +161,11 @@ export class LbPageSettings extends LbBase {
         background: var(--color-accent);
       }
 
+      .toggle-switch.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
       .toggle-switch::after {
         content: '';
         position: absolute;
@@ -174,47 +181,133 @@ export class LbPageSettings extends LbBase {
       .toggle-switch.active::after {
         transform: translateX(22px);
       }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     `,
-    ];
+  ];
 
-    @state() private accountData: AccountData | null = null;
-    @state() private loading = true;
-    @state() private emailNotifications = true;
-    @state() private smsNotifications = false;
-    @state() private orderUpdates = true;
+  @state() private accountData: AccountData | null = null;
+  @state() private loading = true;
+  @state() private savingProfile = false;
+  @state() private savingPassword = false;
+  @state() private savingNotifications = false;
+  @state() private emailNotifications = true;
+  @state() private smsNotifications = false;
+  @state() private orderUpdates = true;
+  @state() private phoneValue = '';
+  @state() private currentPassword = '';
+  @state() private newPassword = '';
 
-    async connectedCallback() {
-        super.connectedCallback();
-        try {
-            this.accountData = await DataService.getAccountData();
-        } catch (e) {
-            console.error('Failed to load account data', e);
-        } finally {
-            this.loading = false;
-        }
+  @query('#phone-input') phoneInput!: HTMLInputElement;
+
+  async connectedCallback() {
+    super.connectedCallback();
+    try {
+      this.accountData = await DataService.getAccountData();
+      this.phoneValue = this.accountData?.user?.phone ?? '';
+    } catch (e) {
+      console.error('Failed to load account data', e);
+      LbToast.show('Failed to load settings', 'error');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private async handleSave() {
+    const phone = this.phoneValue.trim();
+    if (phone && !/^[+]?[\d\s()-]{7,20}$/.test(phone)) {
+      LbToast.show('Please enter a valid phone number', 'warning');
+      return;
     }
 
-    private handleSave() {
-        LbToast.show('Settings saved successfully', 'success');
+    this.savingProfile = true;
+    try {
+      const userId = this.accountData?.user?.id;
+      if (!userId) throw new Error('User ID not found');
+
+      await AuthService.updateProfile(parseInt(userId), { phone });
+      LbToast.show('Profile saved successfully', 'success');
+    } catch (e) {
+      console.error('Failed to save profile', e);
+      LbToast.show('Failed to save profile', 'error');
+    } finally {
+      this.savingProfile = false;
+    }
+  }
+
+  private handleCancel() {
+    this.phoneValue = this.accountData?.user?.phone ?? '';
+    LbToast.show('Changes discarded', 'info');
+  }
+
+  private async handlePasswordChange() {
+    if (!this.currentPassword || !this.newPassword) {
+      LbToast.show('Please fill in both password fields', 'warning');
+      return;
+    }
+    if (this.newPassword.length < 8) {
+      LbToast.show('New password must be at least 8 characters', 'warning');
+      return;
     }
 
-    private handleCancel() {
-        LbToast.show('Changes discarded', 'info');
+    this.savingPassword = true;
+    try {
+      await AuthService.changePassword({
+        currentPassword: this.currentPassword,
+        newPassword: this.newPassword,
+      });
+      this.currentPassword = '';
+      this.newPassword = '';
+      LbToast.show('Password changed successfully', 'success');
+    } catch (e) {
+      console.error('Failed to change password', e);
+      LbToast.show('Failed to change password', 'error');
+    } finally {
+      this.savingPassword = false;
+    }
+  }
+
+  private async handleToggleNotification(key: keyof NotificationPreferences) {
+    const userId = this.accountData?.user?.id;
+    if (!userId) return;
+
+    // Optimistic UI update
+    if (key === 'emailNotifications') this.emailNotifications = !this.emailNotifications;
+    else if (key === 'smsNotifications') this.smsNotifications = !this.smsNotifications;
+    else if (key === 'orderUpdates') this.orderUpdates = !this.orderUpdates;
+
+    this.savingNotifications = true;
+    try {
+      await AuthService.updateNotifications(parseInt(userId), {
+        emailNotifications: this.emailNotifications,
+        smsNotifications: this.smsNotifications,
+        orderUpdates: this.orderUpdates,
+      });
+      LbToast.show('Notification preference updated', 'success');
+    } catch (e) {
+      console.error('Failed to update notifications', e);
+      // Revert optimistic update
+      if (key === 'emailNotifications') this.emailNotifications = !this.emailNotifications;
+      else if (key === 'smsNotifications') this.smsNotifications = !this.smsNotifications;
+      else if (key === 'orderUpdates') this.orderUpdates = !this.orderUpdates;
+      LbToast.show('Failed to update notification preference', 'error');
+    } finally {
+      this.savingNotifications = false;
+    }
+  }
+
+  render() {
+    if (this.loading) {
+      return html`<p>Loading settings...</p>`;
     }
 
-    private handlePasswordChange() {
-        LbToast.show('Password change coming soon', 'info');
-    }
+    const user = this.accountData?.user;
+    const company = this.accountData?.company;
 
-    render() {
-        if (this.loading) {
-            return html`<p>Loading settings...</p>`;
-        }
-
-        const user = this.accountData?.user;
-        const company = this.accountData?.company;
-
-        return html`
+    return html`
       <div class="section-header">
         <h1 class="section-title">Settings</h1>
         <p class="section-subtitle">Manage your account preferences</p>
@@ -233,7 +326,12 @@ export class LbPageSettings extends LbBase {
           </div>
           <div class="form-group">
             <label>Phone Number</label>
-            <input type="tel" value="${user?.phone ?? ''}">
+            <input 
+              id="phone-input"
+              type="tel" 
+              .value="${this.phoneValue}"
+              @input=${(e: Event) => this.phoneValue = (e.target as HTMLInputElement).value}
+            >
           </div>
           <div class="form-group">
             <label>Company</label>
@@ -241,7 +339,11 @@ export class LbPageSettings extends LbBase {
           </div>
         </div>
         <div class="settings-actions">
-          <button class="btn btn-primary" @click=${this.handleSave}>Save Changes</button>
+          <button 
+            class="btn btn-primary" 
+            @click=${this.handleSave}
+            ?disabled=${this.savingProfile}
+          >${this.savingProfile ? 'Saving...' : 'Save Changes'}</button>
           <button class="btn btn-outline" @click=${this.handleCancel}>Cancel</button>
         </div>
       </div>
@@ -251,15 +353,29 @@ export class LbPageSettings extends LbBase {
         <div class="settings-form">
           <div class="form-group">
             <label>Current Password</label>
-            <input type="password" placeholder="••••••••">
+            <input 
+              type="password" 
+              placeholder="••••••••"
+              .value="${this.currentPassword}"
+              @input=${(e: Event) => this.currentPassword = (e.target as HTMLInputElement).value}
+            >
           </div>
           <div class="form-group">
             <label>New Password</label>
-            <input type="password" placeholder="••••••••">
+            <input 
+              type="password" 
+              placeholder="••••••••"
+              .value="${this.newPassword}"
+              @input=${(e: Event) => this.newPassword = (e.target as HTMLInputElement).value}
+            >
           </div>
         </div>
         <div class="settings-actions">
-          <button class="btn btn-primary" @click=${this.handlePasswordChange}>Change Password</button>
+          <button 
+            class="btn btn-primary" 
+            @click=${this.handlePasswordChange}
+            ?disabled=${this.savingPassword}
+          >${this.savingPassword ? 'Changing...' : 'Change Password'}</button>
         </div>
       </div>
 
@@ -272,8 +388,8 @@ export class LbPageSettings extends LbBase {
             <span class="toggle-desc">Receive order updates and invoices via email</span>
           </div>
           <div 
-            class="toggle-switch ${this.emailNotifications ? 'active' : ''}"
-            @click=${() => this.emailNotifications = !this.emailNotifications}
+            class="toggle-switch ${this.emailNotifications ? 'active' : ''} ${this.savingNotifications ? 'disabled' : ''}"
+            @click=${() => !this.savingNotifications && this.handleToggleNotification('emailNotifications')}
           ></div>
         </div>
 
@@ -283,8 +399,8 @@ export class LbPageSettings extends LbBase {
             <span class="toggle-desc">Get text alerts for delivery updates</span>
           </div>
           <div 
-            class="toggle-switch ${this.smsNotifications ? 'active' : ''}"
-            @click=${() => this.smsNotifications = !this.smsNotifications}
+            class="toggle-switch ${this.smsNotifications ? 'active' : ''} ${this.savingNotifications ? 'disabled' : ''}"
+            @click=${() => !this.savingNotifications && this.handleToggleNotification('smsNotifications')}
           ></div>
         </div>
 
@@ -294,17 +410,17 @@ export class LbPageSettings extends LbBase {
             <span class="toggle-desc">Notifications when your order status changes</span>
           </div>
           <div 
-            class="toggle-switch ${this.orderUpdates ? 'active' : ''}"
-            @click=${() => this.orderUpdates = !this.orderUpdates}
+            class="toggle-switch ${this.orderUpdates ? 'active' : ''} ${this.savingNotifications ? 'disabled' : ''}"
+            @click=${() => !this.savingNotifications && this.handleToggleNotification('orderUpdates')}
           ></div>
         </div>
       </div>
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'lb-page-settings': LbPageSettings;
-    }
+  interface HTMLElementTagNameMap {
+    'lb-page-settings': LbPageSettings;
+  }
 }

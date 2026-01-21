@@ -166,7 +166,8 @@ export const badgeStyles = css`
   }
 
   .status-confirmed,
-  .status-active {
+  .status-active,
+  .status-ready-for-pickup {
     background: rgba(59, 130, 246, 0.1);
     color: #3b82f6;
   }
@@ -303,11 +304,11 @@ export const cardStyles = css`
  * Combined shared styles for LbBase
  */
 export const sharedStyles = [
-    resetStyles,
-    typographyStyles,
-    buttonStyles,
-    badgeStyles,
-    layoutStyles,
-    formStyles,
-    cardStyles,
+  resetStyles,
+  typographyStyles,
+  buttonStyles,
+  badgeStyles,
+  layoutStyles,
+  formStyles,
+  cardStyles,
 ];

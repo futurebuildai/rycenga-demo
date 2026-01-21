@@ -12,9 +12,9 @@ import type { Order } from '../../types/index.js';
 
 @customElement('lb-page-orders')
 export class LbPageOrders extends LbBase {
-    static styles = [
-        ...LbBase.styles,
-        css`
+  static styles = [
+    ...LbBase.styles,
+    css`
       :host {
         display: block;
       }
@@ -238,96 +238,98 @@ export class LbPageOrders extends LbBase {
         font-size: var(--text-sm);
       }
     `,
-    ];
+  ];
 
-    @state() private orders: Order[] = [];
-    @state() private loading = true;
-    @state() private currentView: 'list' | 'detail' = 'list';
-    @state() private selectedOrder: Order | null = null;
-    @state() private activeFilter = 'All';
+  @state() private orders: Order[] = [];
+  @state() private loading = true;
+  @state() private currentView: 'list' | 'detail' = 'list';
+  @state() private selectedOrder: Order | null = null;
+  @state() private activeFilter = 'All';
 
-    private filters = ['All', 'Submitted', 'Confirmed', 'Ready for Pickup', 'Out for Delivery', 'Delivered', 'Fulfilled'];
+  private filters = ['All', 'Pending', 'Confirmed', 'Ready for Pickup', 'Shipped', 'Delivered', 'Cancelled'];
 
-    async connectedCallback() {
-        super.connectedCallback();
-        await this.loadOrders();
+  async connectedCallback() {
+    super.connectedCallback();
+    await this.loadOrders();
+  }
+
+  private async loadOrders() {
+    try {
+      this.orders = await DataService.getOrders();
+    } catch (e) {
+      console.error('Failed to load orders', e);
+    } finally {
+      this.loading = false;
     }
+  }
 
-    private async loadOrders() {
-        try {
-            this.orders = await DataService.getOrders();
-        } catch (e) {
-            console.error('Failed to load orders', e);
-        } finally {
-            this.loading = false;
-        }
-    }
+  private viewOrderDetail(order: Order) {
+    this.selectedOrder = order;
+    this.currentView = 'detail';
+  }
 
-    private viewOrderDetail(order: Order) {
-        this.selectedOrder = order;
-        this.currentView = 'detail';
-    }
+  private backToList() {
+    this.currentView = 'list';
+    this.selectedOrder = null;
+  }
 
-    private backToList() {
-        this.currentView = 'list';
-        this.selectedOrder = null;
-    }
+  private setFilter(filter: string) {
+    this.activeFilter = filter;
+  }
 
-    private setFilter(filter: string) {
-        this.activeFilter = filter;
-    }
+  private getStatusClass(status: string): string {
+    const statusMap: Record<string, string> = {
+      'pending': 'status-pending',
+      'confirmed': 'status-confirmed',
+      'ready_for_pickup': 'status-ready_for_pickup',
+      'shipped': 'status-shipped',
+      'delivered': 'status-delivered',
+      'cancelled': 'status-cancelled',
+      'closed': 'status-delivered',
+    };
+    return statusMap[status] || 'status-pending';
+  }
 
-    private getStatusClass(status: string): string {
-        const statusMap: Record<string, string> = {
-            'delivered': 'status-delivered',
-            'shipped': 'status-out-for-delivery',
-            'confirmed': 'status-confirmed',
-            'submitted': 'status-submitted',
-            'picking': 'status-confirmed',
-            'cancelled': 'status-expired',
-        };
-        return statusMap[status] || 'status-pending';
-    }
+  private getDisplayStatus(status: string): string {
+    const displayMap: Record<string, string> = {
+      'pending': 'Pending',
+      'confirmed': 'Confirmed',
+      'ready_for_pickup': 'Ready for Pickup',
+      'shipped': 'Shipped',
+      'delivered': 'Delivered',
+      'cancelled': 'Cancelled',
+      'closed': 'Closed',
+    };
+    return displayMap[status] || status;
+  }
 
-    private getDisplayStatus(status: string): string {
-        const displayMap: Record<string, string> = {
-            'delivered': 'Delivered',
-            'shipped': 'Out for Delivery',
-            'confirmed': 'Confirmed',
-            'submitted': 'Submitted',
-            'picking': 'Processing',
-            'cancelled': 'Cancelled',
-        };
-        return displayMap[status] || status;
-    }
+  private getProjectColor(order: Order): string {
+    const colors = ['#3b82f6', '#22c55e', '#f97316', '#a855f7'];
+    const index = this.orders.indexOf(order) % colors.length;
+    return colors[index];
+  }
 
-    private getProjectColor(order: Order): string {
-        const colors = ['#3b82f6', '#22c55e', '#f97316', '#a855f7'];
-        const index = this.orders.indexOf(order) % colors.length;
-        return colors[index];
-    }
+  private formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  }
 
-    private formatCurrency(value: number): string {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-    }
+  private formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
 
-    private formatDate(dateStr: string): string {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    }
+  private getOrderSummary(order: Order): string {
+    const count = order.lines?.length || 0;
+    const names = order.lines?.slice(0, 2).map(l => l.name).join(', ') || '';
+    return `${count} products: ${names}`;
+  }
 
-    private getOrderSummary(order: Order): string {
-        const count = order.lines?.length || 0;
-        const names = order.lines?.slice(0, 2).map(l => l.name).join(', ') || '';
-        return `${count} products: ${names}`;
-    }
+  private calculateSubtotal(order: Order): number {
+    return order.lines?.reduce((sum, line) => sum + line.lineTotal, 0) || 0;
+  }
 
-    private calculateSubtotal(order: Order): number {
-        return order.lines?.reduce((sum, line) => sum + line.lineTotal, 0) || 0;
-    }
-
-    private renderListView() {
-        return html`
+  private renderListView() {
+    return html`
       <div class="filters-bar">
         <div class="filter-chips">
           ${this.filters.map(filter => html`
@@ -366,18 +368,19 @@ export class LbPageOrders extends LbBase {
         `)}
       </div>
     `;
-    }
+  }
 
-    private renderDetailView() {
-        if (!this.selectedOrder) return html``;
+  private renderDetailView() {
+    if (!this.selectedOrder) return html``;
 
-        const order = this.selectedOrder;
-        const subtotal = this.calculateSubtotal(order);
-        const taxRate = 0.0825;
-        const tax = subtotal * taxRate;
-        const total = subtotal + tax;
+    const order = this.selectedOrder;
+    // Use backend-provided totals instead of computing client-side
+    // Backend Order has: subtotal, taxTotal (via taxTotal field), total
+    const subtotal = order.subtotal ?? 0;
+    const tax = order.tax ?? 0;
+    const total = order.total;
 
-        return html`
+    return html`
       <div class="detail-header">
         <button class="btn-back" @click=${this.backToList}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -441,14 +444,14 @@ export class LbPageOrders extends LbBase {
         </div>
       </div>
     `;
+  }
+
+  render() {
+    if (this.loading) {
+      return html`<p>Loading orders...</p>`;
     }
 
-    render() {
-        if (this.loading) {
-            return html`<p>Loading orders...</p>`;
-        }
-
-        return html`
+    return html`
       <div class="section-header">
         <div>
           <h1 class="section-title">Orders</h1>
@@ -458,11 +461,11 @@ export class LbPageOrders extends LbBase {
 
       ${this.currentView === 'list' ? this.renderListView() : this.renderDetailView()}
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'lb-page-orders': LbPageOrders;
-    }
+  interface HTMLElementTagNameMap {
+    'lb-page-orders': LbPageOrders;
+  }
 }

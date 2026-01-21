@@ -250,10 +250,9 @@ export class LbPageEstimates extends LbBase {
 
   private getStatusClass(status: string): string {
     const statusMap: Record<string, string> = {
-      'sent': 'status-pending',
+      'pending': 'status-pending',
       'accepted': 'status-accepted',
       'expired': 'status-expired',
-      'draft': 'status-draft',
       'converted': 'status-success',
     };
     return statusMap[status] || 'status-pending';
@@ -261,10 +260,9 @@ export class LbPageEstimates extends LbBase {
 
   private getDisplayStatus(status: string): string {
     const displayMap: Record<string, string> = {
-      'sent': 'Pending Approval',
+      'pending': 'Pending Approval',
       'accepted': 'Accepted',
       'expired': 'Expired',
-      'draft': 'Draft',
       'converted': 'Converted',
     };
     return displayMap[status] || status;
@@ -351,7 +349,10 @@ export class LbPageEstimates extends LbBase {
           </svg>
           Back to List
         </button>
-        <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
+        <div class="estimate-actions-group">
+          <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
+          <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('Data export coming soon', 'info')}>Export Data</button>
+        </div>
       </div>
 
       <div class="detail-card">

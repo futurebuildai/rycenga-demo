@@ -50,9 +50,9 @@ export interface Account {
 /**
  * MIRRORS: velocity-backend-main/internal/domain/sales.go
  */
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'closed';
-export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'overdue' | 'cancelled' | 'void';
-export type QuoteStatus = 'draft' | 'pending' | 'accepted' | 'rejected' | 'expired';
+export type OrderStatus = 'pending' | 'confirmed' | 'ready_for_pickup' | 'shipped' | 'delivered' | 'cancelled' | 'closed';
+export type InvoiceStatus = 'open' | 'paid' | 'overdue' | 'cancelled' | 'void';
+export type QuoteStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
 
 export interface Order {
     id: number;
@@ -99,4 +99,102 @@ export interface Job {
     city?: string;
     state?: string;
     isActive: boolean;
+}
+
+/**
+ * REQUIRED: Backend should provide this via GET /dashboard/summary
+ * Replaces frontend computation of aggregated values
+ */
+export interface DashboardSummary {
+    balanceDue: number;           // Sum of open + overdue invoices
+    creditLimit: number;          // From Account
+    creditAvailable: number;      // creditLimit - balanceDue
+    activeOrdersCount: number;    // Count of orders NOT (delivered, closed, cancelled)
+    pendingEstimatesCount: number; // Count of quotes with status = 'pending'
+    pendingEstimatesTotal: number; // Sum of totals for pending quotes
+}
+
+/**
+ * REQUIRED: Backend should provide this via GET /billing/summary
+ * Replaces frontend computation of billing aggregates
+ */
+export interface BillingSummary {
+    balanceDue: number;           // Sum of all invoice.balanceDue
+    openInvoicesCount: number;    // Count where status = 'open'
+    overdueInvoicesCount: number; // Count where status = 'overdue'
+    lastPaymentDate?: string;     // ISO date of most recent payment
+    lastPaymentAmount?: number;   // Amount of most recent payment
+}
+
+/**
+ * Payment method for wallet management
+ * MAPS TO: Future backend endpoint POST/DELETE /payment-methods
+ */
+export type PaymentMethodType = 'card' | 'ach';
+
+export interface PaymentMethod {
+    id: string;
+    type: PaymentMethodType;
+    label: string;
+    last4: string;
+    expiry?: string; // MM/YY for cards
+    isDefault: boolean;
+}
+
+/**
+ * Notification preferences for settings page
+ * MAPS TO: PUT /users/{id}/notifications
+ */
+export interface NotificationPreferences {
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+    orderUpdates: boolean;
+}
+
+/**
+ * Team member for account team management
+ * MAPS TO: GET/POST/PUT /account/{id}/members
+ */
+export type TeamMemberRole = 'owner' | 'admin' | 'purchaser' | 'viewer';
+
+export interface TeamMember {
+    id: number;
+    name: string;
+    email: string;
+    role: TeamMemberRole;
+    initials?: string;
+}
+
+/**
+ * Payload for updating user profile
+ * MAPS TO: PUT /users/{id}
+ */
+export interface UpdateProfilePayload {
+    phone?: string;
+}
+
+/**
+ * Payload for changing password
+ * MAPS TO: POST /auth/change-password
+ */
+export interface ChangePasswordPayload {
+    currentPassword: string;
+    newPassword: string;
+}
+
+/**
+ * Payload for inviting a team member
+ * MAPS TO: POST /account/{id}/members/invite
+ */
+export interface InviteMemberPayload {
+    email: string;
+    role: TeamMemberRole;
+}
+
+/**
+ * Payload for paying an invoice
+ * MAPS TO: POST /invoices/{id}/pay
+ */
+export interface PayInvoicePayload {
+    paymentMethodId: string;
 }

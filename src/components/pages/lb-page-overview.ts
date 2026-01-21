@@ -146,6 +146,12 @@ export class LbPageOverview extends LbBase {
         transform: translateY(-2px);
         box-shadow: var(--shadow-lg);
       }
+
+      .btn-cta:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
     `,
   ];
 
@@ -155,28 +161,38 @@ export class LbPageOverview extends LbBase {
   @state() private pendingEstimatesCount = 0;
   @state() private pendingEstimatesTotal = 0;
   @state() private openInvoicesTotal = 0;
+  @state() private creditLimit = 0;
+  @state() private creditAvailable = 0;
 
   async connectedCallback() {
     super.connectedCallback();
     try {
       this.accountData = await DataService.getAccountData();
 
-      // Fetch and count active orders (not delivered or fulfilled)
+      // TODO: Replace with single backend call: GET /dashboard/summary
+      // Backend should return DashboardSummary with pre-computed values:
+      // - balanceDue (sum of open + overdue invoices)
+      // - creditLimit, creditAvailable
+      // - activeOrdersCount
+      // - pendingEstimatesCount, pendingEstimatesTotal
+      //
+      // TEMPORARY: Using legacy account data for now
+      const company = this.accountData?.company;
+      this.creditLimit = company?.limit ?? 0;
+      this.openInvoicesTotal = company?.balance ?? 0;
+      this.creditAvailable = this.creditLimit - this.openInvoicesTotal;
+
+      // TEMPORARY: Fetching and computing until backend provides summary
       const orders = await DataService.getOrders();
       this.activeOrdersCount = orders.filter((o: Order) =>
-        o.status !== 'delivered' && o.status !== 'fulfilled' && o.status !== 'cancelled'
+        o.status !== 'delivered' && o.status !== 'closed' && o.status !== 'cancelled'
       ).length;
 
-      // Fetch and count pending estimates (status === 'sent')
       const estimates = await DataService.getEstimates();
       const pendingEstimates = estimates.filter((e: Estimate) => e.status === 'sent');
       this.pendingEstimatesCount = pendingEstimates.length;
       this.pendingEstimatesTotal = pendingEstimates.reduce((sum, e) => sum + e.total, 0);
 
-      // Fetch and sum open invoices for balance due
-      const invoices = await DataService.getInvoices();
-      const openInvoices = invoices.filter((i: Invoice) => i.status === 'open' || i.status === 'overdue');
-      this.openInvoicesTotal = openInvoices.reduce((sum, i) => sum + i.amountDue, 0);
     } catch (e) {
       console.error('Failed to load account data', e);
     } finally {
@@ -185,8 +201,11 @@ export class LbPageOverview extends LbBase {
   }
 
   private handlePayNow() {
-    LbToast.show('Payment modal would open here', 'info');
+    // Navigate to billing page where full payment flow is implemented
+    RouterService.navigate('billing');
+    LbToast.show('Navigate to Billing to pay open invoices', 'info');
   }
+
 
   private formatCurrency(value: number): string {
     return new Intl.NumberFormat('en-US', {
@@ -200,11 +219,8 @@ export class LbPageOverview extends LbBase {
       return html`<p>Loading...</p>`;
     }
 
-    const company = this.accountData?.company;
     const user = this.accountData?.user;
-    const creditLimit = company?.limit ?? 0;
-    const creditAvailable = creditLimit - this.openInvoicesTotal;
-    const creditPercent = creditLimit > 0 ? (this.openInvoicesTotal / creditLimit) * 100 : 0;
+    const creditPercent = this.creditLimit > 0 ? (this.openInvoicesTotal / this.creditLimit) * 100 : 0;
 
     return html`
       <div class="section-header">
@@ -227,8 +243,8 @@ export class LbPageOverview extends LbBase {
         <div class="stat-card">
           <div class="stat-content">
             <span class="stat-label">Credit Available</span>
-            <span class="stat-value">${this.formatCurrency(creditAvailable)}</span>
-            <span class="stat-meta">of ${this.formatCurrency(creditLimit)} limit</span>
+            <span class="stat-value">${this.formatCurrency(this.creditAvailable)}</span>
+            <span class="stat-meta">of ${this.formatCurrency(this.creditLimit)} limit</span>
           </div>
           <div class="stat-progress">
             <div class="progress-bar" style="width: ${creditPercent}%"></div>

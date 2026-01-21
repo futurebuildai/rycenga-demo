@@ -6,22 +6,15 @@
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
+import { BillingService } from '../../connect/services/billing.js';
 import { LbToast } from '../atoms/lb-toast.js';
-
-interface PaymentMethod {
-    id: string;
-    type: 'card' | 'ach';
-    label: string;
-    last4: string;
-    expiry?: string;
-    isDefault: boolean;
-}
+import type { PaymentMethod, PaymentMethodType } from '../../connect/types/domain.js';
 
 @customElement('lb-page-wallet')
 export class LbPageWallet extends LbBase {
-    static styles = [
-        ...LbBase.styles,
-        css`
+  static styles = [
+    ...LbBase.styles,
+    css`
       :host {
         display: block;
       }
@@ -134,68 +127,114 @@ export class LbPageWallet extends LbBase {
         color: var(--color-text);
         margin-bottom: var(--space-sm);
       }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     `,
-    ];
+  ];
 
-    @state() private paymentMethods: PaymentMethod[] = [
-        {
-            id: 'pm-1',
-            type: 'card',
-            label: 'Visa ending in 4242',
-            last4: '4242',
-            expiry: '12/26',
-            isDefault: true,
-        },
-        {
-            id: 'pm-2',
-            type: 'ach',
-            label: 'Chase Business ••••7890',
-            last4: '7890',
-            isDefault: false,
-        },
-    ];
+  @state() private paymentMethods: PaymentMethod[] = [
+    {
+      id: 'pm-1',
+      type: 'card',
+      label: 'Visa ending in 4242',
+      last4: '4242',
+      expiry: '12/26',
+      isDefault: true,
+    },
+    {
+      id: 'pm-2',
+      type: 'ach',
+      label: 'Chase Business ••••7890',
+      last4: '7890',
+      isDefault: false,
+    },
+  ];
+  @state() private adding = false;
+  @state() private processingId: string | null = null;
 
-    private handleAddMethod() {
-        LbToast.show('Add payment method coming soon', 'info');
+  private async handleAddMethod() {
+    // In production, this would open a payment form modal (Stripe Elements, etc.)
+    this.adding = true;
+    try {
+      const newMethod: Omit<PaymentMethod, 'id'> = {
+        type: 'card',
+        label: 'New Card ••••1234',
+        last4: '1234',
+        expiry: '01/28',
+        isDefault: false,
+      };
+      const added = await BillingService.addPaymentMethod(newMethod);
+      this.paymentMethods = [...this.paymentMethods, added];
+      LbToast.show('Payment method added', 'success');
+    } catch (e) {
+      console.error('Failed to add payment method', e);
+      LbToast.show('Failed to add payment method', 'error');
+    } finally {
+      this.adding = false;
+    }
+  }
+
+  private async handleSetDefault(method: PaymentMethod) {
+    if (method.isDefault) return;
+
+    this.processingId = method.id;
+    try {
+      await BillingService.setDefaultPaymentMethod(method.id);
+      this.paymentMethods = this.paymentMethods.map(m => ({
+        ...m,
+        isDefault: m.id === method.id,
+      }));
+      LbToast.show(`${method.label} set as default`, 'success');
+    } catch (e) {
+      console.error('Failed to set default', e);
+      LbToast.show('Failed to set default payment method', 'error');
+    } finally {
+      this.processingId = null;
+    }
+  }
+
+  private async handleRemove(method: PaymentMethod) {
+    if (method.isDefault) {
+      LbToast.show('Cannot remove default payment method', 'warning');
+      return;
     }
 
-    private handleSetDefault(method: PaymentMethod) {
-        this.paymentMethods = this.paymentMethods.map(m => ({
-            ...m,
-            isDefault: m.id === method.id,
-        }));
-        LbToast.show(`${method.label} set as default`, 'success');
+    this.processingId = method.id;
+    try {
+      await BillingService.removePaymentMethod(method.id);
+      this.paymentMethods = this.paymentMethods.filter(m => m.id !== method.id);
+      LbToast.show('Payment method removed', 'success');
+    } catch (e) {
+      console.error('Failed to remove payment method', e);
+      LbToast.show('Failed to remove payment method', 'error');
+    } finally {
+      this.processingId = null;
     }
+  }
 
-    private handleRemove(method: PaymentMethod) {
-        if (method.isDefault) {
-            LbToast.show('Cannot remove default payment method', 'warning');
-            return;
-        }
-        this.paymentMethods = this.paymentMethods.filter(m => m.id !== method.id);
-        LbToast.show('Payment method removed', 'success');
-    }
-
-    private renderCardIcon() {
-        return html`
+  private renderCardIcon() {
+    return html`
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
         <line x1="1" y1="10" x2="23" y2="10"></line>
       </svg>
     `;
-    }
+  }
 
-    private renderBankIcon() {
-        return html`
+  private renderBankIcon() {
+    return html`
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
     `;
-    }
+  }
 
-    render() {
-        return html`
+  render() {
+    return html`
       <div class="section-header">
         <div>
           <h1 class="section-title">Wallet</h1>
@@ -204,12 +243,16 @@ export class LbPageWallet extends LbBase {
       </div>
 
       <div class="wallet-actions">
-        <button class="btn btn-primary" @click=${this.handleAddMethod}>
+        <button 
+          class="btn btn-primary" 
+          @click=${this.handleAddMethod}
+          ?disabled=${this.adding}
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          Add Payment Method
+          ${this.adding ? 'Adding...' : 'Add Payment Method'}
         </button>
       </div>
 
@@ -233,9 +276,17 @@ export class LbPageWallet extends LbBase {
               </div>
               <div class="payment-actions">
                 ${!method.isDefault ? html`
-                  <button class="btn btn-outline btn-sm" @click=${() => this.handleSetDefault(method)}>Set Default</button>
+                  <button 
+                    class="btn btn-outline btn-sm" 
+                    @click=${() => this.handleSetDefault(method)}
+                    ?disabled=${this.processingId === method.id}
+                  >${this.processingId === method.id ? 'Setting...' : 'Set Default'}</button>
                 ` : ''}
-                <button class="btn btn-outline btn-sm" @click=${() => this.handleRemove(method)}>Remove</button>
+                <button 
+                  class="btn btn-outline btn-sm" 
+                  @click=${() => this.handleRemove(method)}
+                  ?disabled=${this.processingId === method.id || method.isDefault}
+                >${this.processingId === method.id ? 'Removing...' : 'Remove'}</button>
               </div>
             </div>
           `)}
@@ -251,11 +302,11 @@ export class LbPageWallet extends LbBase {
         </div>
       `}
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'lb-page-wallet': LbPageWallet;
-    }
+  interface HTMLElementTagNameMap {
+    'lb-page-wallet': LbPageWallet;
+  }
 }

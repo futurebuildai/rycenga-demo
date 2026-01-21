@@ -8,26 +8,25 @@
 // ============================================
 
 export type OrderStatus =
-    | 'draft'
-    | 'submitted'
+    | 'pending'
     | 'confirmed'
-    | 'picking'
+    | 'ready_for_pickup'
     | 'shipped'
     | 'delivered'
-    | 'fulfilled'
-    | 'cancelled';
+    | 'cancelled'
+    | 'closed';
 
 export type InvoiceStatus =
     | 'open'
-    | 'partial'
     | 'paid'
     | 'overdue'
-    | 'credited';
+    | 'cancelled'
+    | 'void';
 
 export type EstimateStatus =
-    | 'draft'
     | 'sent'
     | 'accepted'
+    | 'rejected'
     | 'expired'
     | 'converted';
 

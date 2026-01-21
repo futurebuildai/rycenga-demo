@@ -7,6 +7,7 @@ import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
+import { BillingService } from '../../connect/services/billing.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Invoice } from '../../types/index.js';
 
@@ -218,6 +219,7 @@ export class LbPageBilling extends LbBase {
   @state() private currentView: 'list' | 'detail' = 'list';
   @state() private selectedInvoice: Invoice | null = null;
   @state() private activeTab = 'invoices';
+  @state() private payingInvoiceId: string | null = null;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -244,13 +246,34 @@ export class LbPageBilling extends LbBase {
     this.selectedInvoice = null;
   }
 
+  private async handlePayInvoice(invoice: Invoice) {
+    // In production, this would open a modal to select payment method
+    this.payingInvoiceId = invoice.id;
+    try {
+      await BillingService.payInvoice(parseInt(invoice.id), { paymentMethodId: 'pm-1' });
+      LbToast.show(`Payment submitted for ${invoice.invoiceNumber}`, 'success');
+      // Optimistic update
+      this.invoices = this.invoices.map(i =>
+        i.id === invoice.id ? { ...i, status: 'paid' as const, amountDue: 0 } : i
+      );
+      if (this.selectedInvoice?.id === invoice.id) {
+        this.selectedInvoice = { ...this.selectedInvoice, status: 'paid' as const, amountDue: 0 };
+      }
+    } catch (e) {
+      console.error('Failed to pay invoice', e);
+      LbToast.show('Failed to process payment', 'error');
+    } finally {
+      this.payingInvoiceId = null;
+    }
+  }
+
   private getStatusClass(status: string): string {
     const statusMap: Record<string, string> = {
       'open': 'status-open',
       'paid': 'status-paid',
-      'partial': 'status-pending',
       'overdue': 'status-expired',
-      'credited': 'status-success',
+      'cancelled': 'status-cancelled',
+      'void': 'status-cancelled',
     };
     return statusMap[status] || 'status-pending';
   }
@@ -264,8 +287,16 @@ export class LbPageBilling extends LbBase {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  private getTotalBalance(): number {
+  // TODO: Replace with GET /billing/summary from backend
+  // Backend should provide: balanceDue, openInvoicesCount, overdueInvoicesCount, lastPaymentDate
+  private get totalBalance(): number {
+    // TEMPORARY: Computing until backend provides BillingSummary
     return this.invoices.reduce((sum, inv) => sum + inv.amountDue, 0);
+  }
+
+  private get openInvoicesCount(): number {
+    // TEMPORARY: Computing until backend provides BillingSummary
+    return this.invoices.filter(i => i.status === 'open' || i.status === 'overdue').length;
   }
 
   private renderListView() {
@@ -273,15 +304,16 @@ export class LbPageBilling extends LbBase {
       <div class="billing-summary">
         <div class="summary-card balance">
           <div class="summary-label">Balance Due</div>
-          <div class="summary-value">${this.formatCurrency(this.getTotalBalance())}</div>
+          <div class="summary-value">${this.formatCurrency(this.totalBalance)}</div>
         </div>
         <div class="summary-card">
-          <div class="summary-label">Open Invoices</div>
-          <div class="summary-value">${this.invoices.filter(i => i.status === 'open').length}</div>
+          <div class="summary-label">Outstanding Invoices</div>
+          <div class="summary-value">${this.openInvoicesCount}</div>
         </div>
         <div class="summary-card">
+          <!-- TODO: Backend should provide lastPaymentDate in BillingSummary -->
           <div class="summary-label">Last Payment</div>
-          <div class="summary-value">Dec 15, 2024</div>
+          <div class="summary-value">—</div>
         </div>
       </div>
 
@@ -301,7 +333,11 @@ export class LbPageBilling extends LbBase {
             <div class="invoice-amount">${this.formatCurrency(invoice.amountDue)}</div>
             <span class="status-badge ${this.getStatusClass(invoice.status)}">${invoice.status}</span>
             <button class="btn btn-outline btn-sm" @click=${() => this.viewInvoiceDetail(invoice)}>View</button>
-            <button class="btn btn-cta btn-sm" @click=${() => LbToast.show('Payment modal coming soon', 'info')}>Pay</button>
+            <button 
+              class="btn btn-cta btn-sm" 
+              @click=${() => this.handlePayInvoice(invoice)}
+              ?disabled=${this.payingInvoiceId === invoice.id || invoice.status === 'paid'}
+            >${this.payingInvoiceId === invoice.id ? 'Paying...' : 'Pay'}</button>
           </div>
         `)}
       ` : this.activeTab === 'statements' ? html`
@@ -358,7 +394,11 @@ export class LbPageBilling extends LbBase {
         </div>
 
         <div class="detail-actions">
-          <button class="btn btn-cta" @click=${() => LbToast.show('Payment modal coming soon', 'info')}>Pay Invoice</button>
+          <button 
+            class="btn btn-cta" 
+            @click=${() => this.handlePayInvoice(invoice)}
+            ?disabled=${this.payingInvoiceId === invoice.id || invoice.status === 'paid'}
+          >${this.payingInvoiceId === invoice.id ? 'Paying...' : 'Pay Invoice'}</button>
           <button class="btn btn-outline" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
         </div>
       </div>

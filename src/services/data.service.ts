@@ -13,7 +13,7 @@ import type {
 
 import { SalesService } from '../connect/services/sales.js';
 import { JobsService } from '../connect/services/jobs.js';
-import { mapQuoteToEstimate, mapJobToProject } from '../connect/mappers.js';
+import { mapQuoteToEstimate, mapJobToProject, mapOrderToLegacy, mapInvoiceToLegacy } from '../connect/mappers.js';
 import { AuthService } from './auth.service.js';
 
 class DataServiceImpl {
@@ -45,26 +45,8 @@ class DataServiceImpl {
      * Get orders via API
      */
     async getOrders(): Promise<Order[]> {
-        // If we want caching, we can uncomment:
-        // if (this.ordersData) return this.ordersData;
-
         const backendOrders = await SalesService.getOrders(this.getAccountId());
-
-        // Map Backend Order to Frontend Order
-        // Current FE Order type: { id, orderNumber, userId, projectId, status, total, createdAt, lines }
-        // BE Order type: { id, orderNumber, orderDate, subtotal, taxTotal, total, status, jobId, poNumber }
-
-        this.ordersData = backendOrders.map(o => ({
-            id: o.orderNumber, // FE often uses string ID, BE uses int ID. Using OrderNumber as ID for FE compatibility or String(o.id)
-            orderNumber: o.orderNumber,
-            userId: 'current', // Placeholder
-            projectId: o.jobId ? o.jobId.toString() : '',
-            status: o.status as any, // Cast to FE status or map strict
-            total: o.total,
-            createdAt: o.orderDate,
-            lines: [] // BE might not return lines in list view, might need detail fetch
-        }));
-
+        this.ordersData = backendOrders.map(mapOrderToLegacy);
         return this.ordersData;
     }
 
@@ -72,25 +54,11 @@ class DataServiceImpl {
      * Get a single order by ID
      */
     async getOrderById(orderId: string): Promise<Order | undefined> {
-        // Warning: This expects orderId to be parseable as int for the API
-        // If the FE passes "ORD-123", we might fail. 
-        // We will try to fetch list first for safety or parse if number
         const id = parseInt(orderId);
         if (!isNaN(id)) {
             const o = await SalesService.getOrderDetails(id);
-            return {
-                id: o.orderNumber,
-                orderNumber: o.orderNumber,
-                userId: 'current',
-                projectId: o.jobId ? o.jobId.toString() : '',
-                status: o.status as any,
-                total: o.total,
-                createdAt: o.orderDate,
-                lines: [], // Populate if available
-            };
+            return mapOrderToLegacy(o);
         }
-
-        // Fallback to searching the list if ID is string based
         const orders = await this.getOrders();
         return orders.find(o => o.id === orderId || o.orderNumber === orderId);
     }
@@ -100,22 +68,7 @@ class DataServiceImpl {
      */
     async getInvoices(): Promise<Invoice[]> {
         const backendInvoices = await SalesService.getInvoices(this.getAccountId());
-
-        // Map BE Invoice to FE Invoice
-        this.invoicesData = backendInvoices.map(i => ({
-            id: i.invoiceNumber,
-            invoiceNumber: i.invoiceNumber,
-            projectId: '', // Not always on invoice summary
-            status: i.status as any,
-            dueDate: i.dueDate || '',
-            subtotal: i.total - i.balanceDue, // Approximation or fetch detail
-            tax: 0,
-            total: i.total,
-            amountPaid: i.total - i.balanceDue,
-            amountDue: i.balanceDue,
-            createdAt: i.invoiceDate
-        }));
-
+        this.invoicesData = backendInvoices.map(mapInvoiceToLegacy);
         return this.invoicesData;
     }
 
