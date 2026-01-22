@@ -11,7 +11,7 @@ export interface User {
     isActive: boolean;
     lastLoginAt?: string; // ISO Date
     role: UserRole;
-    accountId?: number;
+    accountAssignments?: AccountAssignment[];
 }
 
 /**
@@ -30,6 +30,15 @@ export interface AccountAddress {
     country?: string;
     isDefault: boolean;
     addressType: AddressType;
+}
+
+export interface AccountAssignment {
+    id: number;
+    accountId: number;
+    userId: number;
+    assignmentType: string;
+    createdAt: string;
+    isPrimary: boolean;
 }
 
 export interface Account {
