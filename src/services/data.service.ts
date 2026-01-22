@@ -14,7 +14,6 @@ import type {
 import { SalesService } from '../connect/services/sales.js';
 import { JobsService } from '../connect/services/jobs.js';
 import { mapQuoteToEstimate, mapJobToProject, mapOrderToLegacy, mapInvoiceToLegacy } from '../connect/mappers.js';
-import { AuthService } from './auth.service.js';
 
 class DataServiceImpl {
     private accountData: AccountData | null = null;
@@ -22,12 +21,6 @@ class DataServiceImpl {
     private invoicesData: Invoice[] | null = null;
     private estimatesData: Estimate[] | null = null;
     private projectsData: Project[] | null = null;
-
-    private getAccountId(): number {
-        const user = AuthService.getUser();
-        // Fallback or error if no account ID. For now assuming 1 if missing for dev/demo.
-        return user?.accountId || 1;
-    }
 
     /**
      * Fetch account data
@@ -45,7 +38,7 @@ class DataServiceImpl {
      * Get orders via API
      */
     async getOrders(): Promise<Order[]> {
-        const backendOrders = await SalesService.getOrders(this.getAccountId());
+        const backendOrders = await SalesService.getOrders();
         this.ordersData = backendOrders.map(mapOrderToLegacy);
         return this.ordersData;
     }
@@ -67,7 +60,7 @@ class DataServiceImpl {
      * Get invoices via API
      */
     async getInvoices(): Promise<Invoice[]> {
-        const backendInvoices = await SalesService.getInvoices(this.getAccountId());
+        const backendInvoices = await SalesService.getInvoices();
         this.invoicesData = backendInvoices.map(mapInvoiceToLegacy);
         return this.invoicesData;
     }
@@ -93,7 +86,7 @@ class DataServiceImpl {
      * Get Projects (Jobs) via API
      */
     async getProjects(): Promise<Project[]> {
-        const jobs = await JobsService.getJobs(this.getAccountId());
+        const jobs = await JobsService.getJobs();
         this.projectsData = jobs.map(mapJobToProject);
         return this.projectsData;
     }
