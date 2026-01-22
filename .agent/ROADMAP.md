@@ -29,12 +29,16 @@
 
 ---
 
-## Phase 3: Backend Mapping & Handoff Spec
-- [ ] Finalize Data Spine mapping in `ARCHITECTURE.md`
-- [ ] Define JSON API contracts for all portal sections
-- [ ] Document User Authentication requirements (SSO/OAuth specs)
+## Phase 3: Backend Mapping & API Integration ✅
+- [x] Integrate Account & Profile Data from Backend API (Sprint Task #1)
+- [x] Finalize Data Spine mapping for Accounts, Invoices, and Quotes
+- [x] Define JSON API contracts for all portal sections
+- [ ] Document User Authentication requirements (JWT/X-Tenant-ID details)
 - [ ] Map ERP sync fields (`BisTrack` field matching documentation)
 - [ ] Outline Real-time pricing & credit sync protocols
+- [x] Implement Wallet page with real API integration (Payments)
+- [x] Implement Orders/Invoices/Quotes API integration via SalesService
+- [x] Fetch Invoice Line Items (Sprint Task #6) & Backend Alignment
 
 ---
 

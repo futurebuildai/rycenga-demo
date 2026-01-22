@@ -8,7 +8,6 @@ import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
 import { MembersService } from '../../connect/services/members.js';
-import { AuthService as LocalAuthService } from '../../services/auth.service.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { TeamMember as LegacyTeamMember } from '../../types/index.js';
 import type { TeamMember, TeamMemberRole, InviteMemberPayload } from '../../connect/types/domain.js';
@@ -157,8 +156,7 @@ export class LbPageTeam extends LbBase {
   @state() private inviting = false;
 
   private getAccountId(): number {
-    const user = LocalAuthService.getUser();
-    return user?.accountId || 1;
+    return DataService.getCurrentAccountId() || 1;
   }
 
   async connectedCallback() {

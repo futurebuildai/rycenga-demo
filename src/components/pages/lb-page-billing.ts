@@ -9,7 +9,7 @@ import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { LbToast } from '../atoms/lb-toast.js';
-import type { Invoice } from '../../types/index.js';
+import type { Invoice, InvoiceLine } from '../../types/index.js';
 
 @customElement('lb-page-billing')
 export class LbPageBilling extends LbBase {
@@ -211,6 +211,47 @@ export class LbPageBilling extends LbBase {
         display: flex;
         gap: var(--space-md);
       }
+
+      .line-items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: var(--space-xl);
+      }
+
+      .line-items-table th {
+        text-align: left;
+        padding: var(--space-md);
+        border-bottom: 2px solid var(--color-border);
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .line-items-table td {
+        padding: var(--space-md);
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .line-sku {
+        font-family: monospace;
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+      }
+
+      .line-qty {
+        text-align: center;
+      }
+
+      .line-price, .line-total {
+        text-align: right;
+      }
+
+      .loading-lines {
+        padding: var(--space-xl);
+        text-align: center;
+        color: var(--color-text-muted);
+      }
     `,
   ];
 
@@ -220,6 +261,8 @@ export class LbPageBilling extends LbBase {
   @state() private selectedInvoice: Invoice | null = null;
   @state() private activeTab = 'invoices';
   @state() private payingInvoiceId: string | null = null;
+  @state() private selectedInvoiceLines: InvoiceLine[] = [];
+  @state() private loadingLines = false;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -236,9 +279,21 @@ export class LbPageBilling extends LbBase {
     }
   }
 
-  private viewInvoiceDetail(invoice: Invoice) {
+  private async viewInvoiceDetail(invoice: Invoice) {
     this.selectedInvoice = invoice;
     this.currentView = 'detail';
+    this.selectedInvoiceLines = [];
+
+    // Fetch line items
+    this.loadingLines = true;
+    try {
+      this.selectedInvoiceLines = await DataService.getInvoiceLines(invoice.id);
+    } catch (e) {
+      console.error('Failed to load invoice lines', e);
+      LbToast.show('Failed to load line items', 'error');
+    } finally {
+      this.loadingLines = false;
+    }
   }
 
   private backToList() {
@@ -373,6 +428,41 @@ export class LbPageBilling extends LbBase {
           </div>
           <span class="status-badge ${this.getStatusClass(invoice.status)}">${invoice.status}</span>
         </div>
+
+        ${this.loadingLines ? html`
+          <div class="loading-lines">Loading line items...</div>
+        ` : html`
+          <table class="line-items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>SKU</th>
+                <th class="line-qty">Qty</th>
+                <th class="line-price">Price</th>
+                <th class="line-total">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${this.selectedInvoiceLines.length === 0 ? html`
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: var(--space-xl);">
+                    No line items found.
+                  </td>
+                </tr>
+              ` : this.selectedInvoiceLines.map(line => html`
+                <tr>
+                  <td>
+                    <div style="font-weight: 500;">${line.name}</div>
+                  </td>
+                  <td><span class="line-sku">${line.sku || '—'}</span></td>
+                  <td class="line-qty">${line.quantity}</td>
+                  <td class="line-price">${this.formatCurrency(line.unitPrice)}</td>
+                  <td class="line-total" style="font-weight: 600;">${this.formatCurrency(line.lineTotal)}</td>
+                </tr>
+              `)}
+            </tbody>
+          </table>
+        `}
 
         <div class="detail-totals">
           <div class="total-row">

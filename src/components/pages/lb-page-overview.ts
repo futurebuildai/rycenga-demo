@@ -9,7 +9,7 @@ import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
 import { LbToast } from '../atoms/lb-toast.js';
-import type { AccountData, Order, Estimate, Invoice } from '../../types/index.js';
+import type { AccountData } from '../../types/index.js';
 
 @customElement('lb-page-overview')
 export class LbPageOverview extends LbBase {
@@ -159,7 +159,6 @@ export class LbPageOverview extends LbBase {
   @state() private loading = true;
   @state() private activeOrdersCount = 0;
   @state() private pendingEstimatesCount = 0;
-  @state() private pendingEstimatesTotal = 0;
   @state() private openInvoicesTotal = 0;
   @state() private creditLimit = 0;
   @state() private creditAvailable = 0;
@@ -167,34 +166,24 @@ export class LbPageOverview extends LbBase {
   async connectedCallback() {
     super.connectedCallback();
     try {
-      this.accountData = await DataService.getAccountData();
+      const [account, summary] = await Promise.all([
+        DataService.getAccountData(),
+        DataService.getDashboardSummary() // Fetches aggregated stats from /dashboard/summary
+      ]);
 
-      // TODO: Replace with single backend call: GET /dashboard/summary
-      // Backend should return DashboardSummary with pre-computed values:
-      // - balanceDue (sum of open + overdue invoices)
-      // - creditLimit, creditAvailable
-      // - activeOrdersCount
-      // - pendingEstimatesCount, pendingEstimatesTotal
-      //
-      // TEMPORARY: Using legacy account data for now
-      const company = this.accountData?.company;
-      this.creditLimit = company?.limit ?? 0;
-      this.openInvoicesTotal = company?.balance ?? 0;
+      this.accountData = account;
+
+      // Hydrate state from backend summary
+      // Note: creditAvailable is computed as creditLimit - currentBalance
+      this.creditLimit = summary.creditLimit ?? 0;
+      this.openInvoicesTotal = summary.currentBalance;
       this.creditAvailable = this.creditLimit - this.openInvoicesTotal;
-
-      // TEMPORARY: Fetching and computing until backend provides summary
-      const orders = await DataService.getOrders();
-      this.activeOrdersCount = orders.filter((o: Order) =>
-        o.status !== 'delivered' && o.status !== 'closed' && o.status !== 'cancelled'
-      ).length;
-
-      const estimates = await DataService.getEstimates();
-      const pendingEstimates = estimates.filter((e: Estimate) => e.status === 'sent');
-      this.pendingEstimatesCount = pendingEstimates.length;
-      this.pendingEstimatesTotal = pendingEstimates.reduce((sum, e) => sum + e.total, 0);
+      this.activeOrdersCount = summary.activeOrdersCount;
+      this.pendingEstimatesCount = summary.pendingQuotesCount;
 
     } catch (e) {
-      console.error('Failed to load account data', e);
+      console.error('Failed to load dashboard data', e);
+      LbToast.show('Failed to load dashboard summary', 'error');
     } finally {
       this.loading = false;
     }
@@ -264,7 +253,7 @@ export class LbPageOverview extends LbBase {
           <div class="stat-content">
             <span class="stat-label">Pending Estimates</span>
             <span class="stat-value">${this.pendingEstimatesCount}</span>
-            <span class="stat-meta">${this.formatCurrency(this.pendingEstimatesTotal)} total</span>
+            <span class="stat-meta">${this.pendingEstimatesCount === 1 ? '1 estimate' : `${this.pendingEstimatesCount} estimates`} awaiting review</span>
           </div>
           <button class="stat-link" @click=${() => RouterService.navigate('estimates')}>Review →</button>
         </div>

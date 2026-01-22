@@ -37,10 +37,12 @@ My Account Lite is a dedicated Pro customer portal for **LBM (Lumber & Building 
 - **Handoff Target:** Go/Postgres backend (planned, but out of scope for this repo)
 - **Deployment:** Subdomain widget model
 
-## Current State (Phase 2 & Authentication Complete)
-The project has completed **Phase 2 (UI Page Review & Customization)** and implemented the **Authentication UI & Logic**. The following pages/components have been audited, polished, and functionally verified:
-- **Overview, Projects, Orders, Estimates, Billing, Header UI, Settings, Wallet, Team**.
-- **Login screen** with "Boss Lumber & Millwork" branding.
-- **Session management** via `localStorage`.
+## Current State (Phase 3: Backend Integration in Progress)
+The project is currently in **Phase 3 (Backend Mapping & API Integration)**. Key accomplishments include:
+- **Account & Profile Integration**: Switched from mock data to real API endpoints for account, financials, and company profile.
+- **Service Layer**: Fully implemented `src/connect/services` providing typed access to Sales, Jobs, Billing, and Account APIs.
+- **Data Spine Mapping**: Legacy `DataService` refactored to act as a bridge between the new backend API and existing UI components.
+- **UI Preparedness**: All core pages (Overview, Projects, Orders, Estimates, Billing, Settings, Wallet, Team) are now connected to the API layer with proper mapping and error handling.
+- **Invoice Line Items (Sprint Task #6)**: Fully implemented fetching and rendering of detailed line items in the billing detail view, including 100% backend schema alignment.
 
-**Next Priority**: Transition to Phase 3 (Backend Mapping & Handoff Spec).
+**Next Priority**: Finalize authentication plumbing (JWT/X-Tenant-ID) and ERP field sync documentation.

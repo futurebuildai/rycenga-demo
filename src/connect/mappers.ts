@@ -1,21 +1,27 @@
-import type { Job, Quote, Order as BackendOrder, Invoice as BackendInvoice } from './types/domain';
-import type { Project, Estimate, Order, Invoice } from '../types/index';
+import type { Job, Quote, Order as BackendOrder, Invoice as BackendInvoice, OrderLine as BackendOrderLine, QuoteLine as BackendQuoteLine } from './types/domain';
+import type { Project, Estimate, Order, Invoice, OrderLine, InvoiceLine } from '../types/index';
 
 /**
  * Maps Backend Job to Legacy Frontend Project
+ * Extracts address from nested Job.address or first addresses[] entry
  */
-export const mapJobToProject = (job: Job): Project => ({
-    id: job.id.toString(),
-    userId: 'current', // Placeholder as legacy FE expects it
-    name: job.name,
-    status: job.isActive ? 'active' : 'archived',
-    address: {
-        street: job.addressLine1 || '',
-        city: job.city || '',
-        state: job.state || '',
-        zip: ''
-    }
-});
+export const mapJobToProject = (job: Job): Project => {
+    // Get primary address from address field or first entry in addresses array
+    const addr = job.address ?? job.addresses?.[0];
+
+    return {
+        id: job.id.toString(),
+        userId: 'current', // Placeholder as legacy FE expects it
+        name: job.name,
+        status: job.isActive ? 'active' : 'archived',
+        address: addr ? {
+            street: addr.addressLine1 || '',
+            city: addr.city || '',
+            state: addr.state || '',
+            zip: addr.postalCode || ''
+        } : undefined
+    };
+};
 
 /**
  * Maps Backend Quote to Legacy Frontend Estimate
@@ -64,4 +70,31 @@ export const mapInvoiceToLegacy = (invoice: BackendInvoice): Invoice => ({
     amountDue: invoice.balanceDue,
     amountPaid: invoice.total - invoice.balanceDue,
     createdAt: invoice.invoiceDate,
+});
+
+/**
+ * Maps Backend OrderLine/QuoteLine to Legacy Frontend OrderLine
+ */
+export const mapOrderLineToLegacy = (line: BackendOrderLine | BackendQuoteLine): OrderLine => ({
+    id: line.id.toString(),
+    productId: '0', // Not present in backend, using placeholder
+    sku: line.itemCode,
+    name: line.description || '',
+    quantity: (line as any).quantityOrdered ?? (line as any).quantity,
+    unitPrice: line.unitPrice,
+    lineTotal: line.extendedPrice,
+});
+
+/**
+ * Maps Backend InvoiceLine to Legacy Frontend InvoiceLine
+ */
+export const mapInvoiceLineToLegacy = (line: any): InvoiceLine => ({
+    id: line.id.toString(),
+    invoiceId: line.invoiceId?.toString(),
+    productId: '0',
+    sku: line.itemCode,
+    name: line.description || '',
+    quantity: line.quantityBilled,
+    unitPrice: line.unitPrice,
+    lineTotal: line.extendedPrice,
 });

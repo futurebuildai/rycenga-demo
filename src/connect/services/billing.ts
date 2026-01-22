@@ -1,5 +1,5 @@
 import { client } from '../client';
-import type { PaymentMethod, PayInvoicePayload } from '../types/domain';
+import type { PaymentMethod, PayInvoicePayload, InvoiceLine } from '../types/domain';
 
 /**
  * BillingService - Payment methods and invoice payments
@@ -51,4 +51,11 @@ export const BillingService = {
             method: 'POST',
             body: JSON.stringify(payload),
         }),
+
+    /**
+     * Get line items for an invoice
+     * MAPS TO: GET /v1/invoices/{id}/lines
+     */
+    getInvoiceLines: (invoiceId: string): Promise<InvoiceLine[]> =>
+        client.request<InvoiceLine[]>(`/invoices/${invoiceId}/lines`),
 };
