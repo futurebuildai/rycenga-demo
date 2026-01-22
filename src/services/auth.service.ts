@@ -5,10 +5,6 @@
 
 import { AuthService as ConnectorAuth } from '../connect/services/auth';
 import type { User } from '../connect/types/domain';
-
-// Keeping the Session interface for backward compatibility if used elsewhere, 
-// but we might prefer using the User domain object.
-// For now, let's map User to a Session-like structure if needed, or just store the User.
 export interface Session {
     email: string;
     loginTime: string;
