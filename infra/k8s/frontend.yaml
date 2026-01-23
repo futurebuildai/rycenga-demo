@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: velocity-frontend
-  namespace: web
+  namespace: frontend
 spec:
   replicas: 2
   revisionHistoryLimit: 2
@@ -43,7 +43,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: velocity-frontend
-  namespace: web
+  namespace: frontend
   labels:
     app: velocity-frontend
 spec:
