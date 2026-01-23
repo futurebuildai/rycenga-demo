@@ -24,8 +24,6 @@ class ApiClient {
 
         // Protocol requirements from router.go
         headers.set('Content-Type', 'application/json');
-        headers.set('X-Tenant-ID', API_CONFIG.TENANT_ID);
-
         if (this.token && options.requiresAuth !== false) {
             headers.set('Authorization', `Bearer ${this.token}`);
             // If using API Key as well for M2M: headers.set('X-API-Key', API_KEY);
