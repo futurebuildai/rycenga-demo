@@ -96,7 +96,7 @@ jobs:
           export KUBECONFIG="$KUBECONFIG_PATH"
 
           # Validate without dumping sensitive content
-          kubectl -n web get deploy >/dev/null
+          kubectl -n frontend get deploy >/dev/null
 
       - name: Deploy to Kubernetes
         shell: bash
@@ -107,7 +107,7 @@ jobs:
 
           kubectl apply -f infra/k8s/frontend.yaml
 
-          kubectl -n web set image deployment/velocity-frontend \
+          kubectl -n frontend set image deployment/velocity-frontend \
             velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
 
-          kubectl -n web rollout status deployment/velocity-frontend --timeout=10m
+          kubectl -n frontend rollout status deployment/velocity-frontend --timeout=10m
