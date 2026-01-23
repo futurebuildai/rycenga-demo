@@ -106,6 +106,7 @@ jobs:
           set -euo pipefail
 
           kubectl apply -f infra/k8s/frontend.yaml
+          kubectl apply -f infra/k8s/ingress-frontend.yaml
 
           kubectl -n frontend set image deployment/velocity-frontend \
             velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
