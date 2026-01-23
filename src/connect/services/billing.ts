@@ -56,6 +56,6 @@ export const BillingService = {
      * Get line items for an invoice
      * MAPS TO: GET /v1/invoices/{id}/lines
      */
-    getInvoiceLines: (invoiceId: string): Promise<InvoiceLine[]> =>
+    getInvoiceLines: (invoiceId: number): Promise<InvoiceLine[]> =>
         client.request<InvoiceLine[]>(`/invoices/${invoiceId}/lines`),
 };
