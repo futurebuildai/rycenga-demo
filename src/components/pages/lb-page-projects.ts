@@ -1,29 +1,62 @@
 /**
  * LbPageProjects - Projects page component
  * Displays project cards with stats and navigation
+ * Fetches real project data from DataService
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { RouterService } from '../../services/router.service.js';
+import { DataService } from '../../services/data.service.js';
+import type { Project, Address } from '../../types/index.js';
 
 interface ProjectCard {
-    id: string;
-    name: string;
-    address: string;
-    color: string;
-    status: string;
-    orderCount: number;
-    totalSpent: string;
-    openInvoices: number;
+  id: string;
+  name: string;
+  address: string;
+  color: string;
+  status: string;
+  orderCount: number;
+  totalSpent: string;
+  openInvoices: number;
+}
+
+// Color palette for project badges
+const PROJECT_COLORS = ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6'];
+
+/**
+ * Formats an Address object into a single-line string.
+ */
+function formatAddress(address?: Address): string {
+  if (!address) return 'No address';
+  const parts = [address.street, address.city, address.state, address.zip].filter(Boolean);
+  return parts.join(', ') || 'No address';
+}
+
+/**
+ * Maps a Project from the API to a ProjectCard for display.
+ * NOTE: orderCount, totalSpent, and openInvoices are not available from backend.
+ * These are set to default values. This is a known data gap.
+ */
+function mapProjectToCard(project: Project, index: number): ProjectCard {
+  return {
+    id: project.id,
+    name: project.name,
+    address: formatAddress(project.address),
+    color: project.color ?? PROJECT_COLORS[index % PROJECT_COLORS.length],
+    status: project.status === 'active' ? 'Active' : project.status === 'completed' ? 'Completed' : 'Archived',
+    orderCount: 0,       // Gap: Not provided by backend
+    totalSpent: '$0.00', // Gap: Not provided by backend
+    openInvoices: 0,     // Gap: Not provided by backend
+  };
 }
 
 @customElement('lb-page-projects')
 export class LbPageProjects extends LbBase {
-    static styles = [
-        ...LbBase.styles,
-        css`
+  static styles = [
+    ...LbBase.styles,
+    css`
       :host {
         display: block;
       }
@@ -154,55 +187,56 @@ export class LbPageProjects extends LbBase {
         flex: 1;
         min-width: 80px;
       }
+
+      .loading-state,
+      .error-state,
+      .empty-state {
+        text-align: center;
+        padding: var(--space-3xl);
+        color: var(--color-text-muted);
+      }
+
+      .error-state {
+        color: var(--color-danger, #dc2626);
+      }
     `,
-    ];
+  ];
 
-    @state() private searchQuery = '';
+  @state() private searchQuery = '';
+  @state() private projects: ProjectCard[] = [];
+  @state() private loading = false;
+  @state() private error: string | null = null;
 
-    private projects: ProjectCard[] = [
-        {
-            id: 'proj-001',
-            name: 'My Framing Job',
-            address: '1234 Construction Ave, Oakdale, TX 75001',
-            color: '#3b82f6',
-            status: 'Active',
-            orderCount: 5,
-            totalSpent: '$12,450',
-            openInvoices: 3,
-        },
-        {
-            id: 'proj-002',
-            name: '50 Main Street',
-            address: '50 Main Street, Oakdale, TX 75001',
-            color: '#22c55e',
-            status: 'Active',
-            orderCount: 3,
-            totalSpent: '$8,200',
-            openInvoices: 1,
-        },
-        {
-            id: 'proj-003',
-            name: "Erik's Shed",
-            address: '789 Backyard Lane, Pinewood, TX 75002',
-            color: '#f97316',
-            status: 'Active',
-            orderCount: 2,
-            totalSpent: '$1,890',
-            openInvoices: 0,
-        },
-    ];
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.fetchProjects();
+  }
 
-    private get filteredProjects() {
-        if (!this.searchQuery) return this.projects;
-        const query = this.searchQuery.toLowerCase();
-        return this.projects.filter(p =>
-            p.name.toLowerCase().includes(query) ||
-            p.address.toLowerCase().includes(query)
-        );
+  private async fetchProjects(): Promise<void> {
+    this.loading = true;
+    this.error = null;
+    try {
+      const apiProjects: Project[] = await DataService.getProjects();
+      this.projects = apiProjects.map(mapProjectToCard);
+    } catch (err) {
+      console.error('[LbPageProjects] Failed to fetch projects:', err);
+      this.error = err instanceof Error ? err.message : 'Failed to load projects.';
+    } finally {
+      this.loading = false;
     }
+  }
 
-    render() {
-        return html`
+  private get filteredProjects() {
+    if (!this.searchQuery) return this.projects;
+    const query = this.searchQuery.toLowerCase();
+    return this.projects.filter(p =>
+      p.name.toLowerCase().includes(query) ||
+      p.address.toLowerCase().includes(query)
+    );
+  }
+
+  render() {
+    return html`
       <div class="section-header">
         <div>
           <h1 class="section-title">Projects</h1>
@@ -225,45 +259,53 @@ export class LbPageProjects extends LbBase {
         </select>
       </div>
 
-      <div class="projects-grid">
-        ${this.filteredProjects.map(project => html`
-          <div class="project-card">
-            <div class="project-card-header">
-              <span class="project-badge" style="background: ${project.color};"></span>
-              <div class="project-card-info">
-                <h3>${project.name}</h3>
-                <p>${project.address}</p>
+      ${this.loading ? html`
+        <div class="loading-state">Loading projects...</div>
+      ` : this.error ? html`
+        <div class="error-state">Error: ${this.error}</div>
+      ` : this.filteredProjects.length === 0 ? html`
+        <div class="empty-state">No projects found.</div>
+      ` : html`
+        <div class="projects-grid">
+          ${this.filteredProjects.map(project => html`
+            <div class="project-card">
+              <div class="project-card-header">
+                <span class="project-badge" style="background: ${project.color};"></span>
+                <div class="project-card-info">
+                  <h3>${project.name}</h3>
+                  <p>${project.address}</p>
+                </div>
+                <span class="status-badge status-active">${project.status}</span>
               </div>
-              <span class="status-badge status-active">${project.status}</span>
+              <div class="project-card-stats">
+                <div class="project-stat">
+                  <span class="stat-number">${project.orderCount}</span>
+                  <span class="stat-label">Orders</span>
+                </div>
+                <div class="project-stat">
+                  <span class="stat-number">${project.totalSpent}</span>
+                  <span class="stat-label">Total Spent</span>
+                </div>
+                <div class="project-stat">
+                  <span class="stat-number">${project.openInvoices}</span>
+                  <span class="stat-label">Open Invoices</span>
+                </div>
+              </div>
+              <div class="project-card-actions">
+                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('orders')}>Orders</button>
+                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('estimates')}>Estimates</button>
+                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('billing')}>Invoices</button>
+              </div>
             </div>
-            <div class="project-card-stats">
-              <div class="project-stat">
-                <span class="stat-number">${project.orderCount}</span>
-                <span class="stat-label">Orders</span>
-              </div>
-              <div class="project-stat">
-                <span class="stat-number">${project.totalSpent}</span>
-                <span class="stat-label">Total Spent</span>
-              </div>
-              <div class="project-stat">
-                <span class="stat-number">${project.openInvoices}</span>
-                <span class="stat-label">Open Invoices</span>
-              </div>
-            </div>
-            <div class="project-card-actions">
-              <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('orders')}>Orders</button>
-              <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('estimates')}>Estimates</button>
-              <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('billing')}>Invoices</button>
-            </div>
-          </div>
-        `)}
-      </div>
+          `)}
+        </div>
+      `}
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'lb-page-projects': LbPageProjects;
-    }
+  interface HTMLElementTagNameMap {
+    'lb-page-projects': LbPageProjects;
+  }
 }

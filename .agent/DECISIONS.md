@@ -398,3 +398,44 @@ Replicated the **Boss Lumber & Millwork** branded logo using semantic HTML and C
 - Better scaling/performance than raster images.
 - Easier to customize dynamically for different dealers in the future.
 - Professional, lightweight industrial aesthetic.
+---
+
+## DEC-020: API Integration Layer & Service Refactor
+
+**Date:** 2026-01-22
+**Status:** Decided
+
+### Context
+Moving from mock JSON data to a production-ready API integration requires a structured approach to bridge the new backend services with the established frontend architecture.
+
+### Decision
+1. **Service Layer Implementation**: Created `src/connect/services` providing specialized API clients (Account, Sales, Billing, Jobs) using a centralized `ApiClient`.
+2. **Facade Pattern (DataService)**: Refactored existing `DataService` into a facade that fetches real API data and maps it to legacy structures (`AccountData`, `Order`, `Invoice`).
+3. **Strict Mapping**: Implemented explicit mappers (`src/connect/mappers.ts`) to ensure UI components receive consistent data shapes even as backend models evolve.
+4. **Token/Tenant Handling**: Integrated `X-Tenant-ID` and Bearer token headers into the global request interceptor.
+
+### Rationale
+- **Backward Compatibility**: Allows the UI to work with real data without rewriting every component's internal data logic.
+- **Single Source of Truth**: `DataService` remains the central hub for state, now backed by live API calls.
+- **Type Safety**: End-to-end typing from backend domain models to frontend UI types.
+- **Resilience**: Added loading and error states to all API-dependent components.
+
+---
+
+## DEC-021: Backend-Aligned Sales Data Schema
+
+**Date:** 2026-01-22
+**Status:** Decided
+
+### Context
+Initial frontend domain types and mappers used generic field names (`sku`, `name`, `lineTotal`) which diverged from the actual Go backend (`itemCode`, `description`, `extendedPrice`).
+
+### Decision
+1. **Schema Mirroring**: Updated `domain.ts` to exactly match backend structs in `sales.go`.
+2. **Explicit Mapping**: Standardized `mappers.ts` to transform backend-specific keys into the specific properties expected by the legacy UI components.
+3. **Redundant Path Removal**: Removed hardcoded `/v1` prefixes in service calls to ensure they remain relative to the `BASE_URL`.
+
+### Rationale
+- **Zero-Trust Readiness**: Ensures the frontend won't break when connected to the real production API.
+- **Maintainability**: Makes it easier for backend engineers to understand the frontend data requirements.
+- **Correctness**: Eliminates potential `404` and `undefined` field errors.

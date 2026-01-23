@@ -62,6 +62,21 @@ export interface Account {
 export type OrderStatus = 'pending' | 'confirmed' | 'ready_for_pickup' | 'shipped' | 'delivered' | 'cancelled' | 'closed';
 export type InvoiceStatus = 'open' | 'paid' | 'overdue' | 'cancelled' | 'void';
 export type QuoteStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
+export type LineItemStatus = 'active' | 'cancelled' | 'shipped' | 'returned';
+
+export interface OrderLine {
+    id: number;
+    orderId: number;
+    lineNumber: number;
+    itemCode: string;
+    description?: string;
+    quantityOrdered: number;
+    quantityShipped: number;
+    quantityBackordered: number;
+    unitPrice: number;
+    extendedPrice: number;
+    status: LineItemStatus;
+}
 
 export interface Order {
     id: number;
@@ -86,6 +101,17 @@ export interface Invoice {
     pdfUrl?: string; // Potential future field
 }
 
+export interface InvoiceLine {
+    id: number;
+    invoiceId: number;
+    lineNumber: number;
+    itemCode: string;
+    description?: string;
+    quantityBilled: number;
+    unitPrice: number;
+    extendedPrice: number;
+}
+
 // NOTE: Frontend "Estimate" maps to Backend "Quote"
 export interface Quote {
     id: number;
@@ -96,31 +122,65 @@ export interface Quote {
     status: QuoteStatus;
 }
 
-/**
- * MIRRORS: velocity-backend-main/internal/domain/fulfillment.go
- */
-export interface Job {
+export interface QuoteLine {
     id: number;
-    jobNumber: string;
-    name: string;
-    poNumber?: string;
-    addressLine1?: string;
-    city?: string;
-    state?: string;
-    isActive: boolean;
+    quoteId: number;
+    lineNumber: number;
+    itemCode: string;
+    description?: string;
+    quantity: number;
+    unitPrice: number;
+    extendedPrice: number;
 }
 
 /**
- * REQUIRED: Backend should provide this via GET /dashboard/summary
- * Replaces frontend computation of aggregated values
+ * MIRRORS: velocity-backend-main/internal/domain/account.go
+ */
+export type JobAddressRole = 'primary_site' | 'delivery' | 'staging' | 'administrative';
+
+export interface JobAddress {
+    id: number;
+    jobId: number;
+    addressRole: JobAddressRole;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    contactName?: string;
+    contactPhone?: string;
+    contactEmail?: string;
+}
+
+export interface Job {
+    id: number;
+    accountId: number;
+    jobNumber: string;
+    name: string;
+    poNumber?: string;
+    isActive: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    address?: JobAddress;      // Primary address (optional)
+    addresses?: JobAddress[];  // All addresses
+}
+
+/**
+ * MIRRORS: velocity-backend-main/internal/domain/dashboard.go
+ * Response from GET /v1/dashboard/summary
  */
 export interface DashboardSummary {
-    balanceDue: number;           // Sum of open + overdue invoices
-    creditLimit: number;          // From Account
-    creditAvailable: number;      // creditLimit - balanceDue
-    activeOrdersCount: number;    // Count of orders NOT (delivered, closed, cancelled)
-    pendingEstimatesCount: number; // Count of quotes with status = 'pending'
-    pendingEstimatesTotal: number; // Sum of totals for pending quotes
+    accountId: number;
+    accountName: string | null;
+    creditLimit: number | null;
+    currentBalance: number;
+    pastDueInvoicesCount: number;
+    activeOrdersCount: number;
+    pendingQuotesCount: number;
+    recentInvoices: unknown[];
+    recentOrders: unknown[];
+    recentQuotes: unknown[];
 }
 
 /**

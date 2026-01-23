@@ -8,7 +8,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { LbToast } from '../atoms/lb-toast.js';
-import type { PaymentMethod, PaymentMethodType } from '../../connect/types/domain.js';
+import type { PaymentMethod } from '../../connect/types/domain.js';
 
 @customElement('lb-page-wallet')
 export class LbPageWallet extends LbBase {
@@ -132,28 +132,46 @@ export class LbPageWallet extends LbBase {
         opacity: 0.6;
         cursor: not-allowed;
       }
+
+      .loading-text {
+        color: var(--color-text-muted);
+        padding: var(--space-xl);
+        text-align: center;
+      }
+
+      .error-text {
+        color: #dc2626;
+        padding: var(--space-xl);
+        text-align: center;
+      }
     `,
   ];
 
-  @state() private paymentMethods: PaymentMethod[] = [
-    {
-      id: 'pm-1',
-      type: 'card',
-      label: 'Visa ending in 4242',
-      last4: '4242',
-      expiry: '12/26',
-      isDefault: true,
-    },
-    {
-      id: 'pm-2',
-      type: 'ach',
-      label: 'Chase Business ••••7890',
-      last4: '7890',
-      isDefault: false,
-    },
-  ];
+  @state() private paymentMethods: PaymentMethod[] = [];
+  @state() private loading = true;
+  @state() private error: string | null = null;
   @state() private adding = false;
   @state() private processingId: string | null = null;
+
+  async connectedCallback() {
+    super.connectedCallback();
+    await this.loadPaymentMethods();
+  }
+
+  private async loadPaymentMethods() {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      this.paymentMethods = await BillingService.getPaymentMethods();
+    } catch (e) {
+      console.error('Failed to load payment methods', e);
+      this.error = 'Failed to load payment methods. Please try again.';
+      LbToast.show('Failed to load payment methods', 'error');
+    } finally {
+      this.loading = false;
+    }
+  }
 
   private async handleAddMethod() {
     // In production, this would open a payment form modal (Stripe Elements, etc.)
@@ -234,6 +252,17 @@ export class LbPageWallet extends LbBase {
   }
 
   render() {
+    if (this.loading) {
+      return html`<p class="loading-text">Loading payment methods...</p>`;
+    }
+
+    if (this.error) {
+      return html`
+        <p class="error-text">${this.error}</p>
+        <button class="btn btn-primary" @click=${this.loadPaymentMethods}>Retry</button>
+      `;
+    }
+
     return html`
       <div class="section-header">
         <div>
@@ -310,3 +339,4 @@ declare global {
     'lb-page-wallet': LbPageWallet;
   }
 }
+

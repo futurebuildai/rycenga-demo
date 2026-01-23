@@ -183,6 +183,22 @@ export interface Invoice {
     amountDue: number;
     erpInvoiceId?: string;
     createdAt?: string;
+    lines?: InvoiceLine[];
+}
+
+// ============================================
+// InvoiceLine Schema
+// ============================================
+
+export interface InvoiceLine {
+    id: string;
+    invoiceId?: string;
+    productId: string;
+    sku?: string;
+    name?: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
 }
 
 // ============================================
@@ -301,3 +317,22 @@ declare global {
         'route-changed': CustomEvent<{ route: RouteId }>;
     }
 }
+
+// ============================================
+// Dashboard Schema
+// ============================================
+
+export interface DashboardSummary {
+    accountId: number;
+    accountName: string | null;
+    creditLimit: number | null;
+    currentBalance: number;
+    pastDueInvoicesCount: number;
+    activeOrdersCount: number;
+    pendingQuotesCount: number;
+    recentInvoices: unknown[];
+    recentOrders: unknown[];
+    recentQuotes: unknown[];
+}
+
+

@@ -217,9 +217,12 @@ export class LbPageEstimates extends LbBase {
 
   @state() private estimates: Estimate[] = [];
   @state() private loading = true;
+  @state() private error: string | null = null;
   @state() private currentView: 'list' | 'detail' = 'list';
   @state() private selectedEstimate: Estimate | null = null;
   @state() private activeFilter = 'All';
+  @state() private loadingLines = false;
+  @state() private lineError: string | null = null;
 
   private filters = ['All', 'Pending', 'Accepted', 'Expired'];
 
@@ -229,18 +232,43 @@ export class LbPageEstimates extends LbBase {
   }
 
   private async loadEstimates() {
+    this.loading = true;
+    this.error = null;
     try {
       this.estimates = await DataService.getEstimates();
     } catch (e) {
       console.error('Failed to load estimates', e);
+      this.error = 'Failed to load estimates. Please try again later.';
+      LbToast.show(this.error, 'error');
     } finally {
       this.loading = false;
     }
   }
 
-  private viewEstimateDetail(estimate: Estimate) {
+  private async viewEstimateDetail(estimate: Estimate) {
     this.selectedEstimate = estimate;
     this.currentView = 'detail';
+
+    // Fetch line items if not already present
+    if (!estimate.lines || estimate.lines.length === 0) {
+      this.loadingLines = true;
+      this.lineError = null;
+      try {
+        const lines = await DataService.getQuoteLines(estimate.id);
+        this.selectedEstimate = { ...estimate, lines };
+
+        // Update in list as well for caching
+        const index = this.estimates.findIndex(e => e.id === estimate.id);
+        if (index !== -1) {
+          this.estimates[index] = this.selectedEstimate;
+        }
+      } catch (e) {
+        console.error('Failed to load estimate lines', e);
+        this.lineError = 'Failed to load item details. Please try again.';
+      } finally {
+        this.loadingLines = false;
+      }
+    }
   }
 
   private backToList() {
@@ -278,9 +306,8 @@ export class LbPageEstimates extends LbBase {
   }
 
   private getProjectName(estimate: Estimate): string {
-    const names = ['My Framing Job', '50 Main Street', "Erik's Shed"];
-    const index = this.estimates.indexOf(estimate) % names.length;
-    return names[index];
+    // Backend may not provide project name directly in Quote object yet
+    return estimate.projectId ? `Project #${estimate.projectId}` : 'No Project Assigned';
   }
 
   private renderListView() {
@@ -303,7 +330,7 @@ export class LbPageEstimates extends LbBase {
                 <span class="status-badge ${this.getStatusClass(estimate.status)}">${this.getDisplayStatus(estimate.status)}</span>
               </div>
               <span class="estimate-${estimate.status === 'expired' ? 'date' : 'expiry'}">
-                ${estimate.status === 'expired' ? 'Expired' : estimate.status === 'accepted' ? 'Accepted' : 'Expires'}: ${this.formatDate(estimate.validUntil)}
+                ${estimate.status === 'expired' ? 'Expired' : estimate.status === 'accepted' ? 'Accepted' : 'Expires'}: ${estimate.validUntil ? this.formatDate(estimate.validUntil) : 'N/A'}
               </span>
             </div>
             <div class="estimate-body">
@@ -318,7 +345,7 @@ export class LbPageEstimates extends LbBase {
                 </div>
                 <div class="estimate-details-text">
                   <span class="estimate-project-name">${this.getProjectName(estimate)}</span>
-                  <span class="estimate-summary">${estimate.lines?.length || 3} products</span>
+                  <span class="estimate-summary">${estimate.lines?.length || 0} products</span>
                 </div>
               </div>
               <div class="estimate-total">
@@ -359,20 +386,86 @@ export class LbPageEstimates extends LbBase {
         <div class="detail-title-row">
           <div>
             <h2 class="detail-id">${estimate.estimateNumber}</h2>
-            <p class="detail-project-info">${this.getProjectName(estimate)} • Valid until ${this.formatDate(estimate.validUntil)}</p>
+            <p class="detail-project-info">${this.getProjectName(estimate)} • Valid until ${estimate.validUntil ? this.formatDate(estimate.validUntil) : 'N/A'}</p>
           </div>
           <span class="status-badge ${this.getStatusClass(estimate.status)}">${this.getDisplayStatus(estimate.status)}</span>
         </div>
 
         <p>Estimate total: <strong>${this.formatCurrency(estimate.total)}</strong></p>
-        <p class="text-muted" style="margin-top: var(--space-md);">Full line items would be displayed here with the same table format as orders.</p>
+        
+        <table class="line-items-table" style="margin-top: var(--space-xl);">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Price</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${this.loadingLines ? html`
+              <tr>
+                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                  <div class="loading-spinner"></div>
+                  <p>Loading items...</p>
+                </td>
+              </tr>
+            ` : this.lineError ? html`
+              <tr>
+                <td colspan="4" class="text-center" style="padding: var(--space-xl); color: var(--color-error);">
+                  <p>${this.lineError}</p>
+                  <button class="btn btn-outline btn-sm" style="margin-top: var(--space-md);" @click=${() => this.viewEstimateDetail(estimate)}>Retry</button>
+                </td>
+              </tr>
+            ` : estimate.lines && estimate.lines.length > 0 ? estimate.lines.map(line => html`
+              <tr>
+                <td>
+                  <div class="line-item-name">${line.name}</div>
+                  <div class="line-item-sku">SKU: ${line.sku}</div>
+                </td>
+                <td class="text-right">${line.quantity}</td>
+                <td class="text-right">${this.formatCurrency(line.unitPrice)}</td>
+                <td class="text-right">${this.formatCurrency(line.lineTotal)}</td>
+              </tr>
+            `) : html`
+              <tr>
+                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                  <p>No line items found for this estimate.</p>
+                </td>
+              </tr>
+            `}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-right"><strong>Total</strong></td>
+              <td class="text-right"><strong>${this.formatCurrency(estimate.total)}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="detail-actions-footer" style="margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: var(--text-sm);">
+          <p>This estimate is valid for 30 days. Contact your sales representative to convert this estimate to an order.</p>
+        </div>
       </div>
     `;
   }
 
   render() {
     if (this.loading) {
-      return html`<p>Loading estimates...</p>`;
+      return html`
+        <div style="display: flex; justify-content: center; padding: var(--space-2xl);">
+          <div class="loading-spinner">Loading estimates...</div>
+        </div>
+      `;
+    }
+
+    if (this.error) {
+      return html`
+        <div style="text-align: center; padding: var(--space-2xl); background: #fee2e2; border-radius: var(--radius-lg); color: #991b1b;">
+          <p>${this.error}</p>
+          <button class="btn btn-outline" style="margin-top: var(--space-md);" @click=${this.loadEstimates}>Retry</button>
+        </div>
+      `;
     }
 
     return html`

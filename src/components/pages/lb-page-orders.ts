@@ -245,6 +245,8 @@ export class LbPageOrders extends LbBase {
   @state() private currentView: 'list' | 'detail' = 'list';
   @state() private selectedOrder: Order | null = null;
   @state() private activeFilter = 'All';
+  @state() private loadingLines = false;
+  @state() private lineError: string | null = null;
 
   private filters = ['All', 'Pending', 'Confirmed', 'Ready for Pickup', 'Shipped', 'Delivered', 'Cancelled'];
 
@@ -263,9 +265,21 @@ export class LbPageOrders extends LbBase {
     }
   }
 
-  private viewOrderDetail(order: Order) {
-    this.selectedOrder = order;
+  private async viewOrderDetail(order: Order) {
+    this.selectedOrder = { ...order, lines: [] };
     this.currentView = 'detail';
+    this.loadingLines = true;
+    this.lineError = null;
+
+    try {
+      const lines = await DataService.getOrderLines(order.id);
+      this.selectedOrder = { ...order, lines };
+    } catch (e) {
+      console.error('Failed to load order lines', e);
+      this.lineError = 'Failed to load line items. Please try again.';
+    } finally {
+      this.loadingLines = false;
+    }
   }
 
   private backToList() {
@@ -321,7 +335,8 @@ export class LbPageOrders extends LbBase {
   private getOrderSummary(order: Order): string {
     const count = order.lines?.length || 0;
     const names = order.lines?.slice(0, 2).map(l => l.name).join(', ') || '';
-    return `${count} products: ${names}`;
+    const productsText = count === 1 ? 'product' : 'products';
+    return `${count} ${productsText}: ${names}${count > 2 ? '...' : ''}`;
   }
 
   private calculateSubtotal(order: Order): number {
@@ -411,7 +426,21 @@ export class LbPageOrders extends LbBase {
             </tr>
           </thead>
           <tbody>
-            ${order.lines?.map(line => html`
+            ${this.loadingLines ? html`
+              <tr>
+                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                  <div class="loading-spinner"></div>
+                  <p>Loading items...</p>
+                </td>
+              </tr>
+            ` : this.lineError ? html`
+              <tr>
+                <td colspan="4" class="text-center" style="padding: var(--space-xl); color: var(--color-error);">
+                  <p>${this.lineError}</p>
+                  <button class="btn btn-outline btn-sm" style="margin-top: var(--space-md);" @click=${() => this.viewOrderDetail(order)}>Retry</button>
+                </td>
+              </tr>
+            ` : order.lines && order.lines.length > 0 ? order.lines.map(line => html`
               <tr>
                 <td>
                   <div class="line-item-name">${line.name}</div>
@@ -421,7 +450,13 @@ export class LbPageOrders extends LbBase {
                 <td class="text-right">${this.formatCurrency(line.unitPrice)}</td>
                 <td class="text-right">${this.formatCurrency(line.lineTotal)}</td>
               </tr>
-            `)}
+            `) : html`
+              <tr>
+                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                  <p>No line items found for this order.</p>
+                </td>
+              </tr>
+            `}
           </tbody>
           <tfoot>
             <tr>
