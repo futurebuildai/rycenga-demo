@@ -160,27 +160,6 @@ export class LbLogin extends LbBase {
         box-shadow: var(--shadow-lg);
       }
 
-      .login-footer {
-        margin-top: var(--space-xl);
-        padding-top: var(--space-lg);
-        border-top: 1px solid var(--color-border);
-        text-align: center;
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .login-footer p {
-        margin-bottom: var(--space-sm);
-      }
-
-      .login-footer code {
-        background: var(--color-bg-alt);
-        padding: 2px 6px;
-        border-radius: var(--radius-sm);
-        font-family: monospace;
-        font-size: var(--text-xs);
-        color: var(--color-text);
-      }
     `,
   ];
 
@@ -280,11 +259,6 @@ export class LbLogin extends LbBase {
               ${this.isLoading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
-
-          <div class="login-footer">
-            <p>Demo Credentials:</p>
-            <code>HomeProUSA@demo.com</code> / <code>MyAccountLite2026</code>
-          </div>
         </div>
       </div>
     `;
