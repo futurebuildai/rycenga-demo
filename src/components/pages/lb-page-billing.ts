@@ -260,7 +260,7 @@ export class LbPageBilling extends LbBase {
   @state() private currentView: 'list' | 'detail' = 'list';
   @state() private selectedInvoice: Invoice | null = null;
   @state() private activeTab = 'invoices';
-  @state() private payingInvoiceId: string | null = null;
+  @state() private payingInvoiceId: number | null = null;
   @state() private selectedInvoiceLines: InvoiceLine[] = [];
   @state() private loadingLines = false;
 
@@ -305,7 +305,7 @@ export class LbPageBilling extends LbBase {
     // In production, this would open a modal to select payment method
     this.payingInvoiceId = invoice.id;
     try {
-      await BillingService.payInvoice(parseInt(invoice.id), { paymentMethodId: 'pm-1' });
+      await BillingService.payInvoice(invoice.id, { paymentMethodId: 'pm-1' });
       LbToast.show(`Payment submitted for ${invoice.invoiceNumber}`, 'success');
       // Optimistic update
       this.invoices = this.invoices.map(i =>

@@ -139,9 +139,10 @@ class DataServiceImpl {
     /**
      * Get a single invoice by ID
      */
-    async getInvoiceById(invoiceId: string): Promise<Invoice | undefined> {
+    async getInvoiceById(invoiceId: string | number): Promise<Invoice | undefined> {
         const invoices = await this.getInvoices();
-        return invoices.find(i => i.id === invoiceId || i.invoiceNumber === invoiceId);
+        const id = typeof invoiceId === 'number' ? invoiceId : parseInt(invoiceId, 10);
+        return invoices.find(i => i.id === id || i.invoiceNumber === String(invoiceId));
     }
 
     /**
@@ -176,9 +177,8 @@ class DataServiceImpl {
     /**
      * Get line items for an invoice
      */
-    async getInvoiceLines(invoiceId: string): Promise<InvoiceLine[]> {
-        const id = String(invoiceId);
-        const backendLines = await BillingService.getInvoiceLines(id);
+    async getInvoiceLines(invoiceId: number): Promise<InvoiceLine[]> {
+        const backendLines = await BillingService.getInvoiceLines(invoiceId);
         return backendLines.map(mapInvoiceLineToLegacy);
     }
 

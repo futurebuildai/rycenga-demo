@@ -169,7 +169,7 @@ export interface Order {
 // ============================================
 
 export interface Invoice {
-    id: string;
+    id: number;
     invoiceNumber: string;
     userId?: string;
     orderId?: string | null;
@@ -192,7 +192,7 @@ export interface Invoice {
 
 export interface InvoiceLine {
     id: string;
-    invoiceId?: string;
+    invoiceId?: number;
     productId: string;
     sku?: string;
     name?: string;
@@ -334,5 +334,4 @@ export interface DashboardSummary {
     recentOrders: unknown[];
     recentQuotes: unknown[];
 }
-
 

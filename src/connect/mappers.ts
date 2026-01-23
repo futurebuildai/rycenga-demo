@@ -61,7 +61,7 @@ export const mapOrderToLegacy = (order: BackendOrder): Order => ({
  * Maps Backend Invoice to Legacy Frontend Invoice
  */
 export const mapInvoiceToLegacy = (invoice: BackendInvoice): Invoice => ({
-    id: invoice.invoiceNumber,
+    id: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
     projectId: null,
     status: invoice.status as Invoice['status'],
@@ -90,7 +90,7 @@ export const mapOrderLineToLegacy = (line: BackendOrderLine | BackendQuoteLine):
  */
 export const mapInvoiceLineToLegacy = (line: any): InvoiceLine => ({
     id: line.id.toString(),
-    invoiceId: line.invoiceId?.toString(),
+    invoiceId: line.invoiceId,
     productId: '0',
     sku: line.itemCode,
     name: line.description || '',
