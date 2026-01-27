@@ -27,7 +27,7 @@ export const mapJobToProject = (job: Job): Project => {
  * Maps Backend Quote to Legacy Frontend Estimate
  */
 export const mapQuoteToEstimate = (quote: Quote): Estimate => ({
-    id: quote.id.toString(),
+    id: quote.id,
     estimateNumber: quote.quoteNumber,
     status: ((): Estimate['status'] => {
         switch (quote.status) {
@@ -46,7 +46,7 @@ export const mapQuoteToEstimate = (quote: Quote): Estimate => ({
  * Maps Backend Order to Legacy Frontend Order
  */
 export const mapOrderToLegacy = (order: BackendOrder): Order => ({
-    id: order.orderNumber,
+    id: order.id,
     orderNumber: order.orderNumber,
     userId: 'current',
     projectId: order.jobId?.toString() ?? null,

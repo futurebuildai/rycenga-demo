@@ -144,7 +144,7 @@ export interface OrderLine {
 // ============================================
 
 export interface Order {
-    id: string;
+    id: number;
     orderNumber: string;
     userId: string;
     projectId?: string | null;
@@ -206,7 +206,7 @@ export interface InvoiceLine {
 // ============================================
 
 export interface Estimate {
-    id: string;
+    id: number;
     estimateNumber: string;
     userId?: string;
     projectId?: string | null;
@@ -334,4 +334,3 @@ export interface DashboardSummary {
     recentOrders: unknown[];
     recentQuotes: unknown[];
 }
-

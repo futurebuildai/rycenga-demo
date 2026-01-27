@@ -117,14 +117,9 @@ class DataServiceImpl {
     /**
      * Get a single order by ID
      */
-    async getOrderById(orderId: string): Promise<Order | undefined> {
-        const id = parseInt(orderId);
-        if (!isNaN(id)) {
-            const o = await SalesService.getOrderDetails(id);
-            return mapOrderToLegacy(o);
-        }
-        const orders = await this.getOrders();
-        return orders.find(o => o.id === orderId || o.orderNumber === orderId);
+    async getOrderById(orderId: number): Promise<Order | undefined> {
+        const o = await SalesService.getOrderDetails(orderId);
+        return mapOrderToLegacy(o);
     }
 
     /**
@@ -157,20 +152,16 @@ class DataServiceImpl {
     /**
      * Get line items for a quote
      */
-    async getQuoteLines(quoteId: string): Promise<OrderLine[]> {
-        const id = parseInt(quoteId);
-        if (isNaN(id)) return [];
-        const lines = await SalesService.getQuoteLines(id);
+    async getQuoteLines(quoteId: number): Promise<OrderLine[]> {
+        const lines = await SalesService.getQuoteLines(quoteId);
         return lines.map(mapOrderLineToLegacy);
     }
 
     /**
      * Get line items for an order
      */
-    async getOrderLines(orderId: string): Promise<OrderLine[]> {
-        const id = parseInt(orderId);
-        if (isNaN(id)) return [];
-        const lines = await SalesService.getOrderLines(id);
+    async getOrderLines(orderId: number): Promise<OrderLine[]> {
+        const lines = await SalesService.getOrderLines(orderId);
         return lines.map(mapOrderLineToLegacy);
     }
 
