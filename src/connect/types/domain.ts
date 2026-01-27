@@ -197,17 +197,60 @@ export interface BillingSummary {
 
 /**
  * Payment method for wallet management
- * MAPS TO: Future backend endpoint POST/DELETE /payment-methods
+ * MAPS TO: GET/POST/DELETE /payment-methods
  */
 export type PaymentMethodType = 'card' | 'ach';
 
 export interface PaymentMethod {
-    id: string;
+    id: number;
+    accountId?: number;
     type: PaymentMethodType;
-    label: string;
-    last4: string;
-    expiry?: string; // MM/YY for cards
+    providerToken?: string;
+    providerKey?: string | null;
+    brand?: string | null;
+    last4?: string | null;
+    expMonth?: number | null;
+    expYear?: number | null;
     isDefault: boolean;
+    metadata?: unknown;
+    createdAt?: string;
+}
+
+/**
+ * Payload for creating a payment method
+ * MAPS TO: POST /payment-methods
+ */
+export interface PaymentMethodCreatePayload {
+    accountToken: string;
+    name: string;
+    type?: PaymentMethodType;
+    brand?: string | null;
+    last4?: string | null;
+    expMonth?: number | null;
+    expYear?: number | null;
+    isDefault?: boolean;
+    address1?: string | null;
+    address2?: string | null;
+    city?: string | null;
+    region?: string | null;
+    accountZip?: string | null;
+    country?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    custom06?: string | null;
+    custom07?: string | null;
+    custom08?: string | null;
+    custom09?: string | null;
+    custom10?: string | null;
+    metadata?: unknown;
+}
+
+/**
+ * Payment config for Runner.js initialization
+ * MAPS TO: GET /payment-config
+ */
+export interface PaymentConfig {
+    publicKey: string;
 }
 
 /**
