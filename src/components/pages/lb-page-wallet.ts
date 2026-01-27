@@ -151,7 +151,7 @@ export class LbPageWallet extends LbBase {
   @state() private loading = true;
   @state() private error: string | null = null;
   @state() private adding = false;
-  @state() private processingId: string | null = null;
+  @state() private processingId: number | null = null;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -179,9 +179,10 @@ export class LbPageWallet extends LbBase {
     try {
       const newMethod: Omit<PaymentMethod, 'id'> = {
         type: 'card',
-        label: 'New Card ••••1234',
+        brand: 'Visa',
         last4: '1234',
-        expiry: '01/28',
+        expMonth: 1,
+        expYear: 28,
         isDefault: false,
       };
       const added = await BillingService.addPaymentMethod(newMethod);
@@ -205,13 +206,27 @@ export class LbPageWallet extends LbBase {
         ...m,
         isDefault: m.id === method.id,
       }));
-      LbToast.show(`${method.label} set as default`, 'success');
+      LbToast.show(`${this.getPaymentLabel(method)} set as default`, 'success');
     } catch (e) {
       console.error('Failed to set default', e);
       LbToast.show('Failed to set default payment method', 'error');
     } finally {
       this.processingId = null;
     }
+  }
+
+  private getPaymentLabel(method: PaymentMethod) {
+    if (method.type === 'card') {
+      return `${method.brand || 'Card'} ••••${method.last4 || '****'}`;
+    }
+    return 'Bank Account';
+  }
+
+  private getPaymentExpiry(method: PaymentMethod) {
+    if (method.expMonth && method.expYear) {
+      return `${method.expMonth.toString().padStart(2, '0')}/${method.expYear}`;
+    }
+    return '';
   }
 
   private async handleRemove(method: PaymentMethod) {
@@ -295,11 +310,11 @@ export class LbPageWallet extends LbBase {
                 </div>
                 <div class="payment-details">
                   <span class="payment-label">
-                    ${method.label}
+                    ${this.getPaymentLabel(method)}
                     ${method.isDefault ? html`<span class="default-badge">Default</span>` : ''}
                   </span>
                   <span class="payment-meta">
-                    ${method.type === 'card' ? `Expires ${method.expiry}` : 'Bank Account'}
+                    ${method.type === 'card' ? `Expires ${this.getPaymentExpiry(method)}` : 'Bank Account'}
                   </span>
                 </div>
               </div>
