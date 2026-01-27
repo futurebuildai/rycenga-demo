@@ -1,10 +1,10 @@
 /**
  * LbHeader - Main header component
- * Displays logo, location selector, and utility navigation
+ * Displays logo and utility navigation
  */
 
 import { html, css } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 
 @customElement('lb-header')
@@ -84,67 +84,6 @@ export class LbHeader extends LbBase {
         padding-right: var(--space-xl);
       }
 
-      .location-selector {
-        position: relative;
-      }
-
-      .location-selector-trigger {
-        display: flex;
-        align-items: center;
-        gap: var(--space-xs);
-        padding: var(--space-xs) var(--space-md);
-        background: var(--color-bg-alt);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        font-size: var(--text-sm);
-        font-weight: 500;
-      }
-
-      .location-selector-trigger:hover {
-        background: white;
-        box-shadow: var(--shadow-sm);
-        border-color: var(--color-accent-light);
-      }
-
-      .current-location {
-        color: var(--color-primary);
-      }
-
-      .location-dropdown {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        width: 200px;
-        background: white;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-lg);
-        padding: var(--space-xs);
-        list-style: none;
-        z-index: 1001;
-        display: none;
-      }
-
-      .location-dropdown.active {
-        display: block;
-        animation: fadeIn 0.15s ease-out;
-      }
-
-      .location-option {
-        padding: var(--space-sm) var(--space-md);
-        cursor: pointer;
-        border-radius: var(--radius-sm);
-        color: var(--color-text);
-        transition: background-color var(--transition-fast);
-      }
-
-      .location-option:hover {
-        background-color: var(--color-bg-alt);
-        color: var(--color-primary);
-      }
-
       .utility-nav {
         display: flex;
         align-items: center;
@@ -195,44 +134,8 @@ export class LbHeader extends LbBase {
           width: auto;
         }
       }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-5px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
     `,
     ];
-
-    @property({ type: String }) currentLocation = 'Oakdale, TX';
-    @state() private dropdownOpen = false;
-
-    private locations = [
-        'Oakdale, TX',
-        'Austin, TX',
-        'Dallas, TX',
-        'Houston, TX',
-    ];
-
-    private toggleDropdown(e: Event) {
-        e.stopPropagation();
-        this.dropdownOpen = !this.dropdownOpen;
-    }
-
-    private selectLocation(location: string) {
-        this.currentLocation = location;
-        this.dropdownOpen = false;
-        this.dispatchEvent(new CustomEvent('location-changed', {
-            detail: { location },
-            bubbles: true,
-            composed: true,
-        }));
-    }
 
     private handleMenuToggle() {
         this.dispatchEvent(new CustomEvent('menu-toggle', {
@@ -240,22 +143,6 @@ export class LbHeader extends LbBase {
             composed: true,
         }));
     }
-
-    connectedCallback() {
-        super.connectedCallback();
-        document.addEventListener('click', this.closeDropdown);
-    }
-
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        document.removeEventListener('click', this.closeDropdown);
-    }
-
-    private closeDropdown = () => {
-        if (this.dropdownOpen) {
-            this.dropdownOpen = false;
-        }
-    };
 
     render() {
         return html`
@@ -275,24 +162,6 @@ export class LbHeader extends LbBase {
         </a>
 
         <div class="header-right">
-          <div class="location-selector">
-            <div class="location-selector-trigger" @click=${this.toggleDropdown}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
-              <span class="current-location">${this.currentLocation}</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
-            <ul class="location-dropdown ${this.dropdownOpen ? 'active' : ''}">
-              ${this.locations.map(loc => html`
-                <li class="location-option" @click=${() => this.selectLocation(loc)}>${loc}</li>
-              `)}
-            </ul>
-          </div>
-
           <nav class="utility-nav">
             <a href="/" class="utility-link active">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
