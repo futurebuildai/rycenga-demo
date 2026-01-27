@@ -28,7 +28,7 @@ export const BillingService = {
      * Remove a payment method
      * MAPS TO: DELETE /payment-methods/{id}
      */
-    removePaymentMethod: (paymentMethodId: string): Promise<void> =>
+    removePaymentMethod: (paymentMethodId: number): Promise<void> =>
         client.request<void>(`/payment-methods/${paymentMethodId}`, {
             method: 'DELETE',
         }),
@@ -37,7 +37,7 @@ export const BillingService = {
      * Set a payment method as the default
      * MAPS TO: PUT /payment-methods/{id}/default
      */
-    setDefaultPaymentMethod: (paymentMethodId: string): Promise<PaymentMethod> =>
+    setDefaultPaymentMethod: (paymentMethodId: number): Promise<PaymentMethod> =>
         client.request<PaymentMethod>(`/payment-methods/${paymentMethodId}/default`, {
             method: 'PUT',
         }),
