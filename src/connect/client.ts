@@ -6,6 +6,7 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
     private token: string | null = null;
+    public onUnauthorized?: () => void;
 
     constructor() {
         const stored = localStorage.getItem('auth_token');
@@ -33,6 +34,13 @@ class ApiClient {
             ...options,
             headers,
         });
+
+        if (response.status === 401) {
+            if (this.onUnauthorized) {
+                this.onUnauthorized();
+            }
+            throw new Error('Unauthorized');
+        }
 
         if (!response.ok) {
             // Handle 401 Unauthorized, etc.

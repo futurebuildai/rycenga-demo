@@ -10,9 +10,9 @@ import type { ToastType } from '../../types/index.js';
 
 @customElement('lb-toast')
 export class LbToast extends LbBase {
-    static styles = [
-        ...LbBase.styles,
-        css`
+  static styles = [
+    ...LbBase.styles,
+    css`
       :host {
         position: fixed;
         bottom: var(--space-xl);
@@ -102,89 +102,99 @@ export class LbToast extends LbBase {
         }
       }
     `,
-    ];
+  ];
 
-    @property({ type: String }) message = '';
-    @property({ type: String }) type: ToastType = 'info';
-    @property({ type: Number }) duration = 3000;
+  @property({ type: String }) message = '';
+  @property({ type: String }) type: ToastType = 'info';
+  @property({ type: Number }) duration = 3000;
 
-    @state() private visible = false;
-    @state() private hiding = false;
+  @state() private visible = false;
+  @state() private hiding = false;
 
-    private timeoutId: number | null = null;
+  private timeoutId: number | null = null;
 
-    /**
-     * Show the toast with current properties
-     */
-    show(): void {
-        this.visible = true;
-        this.hiding = false;
+  /**
+   * Show the toast with current properties
+   */
+  show(): void {
+    this.visible = true;
+    this.hiding = false;
 
-        if (this.timeoutId) {
-            clearTimeout(this.timeoutId);
-        }
-
-        if (this.duration > 0) {
-            this.timeoutId = window.setTimeout(() => this.hide(), this.duration);
-        }
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
     }
 
-    /**
-     * Hide the toast with animation
-     */
-    hide(): void {
-        this.hiding = true;
-        setTimeout(() => {
-            this.visible = false;
-            this.hiding = false;
-        }, 300);
+    if (this.duration > 0) {
+      this.timeoutId = window.setTimeout(() => this.hide(), this.duration);
+    }
+  }
+
+  /**
+   * Hide the toast with animation
+   */
+  hide(): void {
+    this.hiding = true;
+    setTimeout(() => {
+      this.visible = false;
+      this.hiding = false;
+    }, 300);
+  }
+
+  /**
+   * Global flag to suppress error toasts (e.g., during session expiration)
+   */
+  static suppressErrors = false;
+
+  /**
+   * Static method to show a toast globally
+   */
+  static show(message: string, type: ToastType = 'info', duration = 3000): LbToast | null {
+    // Suppress error toasts if flag is set
+    if (type === 'error' && LbToast.suppressErrors) {
+      return null;
     }
 
-    /**
-     * Static method to show a toast globally
-     */
-    static show(message: string, type: ToastType = 'info', duration = 3000): LbToast {
-        // Find or create toast container
-        let toast = document.querySelector('lb-toast') as LbToast | null;
+    // Find or create toast container
+    let toast = document.querySelector('lb-toast') as LbToast | null;
 
-        if (!toast) {
-            toast = document.createElement('lb-toast') as LbToast;
-            document.body.appendChild(toast);
-        }
-
-        toast.message = message;
-        toast.type = type;
-        toast.duration = duration;
-        toast.show();
-
-        return toast;
+    if (!toast) {
+      toast = document.createElement('lb-toast') as LbToast;
+      document.body.appendChild(toast);
     }
 
-    private getIcon(): string {
-        const icons: Record<ToastType, string> = {
-            success: '✓',
-            error: '✕',
-            warning: '⚠',
-            info: 'ℹ',
-        };
-        return icons[this.type];
-    }
+    toast.message = message;
+    toast.type = type;
+    toast.duration = duration;
+    toast.show();
 
-    render() {
-        if (!this.visible) return null;
+    return toast;
+  }
 
-        return html`
+  private getIcon(): string {
+    const icons: Record<ToastType, string> = {
+      success: '✓',
+      error: '✕',
+      warning: '⚠',
+      info: 'ℹ',
+    };
+    return icons[this.type];
+  }
+
+  render() {
+    if (!this.visible) return null;
+
+    return html`
       <div class="toast toast-${this.type} ${this.hiding ? 'hiding' : ''}">
         <span class="toast-icon">${this.getIcon()}</span>
         <span class="toast-message">${this.message}</span>
         <button class="toast-close" @click=${this.hide}>✕</button>
       </div>
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'lb-toast': LbToast;
-    }
+  interface HTMLElementTagNameMap {
+    'lb-toast': LbToast;
+  }
 }
