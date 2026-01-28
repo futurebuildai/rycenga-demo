@@ -6,6 +6,7 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
     private token: string | null = null;
+    private tenantId: string | null = null;
     public onUnauthorized?: () => void;
 
     constructor() {
@@ -13,11 +14,20 @@ class ApiClient {
         if (stored) {
             this.token = stored;
         }
+        const tenant = localStorage.getItem('tenant_id');
+        if (tenant) {
+            this.tenantId = tenant;
+        }
     }
 
     setToken(token: string) {
         this.token = token;
         localStorage.setItem('auth_token', token);
+    }
+
+    setTenant(tenantId: string) {
+        this.tenantId = tenantId;
+        localStorage.setItem('tenant_id', tenantId);
     }
 
     async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -29,6 +39,9 @@ class ApiClient {
             headers.set('Authorization', `Bearer ${this.token}`);
             // If using API Key as well for M2M: headers.set('X-API-Key', API_KEY);
         }
+        if (this.tenantId) {
+            headers.set('X-Tenant-ID', this.tenantId);
+        }
 
         // Development override for testing different tenants
         if (import.meta.env.DEV) {
@@ -38,24 +51,32 @@ class ApiClient {
             }
         }
 
-        const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
-            ...options,
-            headers,
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
 
-        if (response.status === 401) {
-            if (this.onUnauthorized) {
-                this.onUnauthorized();
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
+
+            if (response.status === 401) {
+                if (this.onUnauthorized) {
+                    this.onUnauthorized();
+                }
+                throw new Error('Unauthorized');
             }
-            throw new Error('Unauthorized');
-        }
 
-        if (!response.ok) {
-            // Handle 401 Unauthorized, etc.
-            throw new Error(`API Error: ${response.statusText}`);
-        }
+            if (!response.ok) {
+                // Handle 401 Unauthorized, etc.
+                throw new Error(`API Error: ${response.statusText}`);
+            }
 
-        return response.json();
+            return response.json();
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 }
 

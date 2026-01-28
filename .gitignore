@@ -18,3 +18,7 @@ build/
 # Environment
 .env
 .env.local
+
+# AI Agent Skills (local only - not pushed to GitHub)
+.agent/skills/
+.claude/

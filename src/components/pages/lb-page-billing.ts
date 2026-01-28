@@ -10,6 +10,7 @@ import { DataService } from '../../services/data.service.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Invoice, InvoiceLine } from '../../types/index.js';
+import '../../features/billing/components/lb-payment-history-table.js';
 
 @customElement('lb-page-billing')
 export class LbPageBilling extends LbBase {
@@ -301,26 +302,28 @@ export class LbPageBilling extends LbBase {
     this.selectedInvoice = null;
   }
 
-  private async handlePayInvoice(invoice: Invoice) {
-    // In production, this would open a modal to select payment method
-    this.payingInvoiceId = invoice.id;
-    try {
-      await BillingService.payInvoice(invoice.id, { paymentMethodId: 'pm-1' });
-      LbToast.show(`Payment submitted for ${invoice.invoiceNumber}`, 'success');
-      // Optimistic update
-      this.invoices = this.invoices.map(i =>
-        i.id === invoice.id ? { ...i, status: 'paid' as const, amountDue: 0 } : i
-      );
-      if (this.selectedInvoice?.id === invoice.id) {
-        this.selectedInvoice = { ...this.selectedInvoice, status: 'paid' as const, amountDue: 0 };
-      }
-    } catch (e) {
-      console.error('Failed to pay invoice', e);
-      LbToast.show('Failed to process payment', 'error');
-    } finally {
-      this.payingInvoiceId = null;
-    }
-  }
+  // [L7 AUDIT] Commented out - Backend endpoint NOT IMPLEMENTED
+  // Backend team must add POST /v1/invoices/{id}/pay to router.go
+  // private async handlePayInvoice(invoice: Invoice) {
+  //   // In production, this would open a modal to select payment method
+  //   this.payingInvoiceId = invoice.id;
+  //   try {
+  //     await BillingService.payInvoice(invoice.id, { paymentMethodId: 'pm-1' });
+  //     LbToast.show(`Payment submitted for ${invoice.invoiceNumber}`, 'success');
+  //     // Optimistic update
+  //     this.invoices = this.invoices.map(i =>
+  //       i.id === invoice.id ? { ...i, status: 'paid' as const, amountDue: 0 } : i
+  //     );
+  //     if (this.selectedInvoice?.id === invoice.id) {
+  //       this.selectedInvoice = { ...this.selectedInvoice, status: 'paid' as const, amountDue: 0 };
+  //     }
+  //   } catch (e) {
+  //     console.error('Failed to pay invoice', e);
+  //     LbToast.show('Failed to process payment', 'error');
+  //   } finally {
+  //     this.payingInvoiceId = null;
+  //   }
+  // }
 
   private getStatusClass(status: string): string {
     const statusMap: Record<string, string> = {
@@ -388,17 +391,19 @@ export class LbPageBilling extends LbBase {
             <div class="invoice-amount">${this.formatCurrency(invoice.amountDue)}</div>
             <span class="status-badge ${this.getStatusClass(invoice.status)}">${invoice.status}</span>
             <button class="btn btn-outline btn-sm" @click=${() => this.viewInvoiceDetail(invoice)}>View</button>
-            <button 
-              class="btn btn-cta btn-sm" 
+            ${/* [L7 AUDIT] Pay button disabled - Backend endpoint NOT IMPLEMENTED
+            <button
+              class="btn btn-cta btn-sm"
               @click=${() => this.handlePayInvoice(invoice)}
               ?disabled=${this.payingInvoiceId === invoice.id || invoice.status === 'paid'}
             >${this.payingInvoiceId === invoice.id ? 'Paying...' : 'Pay'}</button>
+            */ ''}
           </div>
         `)}
       ` : this.activeTab === 'statements' ? html`
         <p class="text-muted">Monthly account statements will be displayed here.</p>
       ` : html`
-        <p class="text-muted">Payment history will be displayed here.</p>
+        <lb-payment-history-table></lb-payment-history-table>
       `}
     `;
   }
@@ -484,11 +489,13 @@ export class LbPageBilling extends LbBase {
         </div>
 
         <div class="detail-actions">
-          <button 
-            class="btn btn-cta" 
+          ${/* [L7 AUDIT] Pay Invoice button disabled - Backend endpoint NOT IMPLEMENTED
+          <button
+            class="btn btn-cta"
             @click=${() => this.handlePayInvoice(invoice)}
             ?disabled=${this.payingInvoiceId === invoice.id || invoice.status === 'paid'}
           >${this.payingInvoiceId === invoice.id ? 'Paying...' : 'Pay Invoice'}</button>
+          */ ''}
           <button class="btn btn-outline" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
         </div>
       </div>

@@ -254,6 +254,83 @@ export interface PaymentConfig {
 }
 
 /**
+ * Payment transaction status
+ * MAPS TO: payments.status in backend
+ */
+export type PaymentStatus = 'pending' | 'submitted' | 'settled' | 'failed' | 'cancelled' | 'refunded';
+
+/**
+ * Payment transaction record
+ * MAPS TO: GET /v1/payments
+ */
+export interface PaymentTransaction {
+    id: number;
+    accountId: number;
+    userId: number | null;
+    externalId: string | null;
+    provider: string;
+    status: PaymentStatus;
+    currencyCode: string;
+    amount: number;
+    convenienceFee: number;
+    totalCharged: number;
+    paymentMethodType: PaymentMethodType | null;
+    submittedAt: string;
+    settledAt: string | null;
+    failureCode: string | null;
+    failureMessage: string | null;
+}
+
+/**
+ * Account statement
+ * MAPS TO: GET /v1/statements
+ */
+export interface Statement {
+    id: number;
+    accountId: number;
+    statementNumber: string | null;
+    periodStart: string;
+    periodEnd: string;
+    statementDate: string;
+    currencyCode: string;
+    openingBalance: number;
+    closingBalance: number;
+    documentId: number | null;
+    createdAt: string;
+}
+
+/**
+ * Card tokenization input for SDK
+ * PCI-DSS: NEVER persist this data - only pass to tokenization
+ */
+export interface CardTokenizeInput {
+    cardNumber: string;
+    expMonth: number;
+    expYear: number;
+    cvc: string;
+}
+
+/**
+ * ACH tokenization input for SDK
+ */
+export interface ACHTokenizeInput {
+    routingNumber: string;
+    accountNumber: string;
+    accountType: 'checking' | 'savings';
+}
+
+/**
+ * Token response from Run Payments SDK
+ */
+export interface TokenResponse {
+    token: string;
+    last4?: string;
+    brand?: string;
+    expMonth?: number;
+    expYear?: number;
+}
+
+/**
  * Notification preferences for settings page
  * MAPS TO: PUT /users/{id}/notifications
  */

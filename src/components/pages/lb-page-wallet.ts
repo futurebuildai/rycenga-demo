@@ -9,6 +9,7 @@ import { LbBase } from '../lb-base.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { PaymentMethod } from '../../connect/types/domain.js';
+import '../../features/billing/components/lb-add-payment-modal.js';
 
 @customElement('lb-page-wallet')
 export class LbPageWallet extends LbBase {
@@ -150,7 +151,7 @@ export class LbPageWallet extends LbBase {
   @state() private paymentMethods: PaymentMethod[] = [];
   @state() private loading = true;
   @state() private error: string | null = null;
-  @state() private adding = false;
+  @state() private showAddModal = false;
   @state() private processingId: number | null = null;
 
   async connectedCallback() {
@@ -173,47 +174,39 @@ export class LbPageWallet extends LbBase {
     }
   }
 
-  private async handleAddMethod() {
-    // In production, this would open a payment form modal (Stripe Elements, etc.)
-    this.adding = true;
-    try {
-      const newMethod: Omit<PaymentMethod, 'id'> = {
-        type: 'card',
-        brand: 'Visa',
-        last4: '1234',
-        expMonth: 1,
-        expYear: 28,
-        isDefault: false,
-      };
-      const added = await BillingService.addPaymentMethod(newMethod);
-      this.paymentMethods = [...this.paymentMethods, added];
-      LbToast.show('Payment method added', 'success');
-    } catch (e) {
-      console.error('Failed to add payment method', e);
-      LbToast.show('Failed to add payment method', 'error');
-    } finally {
-      this.adding = false;
-    }
+  private handleAddMethod() {
+    this.showAddModal = true;
   }
 
-  private async handleSetDefault(method: PaymentMethod) {
-    if (method.isDefault) return;
-
-    this.processingId = method.id;
-    try {
-      await BillingService.setDefaultPaymentMethod(method.id);
-      this.paymentMethods = this.paymentMethods.map(m => ({
-        ...m,
-        isDefault: m.id === method.id,
-      }));
-      LbToast.show(`${this.getPaymentLabel(method)} set as default`, 'success');
-    } catch (e) {
-      console.error('Failed to set default', e);
-      LbToast.show('Failed to set default payment method', 'error');
-    } finally {
-      this.processingId = null;
-    }
+  private handleModalClose() {
+    this.showAddModal = false;
   }
+
+  private handlePaymentMethodAdded(e: CustomEvent<PaymentMethod>) {
+    this.paymentMethods = [...this.paymentMethods, e.detail];
+    this.showAddModal = false;
+  }
+
+  // [L7 AUDIT] Commented out - Backend endpoint NOT IMPLEMENTED
+  // Backend team must add PUT /v1/payment-methods/{id}/default to router.go
+  // private async handleSetDefault(method: PaymentMethod) {
+  //   if (method.isDefault) return;
+  //
+  //   this.processingId = method.id;
+  //   try {
+  //     await BillingService.setDefaultPaymentMethod(method.id);
+  //     this.paymentMethods = this.paymentMethods.map(m => ({
+  //       ...m,
+  //       isDefault: m.id === method.id,
+  //     }));
+  //     LbToast.show(`${this.getPaymentLabel(method)} set as default`, 'success');
+  //   } catch (e) {
+  //     console.error('Failed to set default', e);
+  //     LbToast.show('Failed to set default payment method', 'error');
+  //   } finally {
+  //     this.processingId = null;
+  //   }
+  // }
 
   private getPaymentLabel(method: PaymentMethod) {
     if (method.type === 'card') {
@@ -287,18 +280,23 @@ export class LbPageWallet extends LbBase {
       </div>
 
       <div class="wallet-actions">
-        <button 
-          class="btn btn-primary" 
+        <button
+          class="btn btn-primary"
           @click=${this.handleAddMethod}
-          ?disabled=${this.adding}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          ${this.adding ? 'Adding...' : 'Add Payment Method'}
+          Add Payment Method
         </button>
       </div>
+
+      <lb-add-payment-modal
+        .open=${this.showAddModal}
+        @close=${this.handleModalClose}
+        @payment-method-added=${this.handlePaymentMethodAdded}
+      ></lb-add-payment-modal>
 
       ${this.paymentMethods.length > 0 ? html`
         <div class="payment-methods">
@@ -319,17 +317,20 @@ export class LbPageWallet extends LbBase {
                 </div>
               </div>
               <div class="payment-actions">
-                ${!method.isDefault ? html`
-                  <button 
-                    class="btn btn-outline btn-sm" 
+                ${/* [L7 AUDIT] Set Default button disabled - Backend endpoint NOT IMPLEMENTED
+                !method.isDefault ? html`
+                  <button
+                    class="btn btn-outline btn-sm"
                     @click=${() => this.handleSetDefault(method)}
                     ?disabled=${this.processingId === method.id}
+                    aria-label="Set ${this.getPaymentLabel(method)} as default"
                   >${this.processingId === method.id ? 'Setting...' : 'Set Default'}</button>
-                ` : ''}
-                <button 
-                  class="btn btn-outline btn-sm" 
+                ` : '' */ ''}
+                <button
+                  class="btn btn-outline btn-sm"
                   @click=${() => this.handleRemove(method)}
                   ?disabled=${this.processingId === method.id || method.isDefault}
+                  aria-label="Remove ${this.getPaymentLabel(method)}"
                 >${this.processingId === method.id ? 'Removing...' : 'Remove'}</button>
               </div>
             </div>
