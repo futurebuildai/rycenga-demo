@@ -16,7 +16,7 @@ import type { ToastType } from './types/index.js';
 // Expose global showToast for compatibility
 declare global {
     interface Window {
-        showToast: (message: string, type?: ToastType, duration?: number) => LbToast;
+        showToast: (message: string, type?: ToastType, duration?: number) => LbToast | null;
     }
 }
 

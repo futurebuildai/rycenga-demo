@@ -17,6 +17,20 @@ class AuthServiceImpl {
     private listeners: Set<(isAuthenticated: boolean) => void> = new Set();
     private currentUser: User | null = null;
 
+    constructor() {
+        // Handle session expiration from API client
+        import('../connect/client').then(({ client }) => {
+            client.onUnauthorized = () => {
+                console.warn('Session expired - performing auto-logout');
+                import('../components/atoms/lb-toast').then(({ LbToast }) => {
+                    LbToast.suppressErrors = true;
+                    LbToast.show('Your session has expired. Please log in again.', 'warning');
+                });
+                this.logout();
+            };
+        });
+    }
+
     /**
      * Attempt login with provided credentials
      * @returns true if login successful
@@ -24,6 +38,11 @@ class AuthServiceImpl {
     async login(email: string, password: string): Promise<boolean> {
         try {
             const response = await ConnectorAuth.login(email, password);
+
+            // Reset error suppression on successful login
+            import('../components/atoms/lb-toast').then(({ LbToast }) => {
+                LbToast.suppressErrors = false;
+            });
 
             // Store session
             const session: Session = {
