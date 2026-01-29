@@ -30,6 +30,14 @@ class ApiClient {
             // If using API Key as well for M2M: headers.set('X-API-Key', API_KEY);
         }
 
+        // Development override for testing different tenants
+        if (import.meta.env.DEV) {
+            const devTenantId = import.meta.env.VITE_DEV_TENANT_ID;
+            if (devTenantId) {
+                headers.set('X-Tenant-ID', devTenantId);
+            }
+        }
+
         const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
             ...options,
             headers,
