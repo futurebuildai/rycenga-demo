@@ -224,6 +224,11 @@ export class LbPaymentHistoryTable extends LbBase {
       failed: 'Failed',
       cancelled: 'Cancelled',
       refunded: 'Refunded',
+      processing: 'Processing',
+      authorized: 'Authorized',
+      captured: 'Captured',
+      initiated: 'Initiated',
+      voided: 'Voided',
     };
     return labels[status] || status;
   }

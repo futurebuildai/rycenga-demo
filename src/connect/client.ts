@@ -6,7 +6,6 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
     private token: string | null = null;
-    private tenantId: string | null = null;
     public onUnauthorized?: () => void;
 
     constructor() {
@@ -14,20 +13,11 @@ class ApiClient {
         if (stored) {
             this.token = stored;
         }
-        const tenant = localStorage.getItem('tenant_id');
-        if (tenant) {
-            this.tenantId = tenant;
-        }
     }
 
     setToken(token: string) {
         this.token = token;
         localStorage.setItem('auth_token', token);
-    }
-
-    setTenant(tenantId: string) {
-        this.tenantId = tenantId;
-        localStorage.setItem('tenant_id', tenantId);
     }
 
     async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -38,17 +28,6 @@ class ApiClient {
         if (this.token && options.requiresAuth !== false) {
             headers.set('Authorization', `Bearer ${this.token}`);
             // If using API Key as well for M2M: headers.set('X-API-Key', API_KEY);
-        }
-        if (this.tenantId) {
-            headers.set('X-Tenant-ID', this.tenantId);
-        }
-
-        // Development override for testing different tenants
-        if (import.meta.env.DEV) {
-            const devTenantId = import.meta.env.VITE_DEV_TENANT_ID;
-            if (devTenantId) {
-                headers.set('X-Tenant-ID', devTenantId);
-            }
         }
 
         const controller = new AbortController();

@@ -6,6 +6,7 @@ import type {
     PaymentTransaction,
     Statement,
     PayInvoicePayload,
+    PaymentPayload,
     InvoiceLine
 } from '../types/domain';
 
@@ -43,7 +44,21 @@ export const BillingService = {
     //         method: 'PUT',
     //     }),
 
+    /**
+     * Create a payment
+     * MAPS TO: POST /v1/payments
+     */
+    createPayment: (payload: PaymentPayload): Promise<PaymentTransaction> =>
+        client.request<PaymentTransaction>('/payments', {
+            method: 'POST',
+            headers: {
+                'Idempotency-Key': crypto.randomUUID(),
+            },
+            body: JSON.stringify(payload),
+        }),
+
     // /**
+    //  * @deprecated Use `createPayment` with `type: 'invoice'` instead.
     //  * Pay an invoice
     //  * MAPS TO: POST /invoices/{invoiceId}/pay
     //  *

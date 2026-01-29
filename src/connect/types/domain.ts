@@ -254,34 +254,6 @@ export interface PaymentConfig {
 }
 
 /**
- * Payment transaction status
- * MAPS TO: payments.status in backend
- */
-export type PaymentStatus = 'pending' | 'submitted' | 'settled' | 'failed' | 'cancelled' | 'refunded';
-
-/**
- * Payment transaction record
- * MAPS TO: GET /v1/payments
- */
-export interface PaymentTransaction {
-    id: number;
-    accountId: number;
-    userId: number | null;
-    externalId: string | null;
-    provider: string;
-    status: PaymentStatus;
-    currencyCode: string;
-    amount: number;
-    convenienceFee: number;
-    totalCharged: number;
-    paymentMethodType: PaymentMethodType | null;
-    submittedAt: string;
-    settledAt: string | null;
-    failureCode: string | null;
-    failureMessage: string | null;
-}
-
-/**
  * Account statement
  * MAPS TO: GET /v1/statements
  */
@@ -386,4 +358,58 @@ export interface InviteMemberPayload {
  */
 export interface PayInvoicePayload {
     paymentMethodId: string;
+}
+
+/**
+ * MIRRORS: velocity-backend/internal/domain/finance.go
+ * Payment creation types for POST /v1/payments
+ */
+export interface PaymentAllocation {
+    invoiceId: number;
+    amount: number;
+}
+
+export type PaymentType = 'balance' | 'invoice' | 'statement' | 'order';
+
+export interface PaymentPayload {
+    type: PaymentType;
+    referenceId?: number;
+    allocations?: PaymentAllocation[];
+    amount: number;
+    currency: string;
+    paymentMethodId: number;
+    convenienceFee?: number;
+}
+
+export type PaymentStatus =
+    | 'pending'
+    | 'submitted'
+    | 'settled'
+    | 'failed'
+    | 'cancelled'
+    | 'refunded'
+    | 'processing'
+    | 'authorized'
+    | 'captured'
+    | 'initiated'
+    | 'voided';
+
+export interface PaymentTransaction {
+    id: number;
+    accountId: number;
+    userId: number | null;
+    externalId: string | null;
+    provider: string;
+    status: PaymentStatus;
+    currencyCode: string;
+    amount: number;
+    convenienceFee: number;
+    totalCharged: number;
+    paymentMethodType: PaymentMethodType | null;
+    submittedAt: string;
+    settledAt: string | null;
+    failureCode: string | null;
+    failureMessage: string | null;
+    referenceType?: string;
+    referenceId?: number;
 }
