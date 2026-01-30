@@ -302,29 +302,6 @@ export class LbPageBilling extends LbBase {
     this.selectedInvoice = null;
   }
 
-  // [L7 AUDIT] Commented out - Backend endpoint NOT IMPLEMENTED
-  // Backend team must add POST /v1/invoices/{id}/pay to router.go
-  // private async handlePayInvoice(invoice: Invoice) {
-  //   // In production, this would open a modal to select payment method
-  //   this.payingInvoiceId = invoice.id;
-  //   try {
-  //     await BillingService.payInvoice(invoice.id, { paymentMethodId: 'pm-1' });
-  //     LbToast.show(`Payment submitted for ${invoice.invoiceNumber}`, 'success');
-  //     // Optimistic update
-  //     this.invoices = this.invoices.map(i =>
-  //       i.id === invoice.id ? { ...i, status: 'paid' as const, amountDue: 0 } : i
-  //     );
-  //     if (this.selectedInvoice?.id === invoice.id) {
-  //       this.selectedInvoice = { ...this.selectedInvoice, status: 'paid' as const, amountDue: 0 };
-  //     }
-  //   } catch (e) {
-  //     console.error('Failed to pay invoice', e);
-  //     LbToast.show('Failed to process payment', 'error');
-  //   } finally {
-  //     this.payingInvoiceId = null;
-  //   }
-  // }
-
   private getStatusClass(status: string): string {
     const statusMap: Record<string, string> = {
       'open': 'status-open',
