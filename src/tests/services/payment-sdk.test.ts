@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { PaymentSDKService } from '../../connect/services/payment-sdk';
 import { BillingService } from '../../connect/services/billing';
 import type { CardTokenizeInput, ACHTokenizeInput } from '../../connect/types/domain';
@@ -16,7 +16,7 @@ vi.mock('../../connect/services/billing', () => ({
 describe('PaymentSDKService', () => {
     let originalCreateElement: typeof document.createElement;
     let mockScript: HTMLScriptElement;
-    let mockAppendChild: ReturnType<typeof vi.fn<[Node], Node>>;
+    let mockAppendChild: Mock<(node: Node) => Node>;
 
     beforeEach(() => {
         // Reset SDK state before each test
