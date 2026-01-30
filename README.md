@@ -17,32 +17,33 @@ A dedicated, **Frontend-Only** Pro customer portal for LBM (Lumber & Building Ma
 
 ## Tech Stack
 
-- **Frontend:** Vanilla HTML, CSS, JavaScript (Account Portal focused)
+- **Frontend:** TypeScript, Lit, Vite
+- **Styling:** CSS Variables, Shadow DOM
+- **State Management:** Reactive Properties (Lit)
 - **Fonts:** Space Grotesk + Inter (Google Fonts)
-- **Design:** Slate/Orange industrial aesthetic
 
 ## Getting Started
 
 ```bash
-# Start local server
-python3 -m http.server 8080
+# Install dependencies
+npm install
 
-# Open in browser
-open http://localhost:8080/index.html
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
 
 ## Folder Structure
 
 ```
-/
-├── index.html          # My Account Portal
-├── style.css           # Global styles
-├── account.css         # Portal styles
-├── account.js          # Portal JS
-├── docs/               # Technical documentation
-│   └── ARCHITECTURE.md # Backend/DB architecture
-└── .agent/             # Agent collaboration docs
-    └── README.md       # Instructions for agents
+src/
+├── components/         # Shared UI components (atoms, molecules)
+├── features/           # Feature-based modules (billing, etc.)
+├── connect/            # API services and type definitions
+├── services/           # Application services (auth, router)
+└── main.ts             # Application entry point
 ```
 
 ## Documentation

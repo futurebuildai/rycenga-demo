@@ -29,7 +29,10 @@
         "declaration": false,
         "declarationMap": false,
         "sourceMap": true,
-        "outDir": "./dist"
+        "outDir": "./dist",
+        "types": [
+            "vitest/globals"
+        ]
     },
     "include": [
         "src/**/*.ts"

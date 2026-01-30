@@ -12,6 +12,15 @@ export default defineConfig({
             },
         },
     },
+    server: {
+        proxy: {
+            '/api/v1': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api\/v1/, '/v1'),
+            },
+        },
+    },
     resolve: {
         alias: {
             '@': resolve(__dirname, 'src'),

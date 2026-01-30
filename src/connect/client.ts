@@ -38,24 +38,32 @@ class ApiClient {
             }
         }
 
-        const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
-            ...options,
-            headers,
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
 
-        if (response.status === 401) {
-            if (this.onUnauthorized) {
-                this.onUnauthorized();
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
+
+            if (response.status === 401) {
+                if (this.onUnauthorized) {
+                    this.onUnauthorized();
+                }
+                throw new Error('Unauthorized');
             }
-            throw new Error('Unauthorized');
-        }
 
-        if (!response.ok) {
-            // Handle 401 Unauthorized, etc.
-            throw new Error(`API Error: ${response.statusText}`);
-        }
+            if (!response.ok) {
+                // Handle 401 Unauthorized, etc.
+                throw new Error(`API Error: ${response.statusText}`);
+            }
 
-        return response.json();
+            return response.json();
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 }
 

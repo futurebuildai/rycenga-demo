@@ -303,11 +303,11 @@ export class LbSidebar extends LbBase {
       <div class="account-sidebar-footer">
         <div class="account-support">
           <p class="support-label">Need Help?</p>
-          <a href="tel:${support?.phone?.replace(/\D/g, '')}" class="support-phone">
+          <a href="tel:${(support?.phone ?? '(555) 123-4567').replace(/\D/g, '')}" class="support-phone">
             ${support?.phone ?? '(555) 123-4567'}
           </a>
-          <a href="mailto:${support?.email}" class="support-email">
-            ${support?.email ?? 'support@lumberboss.com'}
+          <a href="mailto:${support?.email ?? 'support@velocity.com'}" class="support-email">
+            ${support?.email ?? 'support@velocity.com'}
           </a>
         </div>
         <button class="sign-out-btn" @click=${this.handleSignOut}>
