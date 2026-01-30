@@ -10,6 +10,7 @@ import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { AccountData } from '../../types/index.js';
+import '../../features/billing/components/lb-payment-modal.js';
 
 @customElement('lb-page-overview')
 export class LbPageOverview extends LbBase {
@@ -163,8 +164,16 @@ export class LbPageOverview extends LbBase {
   @state() private creditLimit = 0;
   @state() private creditAvailable = 0;
 
+  // Payment Modal
+  @state() private paymentModalOpen = false;
+  @state() private paymentAmount = 0;
+
   async connectedCallback() {
     super.connectedCallback();
+    this.refreshDashboard();
+  }
+
+  private async refreshDashboard() {
     try {
       const [account, summary] = await Promise.all([
         DataService.getAccountData(),
@@ -190,9 +199,13 @@ export class LbPageOverview extends LbBase {
   }
 
   private handlePayNow() {
-    // Navigate to billing page where full payment flow is implemented
-    RouterService.navigate('billing');
-    LbToast.show('Navigate to Billing to pay open invoices', 'info');
+    this.paymentAmount = this.openInvoicesTotal;
+    this.paymentModalOpen = true;
+  }
+
+  private handlePaymentSuccess() {
+    this.refreshDashboard();
+    this.paymentModalOpen = false;
   }
 
 
@@ -226,7 +239,7 @@ export class LbPageOverview extends LbBase {
             <span class="stat-value">${this.formatCurrency(this.openInvoicesTotal)}</span>
             <span class="stat-meta">From open invoices</span>
           </div>
-          <button class="btn-cta stat-action" @click=${this.handlePayNow}>Pay Now</button>
+          <button class="btn-cta stat-action" @click=${this.handlePayNow} ?disabled=${this.openInvoicesTotal <= 0}>Pay Now</button>
         </div>
 
         <div class="stat-card">
@@ -258,6 +271,14 @@ export class LbPageOverview extends LbBase {
           <button class="stat-link" @click=${() => RouterService.navigate('estimates')}>Review →</button>
         </div>
       </div>
+
+      <lb-payment-modal
+        .open=${this.paymentModalOpen}
+        .amount=${this.paymentAmount}
+        type="balance"
+        @close=${() => this.paymentModalOpen = false}
+        @payment-success=${this.handlePaymentSuccess}
+      ></lb-payment-modal>
     `;
   }
 }

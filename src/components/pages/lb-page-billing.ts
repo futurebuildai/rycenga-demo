@@ -11,6 +11,7 @@ import { BillingService } from '../../connect/services/billing.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Invoice, InvoiceLine } from '../../types/index.js';
 import '../../features/billing/components/lb-payment-history-table.js';
+import '../../features/billing/components/lb-payment-modal.js';
 
 @customElement('lb-page-billing')
 export class LbPageBilling extends LbBase {
@@ -261,9 +262,13 @@ export class LbPageBilling extends LbBase {
   @state() private currentView: 'list' | 'detail' = 'list';
   @state() private selectedInvoice: Invoice | null = null;
   @state() private activeTab = 'invoices';
-  @state() private payingInvoiceId: number | null = null;
   @state() private selectedInvoiceLines: InvoiceLine[] = [];
   @state() private loadingLines = false;
+
+  // Payment Modal State
+  @state() private paymentModalOpen = false;
+  @state() private paymentAmount = 0;
+  @state() private paymentInvoiceId: number | undefined;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -334,6 +339,24 @@ export class LbPageBilling extends LbBase {
     return this.invoices.filter(i => i.status === 'open' || i.status === 'overdue').length;
   }
 
+  private openPaymentModal(invoice: Invoice) {
+    this.paymentInvoiceId = invoice.id;
+    this.paymentAmount = invoice.amountDue;
+    this.paymentModalOpen = true;
+  }
+
+  private handlePaymentSuccess() {
+    this.loadInvoices(); // Refresh invoices to show updated status
+    if (this.selectedInvoice && this.paymentInvoiceId === this.selectedInvoice.id) {
+      // Ideally we'd re-fetch the specific invoice, but for now we can infer payment
+      // or just depend on loadInvoices to update the list view.
+      // If we stay in detail view, we might want to manually update the selectedInvoice status or close detail view.
+      this.backToList();
+    }
+    this.paymentInvoiceId = undefined;
+    this.paymentAmount = 0;
+  }
+
   private renderListView() {
     return html`
       <div class="billing-summary">
@@ -368,13 +391,11 @@ export class LbPageBilling extends LbBase {
             <div class="invoice-amount">${this.formatCurrency(invoice.amountDue)}</div>
             <span class="status-badge ${this.getStatusClass(invoice.status)}">${invoice.status}</span>
             <button class="btn btn-outline btn-sm" @click=${() => this.viewInvoiceDetail(invoice)}>View</button>
-            ${/* [L7 AUDIT] Pay button disabled - Backend endpoint NOT IMPLEMENTED
             <button
               class="btn btn-cta btn-sm"
-              @click=${() => this.handlePayInvoice(invoice)}
-              ?disabled=${this.payingInvoiceId === invoice.id || invoice.status === 'paid'}
-            >${this.payingInvoiceId === invoice.id ? 'Paying...' : 'Pay'}</button>
-            */ ''}
+              @click=${() => this.openPaymentModal(invoice)}
+              ?disabled=${invoice.status === 'paid' || invoice.status === 'void' || invoice.status === 'cancelled'}
+            >Pay</button>
           </div>
         `)}
       ` : this.activeTab === 'statements' ? html`
@@ -466,13 +487,11 @@ export class LbPageBilling extends LbBase {
         </div>
 
         <div class="detail-actions">
-          ${/* [L7 AUDIT] Pay Invoice button disabled - Backend endpoint NOT IMPLEMENTED
           <button
             class="btn btn-cta"
-            @click=${() => this.handlePayInvoice(invoice)}
-            ?disabled=${this.payingInvoiceId === invoice.id || invoice.status === 'paid'}
-          >${this.payingInvoiceId === invoice.id ? 'Paying...' : 'Pay Invoice'}</button>
-          */ ''}
+            @click=${() => this.openPaymentModal(invoice)}
+            ?disabled=${invoice.status === 'paid' || invoice.status === 'void' || invoice.status === 'cancelled'}
+          >Pay Invoice</button>
           <button class="btn btn-outline" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
         </div>
       </div>
@@ -493,6 +512,15 @@ export class LbPageBilling extends LbBase {
       </div>
 
       ${this.currentView === 'list' ? this.renderListView() : this.renderDetailView()}
+
+      <lb-payment-modal
+        .open=${this.paymentModalOpen}
+        .amount=${this.paymentAmount}
+        .invoiceId=${this.paymentInvoiceId}
+        type="invoice"
+        @close=${() => this.paymentModalOpen = false}
+        @payment-success=${this.handlePaymentSuccess}
+      ></lb-payment-modal>
     `;
   }
 }
