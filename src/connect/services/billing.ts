@@ -57,21 +57,6 @@ export const BillingService = {
             body: JSON.stringify(payload),
         }),
 
-    // /**
-    //  * @deprecated Use `createPayment` with `type: 'invoice'` instead.
-    //  * Pay an invoice
-    //  * MAPS TO: POST /invoices/{invoiceId}/pay
-    //  *
-    //  * TODO: [L7 AUDIT] Backend endpoint NOT IMPLEMENTED
-    //  * Backend team must add POST /v1/invoices/{id}/pay to router.go
-    //  * No /invoices/{id}/pay route currently exists in backend
-    //  */
-    // payInvoice: (invoiceId: number, payload: PayInvoicePayload): Promise<void> =>
-    //     client.request<void>(`/invoices/${invoiceId}/pay`, {
-    //         method: 'POST',
-    //         body: JSON.stringify(payload),
-    //     }),
-
     /**
      * Get line items for an invoice
      * MAPS TO: GET /v1/invoices/{id}/lines
