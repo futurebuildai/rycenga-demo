@@ -177,19 +177,4 @@ describe('BillingService', () => {
             expect(result).toEqual(mockStatements);
         });
     });
-
-    // [L7 AUDIT] Commented out - Backend endpoint NOT IMPLEMENTED
-    // Backend team must add POST /v1/invoices/{id}/pay to router.go
-    // describe('payInvoice', () => {
-    //     it('should POST to /invoices/{id}/pay with paymentMethodId', async () => {
-    //         vi.mocked(client.request).mockResolvedValue(undefined);
-    //
-    //         await BillingService.payInvoice(123, { paymentMethodId: '456' });
-    //
-    //         expect(client.request).toHaveBeenCalledWith('/invoices/123/pay', {
-    //             method: 'POST',
-    //             body: JSON.stringify({ paymentMethodId: '456' }),
-    //         });
-    //     });
-    // });
 });
