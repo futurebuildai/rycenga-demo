@@ -7,6 +7,7 @@ import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
+import { DocumentsService } from '../../connect/services/documents.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Order } from '../../types/index.js';
 
@@ -343,6 +344,28 @@ export class LbPageOrders extends LbBase {
     return order.lines?.reduce((sum, line) => sum + line.lineTotal, 0) || 0;
   }
 
+  private async downloadOrderPdf(order: Order) {
+    try {
+      LbToast.show('Preparing PDF...', 'info');
+      const response = await DocumentsService.getDocumentPdf({
+        type: 'order',
+        id: order.id,
+        idType: 'internal',
+      });
+
+      const url = URL.createObjectURL(response.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) {
+      console.error('[LbPageOrders] Failed to download order PDF', err);
+      LbToast.show('Failed to download PDF. Please try again.', 'error');
+    }
+  }
+
   private renderListView() {
     return html`
       <div class="filters-bar">
@@ -404,7 +427,7 @@ export class LbPageOrders extends LbBase {
           </svg>
           Back to List
         </button>
-        <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
+        <button class="btn btn-outline btn-sm" @click=${() => this.downloadOrderPdf(order)}>Download PDF</button>
       </div>
 
       <div class="detail-card">

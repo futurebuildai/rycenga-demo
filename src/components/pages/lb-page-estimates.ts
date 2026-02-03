@@ -7,6 +7,7 @@ import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
+import { DocumentsService } from '../../connect/services/documents.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Estimate } from '../../types/index.js';
 
@@ -300,6 +301,28 @@ export class LbPageEstimates extends LbBase {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
 
+  private async downloadEstimatePdf(estimate: Estimate) {
+    try {
+      LbToast.show('Preparing PDF...', 'info');
+      const response = await DocumentsService.getDocumentPdf({
+        type: 'quote',
+        id: estimate.id,
+        idType: 'internal',
+      });
+
+      const url = URL.createObjectURL(response.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) {
+      console.error('[LbPageEstimates] Failed to download estimate PDF', err);
+      LbToast.show('Failed to download PDF. Please try again.', 'error');
+    }
+  }
+
   private formatDate(dateStr: string): string {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -377,7 +400,7 @@ export class LbPageEstimates extends LbBase {
           Back to List
         </button>
         <div class="estimate-actions-group">
-          <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
+          <button class="btn btn-outline btn-sm" @click=${() => this.downloadEstimatePdf(estimate)}>Download PDF</button>
           <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('Data export coming soon', 'info')}>Export Data</button>
         </div>
       </div>

@@ -8,8 +8,10 @@ import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
 import { BillingService } from '../../connect/services/billing.js';
+import { DocumentsService } from '../../connect/services/documents.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Invoice, InvoiceLine } from '../../types/index.js';
+import type { Statement } from '../../connect/types/domain.js';
 import '../../features/billing/components/lb-payment-history-table.js';
 import '../../features/billing/components/lb-payment-modal.js';
 
@@ -264,6 +266,7 @@ export class LbPageBilling extends LbBase {
   @state() private activeTab = 'invoices';
   @state() private selectedInvoiceLines: InvoiceLine[] = [];
   @state() private loadingLines = false;
+  @state() private statements: Statement[] = [];
 
   // Payment Modal State
   @state() private paymentModalOpen = false;
@@ -272,7 +275,10 @@ export class LbPageBilling extends LbBase {
 
   async connectedCallback() {
     super.connectedCallback();
-    await this.loadInvoices();
+    await Promise.all([
+      this.loadInvoices(),
+      this.loadStatements(),
+    ]);
   }
 
   private async loadInvoices() {
@@ -282,6 +288,14 @@ export class LbPageBilling extends LbBase {
       console.error('Failed to load invoices', e);
     } finally {
       this.loading = false;
+    }
+  }
+
+  private async loadStatements() {
+    try {
+      this.statements = await BillingService.getStatements();
+    } catch (e) {
+      console.error('Failed to load statements', e);
     }
   }
 
@@ -357,6 +371,50 @@ export class LbPageBilling extends LbBase {
     this.paymentAmount = 0;
   }
 
+  private async downloadInvoicePdf(invoice: Invoice) {
+    try {
+      LbToast.show('Preparing PDF...', 'info');
+      const response = await DocumentsService.getDocumentPdf({
+        type: 'invoice',
+        id: invoice.id,
+        idType: 'internal',
+      });
+
+      const url = URL.createObjectURL(response.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) {
+      console.error('[LbPageBilling] Failed to download invoice PDF', err);
+      LbToast.show('Failed to download PDF. Please try again.', 'error');
+    }
+  }
+
+  private async downloadStatementPdf(statement: Statement) {
+    try {
+      LbToast.show('Preparing PDF...', 'info');
+      const response = await DocumentsService.getDocumentPdf({
+        type: 'statement',
+        id: statement.id,
+        idType: 'internal',
+      });
+
+      const url = URL.createObjectURL(response.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) {
+      console.error('[LbPageBilling] Failed to download statement PDF', err);
+      LbToast.show('Failed to download PDF. Please try again.', 'error');
+    }
+  }
+
   private renderListView() {
     return html`
       <div class="billing-summary">
@@ -399,7 +457,20 @@ export class LbPageBilling extends LbBase {
           </div>
         `)}
       ` : this.activeTab === 'statements' ? html`
-        <p class="text-muted">Monthly account statements will be displayed here.</p>
+        ${this.statements.length === 0 ? html`
+          <p class="text-muted">No monthly account statements found.</p>
+        ` : this.statements.map(statement => html`
+          <div class="invoice-row">
+            <div class="invoice-info">
+              <span class="invoice-number">${statement.statementNumber || `Statement #${statement.id}`}</span>
+              <span class="invoice-project">Date: ${this.formatDate(statement.statementDate)}</span>
+            </div>
+            <div class="invoice-amount">${this.formatCurrency(statement.closingBalance)}</div>
+            <span class="status-badge status-paid">Settled</span>
+            <button class="btn btn-outline btn-sm" @click=${() => this.downloadStatementPdf(statement)}>Download PDF</button>
+            <span></span>
+          </div>
+        `)}
       ` : html`
         <lb-payment-history-table></lb-payment-history-table>
       `}
@@ -420,7 +491,7 @@ export class LbPageBilling extends LbBase {
           </svg>
           Back to Invoices
         </button>
-        <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
+        <button class="btn btn-outline btn-sm" @click=${() => this.downloadInvoicePdf(invoice)}>Download PDF</button>
       </div>
 
       <div class="detail-card">
@@ -492,7 +563,7 @@ export class LbPageBilling extends LbBase {
             @click=${() => this.openPaymentModal(invoice)}
             ?disabled=${invoice.status === 'paid' || invoice.status === 'void' || invoice.status === 'cancelled'}
           >Pay Invoice</button>
-          <button class="btn btn-outline" @click=${() => LbToast.show('PDF download coming soon', 'info')}>Download PDF</button>
+          <button class="btn btn-outline" @click=${() => this.downloadInvoicePdf(invoice)}>Download PDF</button>
         </div>
       </div>
     `;
