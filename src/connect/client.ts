@@ -65,6 +65,51 @@ class ApiClient {
             clearTimeout(timeoutId);
         }
     }
+
+    async requestBlob(endpoint: string, options: RequestOptions = {}): Promise<{ blob: Blob; contentType: string; contentDisposition: string; }> {
+        const headers = new Headers(options.headers);
+
+        if (this.token && options.requiresAuth !== false) {
+            headers.set('Authorization', `Bearer ${this.token}`);
+        }
+
+        if (import.meta.env.DEV) {
+            const devTenantId = import.meta.env.VITE_DEV_TENANT_ID;
+            if (devTenantId) {
+                headers.set('X-Tenant-ID', devTenantId);
+            }
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
+
+            if (response.status === 401) {
+                if (this.onUnauthorized) {
+                    this.onUnauthorized();
+                }
+                throw new Error('Unauthorized');
+            }
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.statusText}`);
+            }
+
+            return {
+                blob: await response.blob(),
+                contentType: response.headers.get('Content-Type') || '',
+                contentDisposition: response.headers.get('Content-Disposition') || '',
+            };
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
 }
 
 export const client = new ApiClient();
