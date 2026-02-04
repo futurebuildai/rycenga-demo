@@ -186,17 +186,14 @@ class DataServiceImpl {
 
     /**
      * Get Dashboard Summary
-     * Requires getAccountData() to be called first to set currentAccountId
+     * Uses auth/account context on backend.
      */
     async getDashboardSummary(): Promise<DashboardSummary> {
         if (!this.currentAccountId) {
-            // Ensure account data is loaded first
+            // Keep account context available for compatibility fallback only.
             await this.getAccountData();
         }
-        if (!this.currentAccountId) {
-            throw new Error('No account ID available for dashboard summary');
-        }
-        return DashboardService.getSummary(this.currentAccountId);
+        return DashboardService.getSummary();
     }
 
     /**
