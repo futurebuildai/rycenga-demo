@@ -26,6 +26,7 @@
 - [x] **Settings Page**: Restored Profile management section, updated demo user data.
 - [x] **Wallet & Team**: Review payment method cards and team member list styling.
 - [x] **Auth Flows**: Review Login/Sign-up visual flows (mocked).
+- [x] **Admin Portal**: Implemented Financial Overview Status, Account Number, and Payment Request flow.
 
 ---
 

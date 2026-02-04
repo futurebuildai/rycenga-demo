@@ -10,6 +10,7 @@ import { DataService } from '../../services/data.service.js';
 import { DocumentsService } from '../../connect/services/documents.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Order } from '../../types/index.js';
+import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
 @customElement('lb-page-orders')
 export class LbPageOrders extends LbBase {
@@ -248,22 +249,44 @@ export class LbPageOrders extends LbBase {
   @state() private activeFilter = 'All';
   @state() private loadingLines = false;
   @state() private lineError: string | null = null;
+  @state() private ordersLoading = false;
+  @state() private page = 1;
+  @state() private pageSize = 10;
+  @state() private totalCount = 0;
 
   private filters = ['All', 'Pending', 'Confirmed', 'Ready for Pickup', 'Shipped', 'Delivered', 'Cancelled'];
 
   async connectedCallback() {
     super.connectedCallback();
-    await this.loadOrders();
+    await this.loadOrders(true);
   }
 
-  private async loadOrders() {
+  private async loadOrders(initialLoad = false) {
     try {
-      this.orders = await DataService.getOrders();
+      if (initialLoad) {
+        this.loading = true;
+      } else {
+        this.ordersLoading = true;
+      }
+      const { items, total } = await DataService.getOrders(
+        this.pageSize,
+        (this.page - 1) * this.pageSize,
+      );
+      this.orders = items;
+      this.totalCount = total;
     } catch (e) {
       console.error('Failed to load orders', e);
     } finally {
       this.loading = false;
+      this.ordersLoading = false;
     }
+  }
+
+  private async handlePageChange(page: number) {
+    const totalPages = Math.ceil(this.totalCount / this.pageSize);
+    if (page < 1 || page > totalPages || page === this.page) return;
+    this.page = page;
+    await this.loadOrders();
   }
 
   private async viewOrderDetail(order: Order) {
@@ -366,8 +389,34 @@ export class LbPageOrders extends LbBase {
     }
   }
 
+  private renderPageNumbers() {
+    const totalPages = Math.ceil(this.totalCount / this.pageSize);
+    if (totalPages <= 1) return null;
+
+    return buildPaginationTokens(this.page, totalPages).map(token =>
+      token === 'ellipsis'
+        ? html`<span style="align-self: center; color: var(--color-text-muted);">...</span>`
+        : html`
+            <button
+              class="btn btn-outline btn-sm ${this.page === token ? 'active' : ''}"
+              ?disabled=${this.ordersLoading}
+              @click=${() => this.handlePageChange(token)}
+              style="${this.page === token ? 'background: var(--color-primary); color: white; border-color: var(--color-primary);' : ''}"
+            >
+              ${token}
+            </button>
+          `,
+    );
+  }
+
   private renderListView() {
+    const { start, end } = getPaginationBounds(this.page, this.pageSize, this.totalCount);
     return html`
+      ${this.ordersLoading ? html`
+        <div style="margin-bottom: var(--space-md); color: var(--color-text-muted); font-size: var(--text-sm);">
+          Updating orders...
+        </div>
+      ` : ''}
       <div class="filters-bar">
         <div class="filter-chips">
           ${this.filters.map(filter => html`
@@ -404,6 +453,17 @@ export class LbPageOrders extends LbBase {
             </div>
           </div>
         `)}
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-lg);">
+        <div style="color: var(--color-text-muted); font-size: var(--text-sm);">
+          Showing ${start}-${end} of ${this.totalCount}
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+          <button class="btn btn-outline btn-sm" ?disabled=${this.page === 1 || this.ordersLoading} @click=${() => this.handlePageChange(this.page - 1)}>Previous</button>
+          ${this.renderPageNumbers()}
+          <button class="btn btn-outline btn-sm" ?disabled=${this.page >= Math.ceil(this.totalCount / this.pageSize) || this.ordersLoading} @click=${() => this.handlePageChange(this.page + 1)}>Next</button>
+        </div>
       </div>
     `;
   }

@@ -10,6 +10,7 @@ import { DataService } from '../../services/data.service.js';
 import { DocumentsService } from '../../connect/services/documents.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Estimate } from '../../types/index.js';
+import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
 @customElement('lb-page-estimates')
 export class LbPageEstimates extends LbBase {
@@ -224,26 +225,49 @@ export class LbPageEstimates extends LbBase {
   @state() private activeFilter = 'All';
   @state() private loadingLines = false;
   @state() private lineError: string | null = null;
+  @state() private estimatesLoading = false;
+  @state() private page = 1;
+  @state() private pageSize = 10;
+  @state() private totalCount = 0;
 
   private filters = ['All', 'Pending', 'Accepted', 'Expired'];
 
   async connectedCallback() {
     super.connectedCallback();
-    await this.loadEstimates();
+    await this.loadEstimates(true);
   }
 
-  private async loadEstimates() {
-    this.loading = true;
-    this.error = null;
+  private async loadEstimates(initialLoad = false) {
+    if (initialLoad) {
+      this.loading = true;
+      this.error = null;
+    } else {
+      this.estimatesLoading = true;
+    }
     try {
-      this.estimates = await DataService.getEstimates();
+      const { items, total } = await DataService.getEstimates(
+        this.pageSize,
+        (this.page - 1) * this.pageSize,
+      );
+      this.estimates = items;
+      this.totalCount = total;
     } catch (e) {
       console.error('Failed to load estimates', e);
-      this.error = 'Failed to load estimates. Please try again later.';
-      LbToast.show(this.error, 'error');
+      if (initialLoad) {
+        this.error = 'Failed to load estimates. Please try again later.';
+      }
+      LbToast.show('Failed to load estimates. Please try again later.', 'error');
     } finally {
       this.loading = false;
+      this.estimatesLoading = false;
     }
+  }
+
+  private async handlePageChange(page: number) {
+    const totalPages = Math.ceil(this.totalCount / this.pageSize);
+    if (page < 1 || page > totalPages || page === this.page) return;
+    this.page = page;
+    await this.loadEstimates();
   }
 
   private async viewEstimateDetail(estimate: Estimate) {
@@ -333,8 +357,34 @@ export class LbPageEstimates extends LbBase {
     return estimate.projectId ? `Project #${estimate.projectId}` : 'No Project Assigned';
   }
 
+  private renderPageNumbers() {
+    const totalPages = Math.ceil(this.totalCount / this.pageSize);
+    if (totalPages <= 1) return null;
+
+    return buildPaginationTokens(this.page, totalPages).map(token =>
+      token === 'ellipsis'
+        ? html`<span style="align-self: center; color: var(--color-text-muted);">...</span>`
+        : html`
+            <button
+              class="btn btn-outline btn-sm ${this.page === token ? 'active' : ''}"
+              ?disabled=${this.estimatesLoading}
+              @click=${() => this.handlePageChange(token)}
+              style="${this.page === token ? 'background: var(--color-primary); color: white; border-color: var(--color-primary);' : ''}"
+            >
+              ${token}
+            </button>
+          `,
+    );
+  }
+
   private renderListView() {
+    const { start, end } = getPaginationBounds(this.page, this.pageSize, this.totalCount);
     return html`
+      ${this.estimatesLoading ? html`
+        <div style="margin-bottom: var(--space-md); color: var(--color-text-muted); font-size: var(--text-sm);">
+          Updating estimates...
+        </div>
+      ` : ''}
       <div class="filters-bar">
         ${this.filters.map(filter => html`
           <button 
@@ -381,6 +431,17 @@ export class LbPageEstimates extends LbBase {
             </div>
           </div>
         `)}
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-lg);">
+        <div style="color: var(--color-text-muted); font-size: var(--text-sm);">
+          Showing ${start}-${end} of ${this.totalCount}
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+          <button class="btn btn-outline btn-sm" ?disabled=${this.page === 1 || this.estimatesLoading} @click=${() => this.handlePageChange(this.page - 1)}>Previous</button>
+          ${this.renderPageNumbers()}
+          <button class="btn btn-outline btn-sm" ?disabled=${this.page >= Math.ceil(this.totalCount / this.pageSize) || this.estimatesLoading} @click=${() => this.handlePageChange(this.page + 1)}>Next</button>
+        </div>
       </div>
     `;
   }
@@ -486,7 +547,7 @@ export class LbPageEstimates extends LbBase {
       return html`
         <div style="text-align: center; padding: var(--space-2xl); background: #fee2e2; border-radius: var(--radius-lg); color: #991b1b;">
           <p>${this.error}</p>
-          <button class="btn btn-outline" style="margin-top: var(--space-md);" @click=${this.loadEstimates}>Retry</button>
+          <button class="btn btn-outline" style="margin-top: var(--space-md);" @click=${() => this.loadEstimates(true)}>Retry</button>
         </div>
       `;
     }

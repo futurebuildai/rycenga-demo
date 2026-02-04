@@ -1,39 +1,63 @@
-# Session Handoff - Sales Data & Invoice Line Items
+# Session Handoff - Admin Portal Refinements & Payment Request
 
-**Date:** 2026-01-22
-**Focus:** Backend Schema Alignment & Invoice Details (Sprint Task #6)
+**Date:** 2026-02-03
+**Focus:** Admin Portal UI Polish, Invite Flow, and Invoice Payment Request
 
 ## Work Summary
 
 | Activity | Details | Status |
 | :--- | :--- | :--- |
-| **Feature** | **Invoice Details**: Implemented detailed line item fetching and table rendering in `lb-page-billing.ts`. | ✅ Complete |
-| **Logic** | **Backend Schema Sync**: Audited `sales.go` and aligned all domain types and mappers (itemCode, extendedPrice, etc.). | ✅ Complete |
-| **Service** | **Billing Service**: Added `getInvoiceLines` and unified API pathing (removed redundant `/v1`). | ✅ Complete |
-| **Verification** | **Build & Typecheck**: Resolved pre-existing regressions in `DataService` and `SalesService`. | ✅ Passed |
-| **Docs** | Updated `ROADMAP.md`, `CONTEXT.md`, and `DECISIONS.md`. Created Before/After walkthrough. | ✅ Synced |
+| **Feature** | **Invoice Payment**: Added "Request Payment" flow with multi-select checkboxes and "Coming Soon" modal. | ✅ Complete |
+| **Feature** | **Status Stamp**: Added "Healthy" / "Past Due" visual stamp to Account Financial Overview. | ✅ Complete |
+| **Feature** | **Team Invite**: Added "Invite Member" modal in Team Settings. | ✅ Complete |
+| **UI Polish** | **Account Header**: added `Account #ID` display. **Tabs**: Reordered to Invoices/Estimates/Orders and fixed click bugs. | ✅ Complete |
+| **Workflow** | **Auth Bypass**: Created robust `local_auth_bypass.md` for verifiable Admin testing. | ✅ Complete |
 
 ## Code Changes
 
-### Core Services & Logic
-- **`src/connect/services/billing.ts`**: Added `getInvoiceLines` with correct API pathing.
-- **`src/connect/services/sales.ts`**: Fixed type regressions for order and quote lines.
-- **`src/connect/mappers.ts`**: Aligned mapping keys with real backend field names.
-- **`src/connect/types/domain.ts`**: Synchronized domain models with backend structs.
-- **`src/services/data.service.ts`**: Added `getInvoiceLines` bridge and resolved missing type imports.
+### Admin Portal (`src/admin/pages/`)
+- **`page-account-details.ts`**:
+    - Implemented invoice selection state and "Request Payment" button.
+    - Added "Health/Past Due" status stamp logic.
+    - Fixed tab navigation bugs and reordered tabs.
+    - Added Account Number to header.
+- **`page-settings.ts`**:
+    - Implemented "Invite Member" modal and state.
+    - Added optimistic UI updates for new members.
+- **`src/admin/services/admin-data.service.ts`**:
+    - Added `inviteTeamMember` mock method.
 
-### UI Components
-- **`src/components/pages/lb-page-billing.ts`**:
-    - Added reactive state for invoice lines.
-    - Implemented drill-down logic with loading/error handlers.
-    - Added responsive line items table using CSS Grid for alignment.
+### Workflows
+- **`.agent/workflows/local_auth_bypass.md`**: New standard for local auth testing (DevLogin + Mock Fetch).
 
 ## Verification
-- **Build**: `npm run build` passed.
-- **Typecheck**: `tsc --noEmit` passed with 0 errors.
-- **Zero Trust Audit**: Verified that API schema mismatches were resolved by auditing backend source code.
+- **Browser**: Verified Admin Portal access via `/admin.html`.
+- **UI**: Confirmed payment modal, status stamp, and account number visibility.
+- **Auth**: Validated auth bypass strategies.
 
 ## Next Steps (Prioritized)
-1. **SSO Integration**: Map auth context for dealer-specific subdomains.
-2. **Real-time Sync**: Expand push notification support for order status changes.
-3. **PDF Generation**: Bridge frontend "Download PDF" button to backend PDF retrieval endpoint.
+1.  **Backend Integration**: Connect "Request Payment" and "Invite Member" to real API endpoints.
+## ⚠️ Backend Interface Gaps (Critical for Rich UI)
+The following fields are expected by the Admin UI but are **missing** from the current `domain.ts` contract. The Frontend Service currently defaults these to safe values (0, "Unknown", "Current"), meaning the UI will look "empty" or "healthy" until these are provided.
+
+### 1. Account List (`GET /admin/accounts`)
+| Field | Frontend Expectation | Current Backend State | Impact |
+| :--- | :--- | :--- | :--- |
+| `pastDueBalance` | `number` (USD) | **Missing** | Status Stamp always "Healthy" |
+| `aging` | `'Current'|'30'|'60'|'90'|'90+'` | **Missing** | Aging column always "Current" |
+| `openInvoicesCount` | `number` | **Missing** | Open Invoices column shows "0" |
+| `primaryContact` | `string` (Name) | **Missing** | Contact column shows "Unknown" |
+
+### 2. Dashboard (`GET /admin/dashboard/summary`)
+| Field | Frontend Expectation | Current Backend State | Impact |
+| :--- | :--- | :--- | :--- |
+| `totalAccounts` | `number` | **Missing** | "Total Accounts" tile shows "0" |
+
+### 3. Orders (`GET /admin/accounts/{id}/orders`)
+| Field | Frontend Expectation | Current Backend State | Impact |
+| :--- | :--- | :--- | :--- |
+| `itemsCount` | `number` | **Missing** | Order line item count shows "0" |
+
+**Recommendation**: The Backend Team should extend the `Account` response or provide a "Rich Account" endpoint that aggregates these financial metrics to support the Admin functionality.
+2.  **Payment Gateway**: Implement actual payment processing interface (replace "Coming Soon" modal).
+3.  **Role Management**: Expand permissions for "Tenant Staff" vs "Tenant Owner".
