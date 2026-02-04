@@ -12,6 +12,7 @@ export interface Session {
 }
 
 const STORAGE_KEY = 'lumberboss_session';
+const IMPERSONATION_KEY = 'impersonation_session';
 
 class AuthServiceImpl {
     private listeners: Set<(isAuthenticated: boolean) => void> = new Set();
@@ -53,6 +54,7 @@ class AuthServiceImpl {
 
             this.currentUser = response.user;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+            localStorage.removeItem(IMPERSONATION_KEY);
             this.notifyListeners(true);
             return true;
         } catch (error) {
@@ -67,6 +69,7 @@ class AuthServiceImpl {
     logout(): void {
         ConnectorAuth.logout();
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(IMPERSONATION_KEY);
         this.currentUser = null;
         this.notifyListeners(false);
     }

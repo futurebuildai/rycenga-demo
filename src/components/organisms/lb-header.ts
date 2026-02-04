@@ -18,7 +18,7 @@ export class LbHeader extends LbBase {
         background: white;
         border-bottom: 1px solid var(--color-border);
         position: sticky;
-        top: 0;
+        top: var(--impersonation-banner-height, 0px);
         z-index: 1000;
       }
 

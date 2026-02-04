@@ -7,6 +7,7 @@ import './pages/page-invoice-details.js';
 import './pages/page-settings.js';
 import './pages/page-messaging.js';
 import './pages/page-ar-center.js';
+import './pages/page-users.js';
 
 export function initRouter(outlet: HTMLElement): Router {
     const router = new Router(outlet);
@@ -14,6 +15,7 @@ export function initRouter(outlet: HTMLElement): Router {
     router.setRoutes([
         { path: '/admin', component: 'admin-page-dashboard' },
         { path: '/admin/accounts', component: 'admin-page-accounts' },
+        { path: '/admin/users', component: 'admin-page-users' },
         { path: '/admin/accounts/:id', component: 'admin-page-account-details' },
         { path: '/admin/invoices/:id', component: 'admin-page-invoice-details' },
         { path: '/admin/settings', component: 'admin-page-settings' },

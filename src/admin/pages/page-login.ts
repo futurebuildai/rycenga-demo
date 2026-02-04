@@ -135,6 +135,10 @@ export class PageLogin extends LitElement {
 
     @state() private email = '';
     @state() private password = '';
+    @state() private otpCode = '';
+    @state() private otpRequestId: number | null = null;
+    @state() private otpEmail = '';
+    @state() private otpExpiresAt = '';
     @state() private errorMessage = '';
     @state() private isLoading = false;
 
@@ -152,12 +156,34 @@ export class PageLogin extends LitElement {
             const result = await AdminAuthService.login(this.email, this.password);
 
             if (result.success) {
-                // Auth state change triggers re-render via AdminAuthService subscription
+                if (result.requiresOtp && result.otpRequestId && result.email) {
+                    this.otpRequestId = result.otpRequestId;
+                    this.otpEmail = result.email;
+                    this.otpExpiresAt = result.expiresAt || '';
+                }
             } else {
                 this.errorMessage = result.reason ?? 'Login failed.';
             }
         } catch {
             this.errorMessage = 'An unexpected error occurred.';
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    private async handleVerifyOTP(e: Event) {
+        e.preventDefault();
+        this.errorMessage = '';
+        this.isLoading = true;
+        try {
+            if (!this.otpRequestId || !this.otpEmail) {
+                this.errorMessage = 'Missing verification challenge.';
+                return;
+            }
+            const result = await AdminAuthService.verifyLoginOTP(this.otpEmail, this.otpRequestId, this.otpCode.trim());
+            if (!result.success) {
+                this.errorMessage = result.reason ?? 'Verification failed.';
+            }
         } finally {
             this.isLoading = false;
         }
@@ -173,49 +199,70 @@ export class PageLogin extends LitElement {
                         <span class="logo-tagline">Dealer Portal Access</span>
                     </div>
 
-                    <form @submit=${this.handleSubmit}>
+                    <form @submit=${this.otpRequestId ? this.handleVerifyOTP : this.handleSubmit}>
                         ${this.errorMessage ? html`
                             <div class="login-error">${this.errorMessage}</div>
                         ` : ''}
 
-                        <div class="form-group">
-                            <label for="admin-email">Email Address</label>
-                            <div class="input-wrap">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                </svg>
-                                <input
-                                    type="email"
-                                    id="admin-email"
-                                    placeholder="admin@company.com"
-                                    required
-                                    .value=${this.email}
-                                    @input=${(e: Event) => { this.email = (e.target as HTMLInputElement).value; }}
-                                >
+                        ${this.otpRequestId ? html`
+                            <div class="form-group">
+                                <label for="admin-otp">Verification Code</label>
+                                <div class="input-wrap">
+                                    <input
+                                        type="text"
+                                        id="admin-otp"
+                                        maxlength="6"
+                                        placeholder="123456"
+                                        required
+                                        .value=${this.otpCode}
+                                        @input=${(e: Event) => { this.otpCode = (e.target as HTMLInputElement).value; }}
+                                    >
+                                </div>
+                                <div class="logo-tagline" style="margin-top:8px;">
+                                    Enter the 6-digit code sent to ${this.otpEmail}
+                                    ${this.otpExpiresAt ? html`<br />Expires at ${new Date(this.otpExpiresAt).toLocaleTimeString()}` : ''}
+                                </div>
                             </div>
-                        </div>
+                        ` : html`
+                            <div class="form-group">
+                                <label for="admin-email">Email Address</label>
+                                <div class="input-wrap">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                        <polyline points="22,6 12,13 2,6"></polyline>
+                                    </svg>
+                                    <input
+                                        type="email"
+                                        id="admin-email"
+                                        placeholder="admin@company.com"
+                                        required
+                                        .value=${this.email}
+                                        @input=${(e: Event) => { this.email = (e.target as HTMLInputElement).value; }}
+                                    >
+                                </div>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="admin-password">Password</label>
-                            <div class="input-wrap">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                </svg>
-                                <input
-                                    type="password"
-                                    id="admin-password"
-                                    placeholder="••••••••"
-                                    required
-                                    .value=${this.password}
-                                    @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; }}
-                                >
+                            <div class="form-group">
+                                <label for="admin-password">Password</label>
+                                <div class="input-wrap">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                    <input
+                                        type="password"
+                                        id="admin-password"
+                                        placeholder="••••••••"
+                                        required
+                                        .value=${this.password}
+                                        @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; }}
+                                    >
+                                </div>
                             </div>
-                        </div>
+                        `}
 
                         <button type="submit" class="btn-login" ?disabled=${this.isLoading}>
-                            ${this.isLoading ? 'Signing In...' : 'Sign In'}
+                            ${this.isLoading ? (this.otpRequestId ? 'Verifying...' : 'Signing In...') : (this.otpRequestId ? 'Verify Code' : 'Sign In')}
                         </button>
                     </form>
                 </div>

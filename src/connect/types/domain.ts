@@ -1,16 +1,18 @@
 /**
  * MIRRORS: velocity-backend-main/internal/domain/auth.go
  */
-export type UserRole = 'tenant_owner' | 'tenant_staff' | 'account_admin' | 'account_user';
+export type UserRole = 'tenant_owner' | 'tenant_staff' | 'account_admin' | 'account_manager' | 'account_user';
 
 export interface User {
     id: number;
     email: string;
+    emailVerified?: boolean;
     name?: string;
     phone?: string;
     isActive: boolean;
     lastLoginAt?: string; // ISO Date
     role: UserRole;
+    accountId?: number;
     accountAssignments?: AccountAssignment[];
 }
 
