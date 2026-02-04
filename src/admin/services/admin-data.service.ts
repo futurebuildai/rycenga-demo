@@ -197,85 +197,45 @@ const mapQuote = (raw: Quote): AdminQuote => ({
     total: raw.total,
     status: (raw.status === 'sent' || raw.status === 'viewed') ? 'Sent'
         : raw.status === 'expired' ? 'Expired'
-        : 'Draft',
+            : 'Draft',
     name: raw.quoteNumber,
 });
 
 // --- Service ---
 
 class AdminDataServiceImpl {
-    async getAccounts(): Promise<AdminAccount[]> {
-        const accounts = await adminClient.request<Account[]>('/accounts');
+    async getAccounts(limit = 10, offset = 0, pastDueOnly = false): Promise<{ items: AdminAccount[], total: number }> {
+        const response = await adminClient.request<{ items: any[], total: number }>(`/admin/account-dashboard?limit=${limit}&offset=${offset}&past_due_only=${pastDueOnly}`);
+        const { items: accounts, total } = response;
 
-        // Enrich each account with invoice + financials data in parallel
-        const [invoiceResults, financialResults] = await Promise.all([
-            Promise.allSettled(
-                accounts.map(a =>
-                    adminClient.request<Invoice[]>(`/invoices?account_id=${a.id}`)
-                )
-            ),
-            Promise.allSettled(
-                accounts.map(a =>
-                    adminClient.request<AccountFinancials>(`/accounts/${a.id}/financials`)
-                )
-            ),
-        ]);
+        const items: AdminAccount[] = accounts.map(a => ({
+            id: a.id,
+            name: a.name,
+            email: a.email,
+            phone: a.phone,
+            status: a.active ? (a.pastDueBalance > 0 ? 'Overdue' : 'Active') : 'Hold',
+            creditLimit: a.creditLimit,
+            balance: a.balance,
+            availableCredit: a.availableCredit,
+            pastDueBalance: a.pastDueBalance,
+            aging: a.aging as any,
+            openInvoicesCount: a.openInvoicesCount,
+            primaryContact: a.primaryContact,
+        }));
 
-        return accounts.map((account, i) => {
-            const invResult = invoiceResults[i];
-            const finResult = financialResults[i];
-            const invoices = invResult.status === 'fulfilled' ? invResult.value : [];
-            const financials = finResult.status === 'fulfilled' ? finResult.value : undefined;
-            return mapAccount(account, invoices, financials);
-        });
+        return { items, total };
     }
 
     async getDashboardSummary(): Promise<AdminDashboardSummary> {
-        const accounts = await adminClient.request<Account[]>('/accounts');
-
-        const totalAccounts = accounts.length;
-
-        // Fetch financials + dashboard summaries per account in parallel
-        const [finResults, dashResults] = await Promise.all([
-            Promise.allSettled(
-                accounts.map(a =>
-                    adminClient.request<AccountFinancials>(`/accounts/${a.id}/financials`)
-                )
-            ),
-            Promise.allSettled(
-                accounts.map(a =>
-                    adminClient.request<DashboardSummary>(`/dashboard/summary?account_id=${a.id}`)
-                )
-            ),
-        ]);
-
-        let totalCreditExtended = 0;
-        let totalReceivables = 0;
-        for (const r of finResults) {
-            if (r.status !== 'fulfilled') continue;
-            totalCreditExtended += r.value.creditLimit ?? 0;
-            totalReceivables += r.value.totalBalance ?? 0;
-        }
-
-        let activeOrders = 0;
-        let pendingEstimates = 0;
-        let accountsAtRisk = 0;
-
-        for (const result of dashResults) {
-            if (result.status !== 'fulfilled') continue;
-            const d = result.value;
-            activeOrders += d.activeOrdersCount;
-            pendingEstimates += d.pendingQuotesCount;
-            if (d.pastDueInvoicesCount > 0) accountsAtRisk++;
-        }
+        const response = await adminClient.request<any>('/admin/dashboard-summary');
 
         return {
-            totalAccounts,
-            activeOrders,
-            pendingEstimates,
-            totalCreditExtended,
-            totalReceivables,
-            accountsAtRisk,
+            totalAccounts: response.totalAccounts,
+            activeOrders: response.activeOrders,
+            pendingEstimates: response.pendingQuotes,
+            totalCreditExtended: response.totalCreditLimit,
+            totalReceivables: response.totalBalance,
+            accountsAtRisk: response.accountsAtRisk,
         };
     }
 

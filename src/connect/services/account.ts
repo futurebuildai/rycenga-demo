@@ -21,7 +21,7 @@ export const AccountService = {
      * MAPS TO: GET /accounts
      */
     getAccounts: (): Promise<Account[]> =>
-        client.request<Account[]>('/accounts'),
+        client.request<{ items: Account[], total: number }>('/accounts').then(res => res.items),
 
     /**
      * Get details for a specific account

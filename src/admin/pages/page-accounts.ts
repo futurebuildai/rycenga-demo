@@ -131,10 +131,24 @@ export class PageAccounts extends LitElement {
     @state() private loading = true;
     @state() private error = false;
 
+    @state() private page = 1;
+    @state() private pageSize = 10;
+    @state() private totalCount = 0;
+
     async connectedCallback() {
         super.connectedCallback();
+        await this.fetchAccounts();
+    }
+
+    private async fetchAccounts() {
+        this.loading = true;
+        this.error = false;
         try {
-            this.accounts = await AdminDataService.getAccounts();
+            const limit = this.pageSize;
+            const offset = (this.page - 1) * this.pageSize;
+            const { items, total } = await AdminDataService.getAccounts(limit, offset, this.filter === 'past-due');
+            this.accounts = items;
+            this.totalCount = total;
         } catch {
             this.error = true;
         } finally {
@@ -154,9 +168,7 @@ export class PageAccounts extends LitElement {
         }
 
         // 2. Quick Filters
-        if (this.filter === 'past-due') {
-            result = result.filter(a => a.pastDueBalance > 0);
-        }
+        // Handled by backend now
 
         // 3. Sorting
         switch (this.sort) {
@@ -182,8 +194,10 @@ export class PageAccounts extends LitElement {
         this.searchQuery = (e.target as HTMLInputElement).value;
     }
 
-    private setFilter(filter: 'all' | 'past-due') {
+    private async setFilter(filter: 'all' | 'past-due') {
         this.filter = filter;
+        this.page = 1; // Reset to first page
+        await this.fetchAccounts();
     }
 
     private setSort(sort: typeof this.sort) {
@@ -192,6 +206,19 @@ export class PageAccounts extends LitElement {
 
     private navigateToAccount(id: number) {
         Router.go(`/admin/accounts/${id}`);
+    }
+
+    private async handlePageChange(newPage: number) {
+        if (newPage < 1 || newPage > Math.ceil(this.totalCount / this.pageSize)) return;
+        this.page = newPage;
+        await this.fetchAccounts();
+    }
+
+    private async handlePageSizeChange(e: Event) {
+        const newSize = parseInt((e.target as HTMLSelectElement).value, 10);
+        this.pageSize = newSize;
+        this.page = 1; // Reset to first page
+        await this.fetchAccounts();
     }
 
     render() {
@@ -326,12 +353,12 @@ export class PageAccounts extends LitElement {
                     }
                                 </td>
                                 <td>
-                                    <div class="metric-value">$${a.balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                    <div class="metric-value">$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                                     <div style="font-size: 11px; color: #64748b;">Limit: $${(a.creditLimit / 1000).toFixed(0)}k</div>
                                 </td>
                                 <td>
                                     ${a.pastDueBalance > 0
-                        ? html`<div class="metric-value text-danger">$${a.pastDueBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>`
+                        ? html`<div class="metric-value text-danger">$${a.pastDueBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>`
                         : html`<span style="color: #cbd5e1;">-</span>`
                     }
                                 </td>
@@ -348,7 +375,127 @@ export class PageAccounts extends LitElement {
             }
                 </tbody>
             </table>
+
+            <!-- Pagination Controls -->
+            <div class="pagination">
+                <div class="pagination-info">
+                    Showing <span>${Math.min((this.page - 1) * this.pageSize + 1, this.totalCount)}</span> to 
+                    <span>${Math.min(this.page * this.pageSize, this.totalCount)}</span> of 
+                    <span>${this.totalCount}</span> accounts
+                    
+                    <span style="margin-left: 1rem; color: var(--color-text-muted);">|</span>
+                    
+                    <label style="margin-left: 1rem; font-size: 0.875rem;">
+                        Per page:
+                        <select 
+                            style="margin-left: 0.5rem; padding: 0.25rem; border-radius: 4px; border: 1px solid var(--color-border);"
+                            .value=${String(this.pageSize)}
+                            @change=${this.handlePageSizeChange}
+                        >
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="pagination-actions">
+                    <button 
+                        class="pagination-btn" 
+                        ?disabled=${this.page === 1}
+                        @click=${() => this.handlePageChange(this.page - 1)}
+                    >
+                        Previous
+                    </button>
+                    ${this.renderPageNumbers()}
+                    <button 
+                        class="pagination-btn" 
+                        ?disabled=${this.page >= Math.ceil(this.totalCount / this.pageSize)}
+                        @click=${() => this.handlePageChange(this.page + 1)}
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+
+            <style>
+                .pagination {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-top: 1.5rem;
+                    padding: 1rem;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                }
+
+                .pagination-info {
+                    font-size: 0.875rem;
+                    color: var(--color-text-muted);
+                }
+
+                .pagination-info span {
+                    font-weight: 600;
+                    color: var(--color-text);
+                }
+
+                .pagination-actions {
+                    display: flex;
+                    gap: 0.5rem;
+                }
+
+                .pagination-btn {
+                    padding: 0.5rem 1rem;
+                    border: 1px solid var(--color-border);
+                    background: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    color: var(--color-text);
+                    transition: all 0.2s;
+                }
+
+                .pagination-btn:hover:not(:disabled) {
+                    border-color: var(--color-primary-light);
+                    background: var(--color-bg-alt);
+                }
+
+                .pagination-btn:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                .pagination-btn.active {
+                    background: var(--admin-sidebar-bg);
+                    color: white;
+                    border-color: var(--admin-sidebar-bg);
+                }
+            </style>
         `;
+    }
+
+    private renderPageNumbers() {
+        const totalPages = Math.ceil(this.totalCount / this.pageSize);
+        if (totalPages <= 1) return null;
+
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= this.page - 1 && i <= this.page + 1)) {
+                pages.push(html`
+                    <button 
+                        class="pagination-btn ${this.page === i ? 'active' : ''}" 
+                        @click=${() => this.handlePageChange(i)}
+                    >
+                        ${i}
+                    </button>
+                `);
+            } else if (i === this.page - 2 || i === this.page + 2) {
+                pages.push(html`<span style="align-self: center;">...</span>`);
+            }
+        }
+        return pages;
     }
 }
 
