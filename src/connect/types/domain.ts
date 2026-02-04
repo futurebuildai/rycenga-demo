@@ -120,6 +120,7 @@ export interface Invoice {
     balanceDue: number;
     status: InvoiceStatus;
     pdfUrl?: string; // Potential future field
+    lines?: InvoiceLine[];
 }
 
 export interface InvoiceLine {

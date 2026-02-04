@@ -21,6 +21,7 @@ import type {
     DashboardSummary,
     Order,
     Invoice,
+    InvoiceLine,
     Quote,
 } from '../../connect/types/domain.js';
 
@@ -69,12 +70,27 @@ export interface AdminOrder {
 }
 
 export interface AdminInvoice {
-    id: string;
+    id: string; // Display ID (invoice number)
+    internalId: number; // Database ID for API calls
     date: string;
     dueDate: string;
     total: number;
     balance: number;
     status: 'Open' | 'Past Due' | 'Paid';
+}
+
+export interface AdminInvoiceDetails extends AdminInvoice {
+    lines: AdminInvoiceLine[];
+    pdfUrl?: string;
+}
+
+export interface AdminInvoiceLine {
+    id: number;
+    description: string;
+    itemCode: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
 }
 
 export interface AdminQuote {
@@ -93,7 +109,7 @@ export interface AdminAccountDetails extends AdminAccount {
     memberSince: string;
     taxId: string;
     openOrders: AdminOrder[];
-    openInvoices: AdminInvoice[];
+    openInvoices?: AdminInvoice[]; // Now loaded async
     openQuotes: AdminQuote[];
 }
 
@@ -158,11 +174,21 @@ const mapOrder = (raw: Order): AdminOrder => {
 
 const mapInvoice = (raw: Invoice): AdminInvoice => ({
     id: raw.invoiceNumber || String(raw.id),
+    internalId: raw.id,
     date: formatDate(raw.invoiceDate),
     dueDate: formatDate(raw.dueDate),
     total: raw.total,
     balance: raw.balanceDue,
     status: raw.status === 'open' ? 'Open' : isPastDue(raw) ? 'Past Due' : 'Paid',
+});
+
+const mapInvoiceLine = (raw: InvoiceLine): AdminInvoiceLine => ({
+    id: raw.id,
+    description: raw.description || raw.itemCode,
+    itemCode: raw.itemCode,
+    quantity: raw.quantityBilled,
+    unitPrice: raw.unitPrice,
+    total: raw.extendedPrice,
 });
 
 const mapQuote = (raw: Quote): AdminQuote => ({
@@ -201,6 +227,33 @@ class AdminDataServiceImpl {
         return { items, total };
     }
 
+    async getInvoices(accountId: number, limit = 10, offset = 0): Promise<{ items: AdminInvoice[]; total: number }> {
+        const response = await adminClient.request<{ items: any[]; total: number }>(`/invoices?account_id=${accountId}&limit=${limit}&offset=${offset}`);
+        const { items: invoices, total } = response;
+        return {
+            items: invoices.map(mapInvoice),
+            total
+        };
+    }
+
+    async getInvoice(id: number): Promise<AdminInvoiceDetails | null> {
+        try {
+            const [invoice, lines] = await Promise.all([
+                adminClient.request<Invoice>(`/invoices/${id}`),
+                adminClient.request<InvoiceLine[]>(`/invoices/${id}/lines`).catch(() => [])
+            ]);
+
+            return {
+                ...mapInvoice(invoice),
+                lines: lines.map(mapInvoiceLine),
+                pdfUrl: invoice.pdfUrl,
+            };
+        } catch (e) {
+            console.error('Failed to fetch invoice', e);
+            return null;
+        }
+    }
+
     async getDashboardSummary(): Promise<AdminDashboardSummary> {
         const response = await adminClient.request<any>('/admin/dashboard-summary');
 
@@ -216,16 +269,15 @@ class AdminDataServiceImpl {
 
     async getAccountDetails(id: number): Promise<AdminAccountDetails | null> {
         try {
-            const [account, addresses, financials, orders, invoices, quotes] = await Promise.all([
+            const [account, addresses, financials, orders, quotes] = await Promise.all([
                 adminClient.request<Account>(`/accounts/${id}`),
                 adminClient.request<AccountAddress[]>(`/accounts/${id}/addresses`).catch((): AccountAddress[] => []),
                 adminClient.request<AccountFinancials>(`/accounts/${id}/financials`).catch((): AccountFinancials | null => null),
                 adminClient.request<Order[]>(`/orders?account_id=${id}`).catch((): Order[] => []),
-                adminClient.request<Invoice[]>(`/invoices?account_id=${id}`).catch((): Invoice[] => []),
                 adminClient.request<Quote[]>(`/quotes?account_id=${id}`).catch((): Quote[] => []),
             ]);
 
-            const base = mapAccount(account, invoices, financials ?? undefined);
+            const base = mapAccount(account, undefined, financials ?? undefined);
 
             const addr = addresses[0];
             const address: AdminAccountAddress = {
@@ -244,7 +296,6 @@ class AdminDataServiceImpl {
                 memberSince: '',
                 taxId: '',
                 openOrders: orders.map(mapOrder),
-                openInvoices: invoices.map(mapInvoice),
                 openQuotes: quotes.map(mapQuote),
             };
         } catch (e) {

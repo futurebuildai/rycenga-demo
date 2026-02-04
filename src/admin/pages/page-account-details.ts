@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminDataService } from '../services/admin-data.service.js';
-import type { AdminAccountDetails } from '../services/admin-data.service.js';
+import type { AdminAccountDetails, AdminInvoice } from '../services/admin-data.service.js';
 
 interface RouterLocation {
     params: Record<string, string>;
@@ -198,6 +198,59 @@ export class PageAccountDetails extends LitElement {
             border-color: #ef4444;
             background: rgba(239, 68, 68, 0.05);
         }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .pagination-info {
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+        }
+
+        .pagination-info span {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .pagination-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .pagination-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--color-border, #e2e8f0);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-text, #0f172a);
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            border-color: var(--color-primary-light, #bfdbfe);
+            background: var(--color-bg-alt, #f8fafc);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: var(--admin-sidebar-bg, #0f172a);
+            color: white;
+            border-color: var(--admin-sidebar-bg, #0f172a);
+        }
     `;
 
     // @vaadin/router sets this property with route params
@@ -206,6 +259,13 @@ export class PageAccountDetails extends LitElement {
     @state() private account: AdminAccountDetails | null = null;
     @state() private loading = true;
     @state() private activeTab: TransactionTab = 'invoices';
+
+    // Invoice Pagination State
+    @state() private invoicesPage = 1;
+    @state() private invoicesPageSize = 10;
+    @state() private invoicesTotal = 0;
+    @state() private invoicesList: AdminInvoice[] = [];
+    @state() private invoicesLoading = false;
 
     private setTab(tab: TransactionTab) {
         this.activeTab = tab;
@@ -216,7 +276,9 @@ export class PageAccountDetails extends LitElement {
         const id = this.location?.params?.id;
         if (id) {
             try {
-                this.account = await AdminDataService.getAccountDetails(parseInt(id, 10));
+                const accId = parseInt(id, 10);
+                this.account = await AdminDataService.getAccountDetails(accId);
+                await this.fetchInvoices();
             } catch {
                 // account stays null
             }
@@ -254,8 +316,8 @@ export class PageAccountDetails extends LitElement {
 
     private toggleAllInvoices(e: Event) {
         const checked = (e.target as HTMLInputElement).checked;
-        if (checked && this.account) {
-            this.selectedInvoices = new Set(this.account.openInvoices.map(i => i.id));
+        if (checked && this.invoicesList.length > 0) {
+            this.selectedInvoices = new Set(this.invoicesList.map(i => i.id));
         } else {
             this.selectedInvoices = new Set();
         }
@@ -278,7 +340,7 @@ export class PageAccountDetails extends LitElement {
     private renderTabContent() {
         if (!this.account) return null;
 
-        const { openOrders, openInvoices, openQuotes } = this.account;
+        const { openOrders, openQuotes } = this.account;
 
         switch (this.activeTab) {
             case 'orders':
@@ -301,7 +363,7 @@ export class PageAccountDetails extends LitElement {
                                         <td>${o.date}</td>
                                         <td>${o.itemsCount} items</td>
                                         <td><span class="status-badge status-${o.status}">${o.status}</span></td>
-                                        <td class="text-right font-mono">$${o.total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                        <td class="text-right font-mono">$${o.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                     </tr>
                                 `)
                     }
@@ -309,13 +371,16 @@ export class PageAccountDetails extends LitElement {
                     </table>
                 `;
             case 'invoices':
+                const openInvoices = this.invoicesList;
                 const allSelected = openInvoices.length > 0 && this.selectedInvoices.size === openInvoices.length;
                 const hasSelection = this.selectedInvoices.size > 0;
+                const startItem = (this.invoicesPage - 1) * this.invoicesPageSize + 1;
+                const endItem = Math.min(this.invoicesPage * this.invoicesPageSize, this.invoicesTotal);
 
                 return html`
-                    <div style="display: flex; justify-content: space-between; align-items: center; marginBottom: 1rem; min-height: 42px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; min-height: 42px;">
                         <h4 style="margin: 0; color: var(--color-text-light); font-weight: 500;">
-                            ${hasSelection ? `${this.selectedInvoices.size} selected` : ''}
+                            ${hasSelection ? `${this.selectedInvoices.size} selected` : 'Open Invoices'}
                         </h4>
                         ${hasSelection ? html`
                             <button class="btn-primary" @click=${this.openPaymentModal}>
@@ -324,38 +389,70 @@ export class PageAccountDetails extends LitElement {
                         ` : ''}
                     </div>
 
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">
-                                    <input type="checkbox" aria-label="Select all invoices" .checked=${allSelected} @change=${this.toggleAllInvoices} />
-                                </th>
-                                <th>Invoice #</th>
-                                <th>Date</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                                <th class="text-right">Balance</th>
-                                <th class="text-right">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${openInvoices.length === 0 ? html`<tr><td colspan="7" class="text-center">No open invoices.</td></tr>` :
-                        openInvoices.map(i => html`
-                                    <tr class="${this.selectedInvoices.has(i.id) ? 'row-selected' : ''}">
-                                        <td>
-                                            <input type="checkbox" aria-label="Select invoice ${i.id}" .checked=${this.selectedInvoices.has(i.id)} @change=${() => this.toggleInvoice(i.id)} />
-                                        </td>
-                                        <td class="font-medium">${i.id}</td>
-                                        <td>${i.date}</td>
-                                        <td>${i.dueDate}</td>
-                                        <td><span class="status-badge status-${i.status === 'Past Due' ? 'Overdue' : i.status}">${i.status}</span></td>
-                                        <td class="text-right font-mono ${i.status === 'Past Due' ? 'text-danger' : ''}">$${i.balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                        <td class="text-right font-mono text-muted">$${i.total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    ${this.invoicesLoading
+                        ? html`<div style="text-align: center; padding: 2rem; color: var(--color-text-muted);">Loading invoices...</div>`
+                        : html`
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">
+                                            <input type="checkbox" aria-label="Select all invoices" .checked=${allSelected} @change=${this.toggleAllInvoices} />
+                                        </th>
+                                        <th>Invoice #</th>
+                                        <th>Date</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th class="text-right">Balance</th>
+                                        <th class="text-right">Total</th>
                                     </tr>
-                                `)
-                    }
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    ${openInvoices.length === 0 ? html`<tr><td colspan="7" class="text-center">No open invoices.</td></tr>` :
+                                openInvoices.map(i => html`
+                                            <tr class="${this.selectedInvoices.has(i.id) ? 'row-selected' : ''}">
+                                                <td>
+                                                    <input type="checkbox" aria-label="Select invoice ${i.id}" .checked=${this.selectedInvoices.has(i.id)} @change=${() => this.toggleInvoice(i.id)} />
+                                                </td>
+                                                <td class="font-medium">
+                                                    <a href="/admin/invoices/${i.internalId}" style="color: var(--color-primary); text-decoration: none; font-weight: 500;">
+                                                        ${i.id}
+                                                    </a>
+                                                </td>
+                                                <td>${i.date}</td>
+                                                <td>${i.dueDate}</td>
+                                                <td><span class="status-badge status-${i.status === 'Past Due' ? 'Overdue' : i.status}">${i.status}</span></td>
+                                                <td class="text-right font-mono ${i.status === 'Past Due' ? 'text-danger' : ''}">$${i.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                <td class="text-right font-mono text-muted">$${i.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        `)
+                            }
+                                </tbody>
+                            </table>
+
+                            <!-- Pagination Controls -->
+                            <div class="pagination">
+                                <div class="pagination-info">
+                                    Showing <span>${startItem}</span> to <span>${endItem}</span> of <span>${this.invoicesTotal}</span> invoices
+                                </div>
+                                <div class="pagination-actions">
+                                    <button 
+                                        class="pagination-btn" 
+                                        ?disabled=${this.invoicesPage === 1}
+                                        @click=${() => this.handleInvoicePageChange(this.invoicesPage - 1)}
+                                    >
+                                        Previous
+                                    </button>
+                                    ${this.renderInvoicePageNumbers()}
+                                    <button 
+                                        class="pagination-btn" 
+                                        ?disabled=${this.invoicesPage >= Math.ceil(this.invoicesTotal / this.invoicesPageSize)}
+                                        @click=${() => this.handleInvoicePageChange(this.invoicesPage + 1)}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        `}
                 `;
             case 'quotes':
                 return html`
@@ -379,7 +476,7 @@ export class PageAccountDetails extends LitElement {
                                         <td>${q.date}</td>
                                         <td>${q.expiryDate}</td>
                                         <td><span class="status-badge status-Hold">${q.status}</span></td>
-                                        <td class="text-right font-mono">$${q.total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                        <td class="text-right font-mono">$${q.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                     </tr>
                                 `)
                     }
@@ -510,20 +607,20 @@ export class PageAccountDetails extends LitElement {
 
                     <div class="field">
                         <span class="label">Current Balance</span>
-                        <div class="value value-lg">$${a.balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="value value-lg">$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div class="field">
                         <span class="label">Available Credit</span>
-                        <div class="value value-lg value-positive">$${a.availableCredit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="value value-lg value-positive">$${a.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div class="field">
                         <span class="label">Past Due</span>
-                        <div class="value ${a.pastDueBalance > 0 ? 'text-danger' : ''}">$${a.pastDueBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="value ${a.pastDueBalance > 0 ? 'text-danger' : ''}">$${a.pastDueBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div class="financials-row">
                         <div class="field">
                             <span class="label">Credit Limit</span>
-                            <div class="value">$${a.creditLimit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div class="value">$${a.creditLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         </div>
                         <div class="field">
                             <span class="label">Payment Terms</span>
@@ -565,7 +662,7 @@ export class PageAccountDetails extends LitElement {
                     type="button"
                     class="tab-btn ${this.activeTab === 'invoices' ? 'active' : ''}"
                     @click=${() => this.setTab('invoices')}
-                >Open Invoices (${a.openInvoices.length})</button>
+                >Open Invoices (${this.invoicesTotal})</button>
                 <button
                     type="button"
                     class="tab-btn ${this.activeTab === 'quotes' ? 'active' : ''}"
@@ -629,6 +726,51 @@ export class PageAccountDetails extends LitElement {
                 <div class="toast toast-${this.toastType}" role="status" aria-live="polite">${this.toastMessage}</div>
             ` : ''}
         `;
+    }
+    private async fetchInvoices() {
+        if (!this.account) return;
+        this.invoicesLoading = true;
+        try {
+            const { items, total } = await AdminDataService.getInvoices(
+                this.account.id,
+                this.invoicesPageSize,
+                (this.invoicesPage - 1) * this.invoicesPageSize
+            );
+            this.invoicesList = items;
+            this.invoicesTotal = total;
+        } catch {
+            this.showToast('Failed to load invoices', 'error');
+        } finally {
+            this.invoicesLoading = false;
+        }
+    }
+
+    private async handleInvoicePageChange(newPage: number) {
+        if (newPage < 1 || newPage > Math.ceil(this.invoicesTotal / this.invoicesPageSize)) return;
+        this.invoicesPage = newPage;
+        await this.fetchInvoices();
+    }
+
+    private renderInvoicePageNumbers() {
+        const totalPages = Math.ceil(this.invoicesTotal / this.invoicesPageSize);
+        if (totalPages <= 1) return null;
+
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= this.invoicesPage - 1 && i <= this.invoicesPage + 1)) {
+                pages.push(html`
+                    <button 
+                        class="pagination-btn ${this.invoicesPage === i ? 'active' : ''}" 
+                        @click=${() => this.handleInvoicePageChange(i)}
+                    >
+                        ${i}
+                    </button>
+                `);
+            } else if (i === this.invoicesPage - 2 || i === this.invoicesPage + 2) {
+                pages.push(html`<span style="align-self: center;">...</span>`);
+            }
+        }
+        return pages;
     }
 }
 
