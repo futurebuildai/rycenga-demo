@@ -48,6 +48,37 @@ export class LbApp extends LbBase {
         overflow-x: auto;
       }
 
+      .impersonation-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 44px;
+        background: linear-gradient(90deg, #7f1d1d, #991b1b);
+        color: #fff;
+        z-index: 1200;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        font-size: var(--text-sm);
+      }
+
+      .impersonation-banner button {
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: var(--text-xs);
+        cursor: pointer;
+      }
+
+      .has-impersonation {
+        --impersonation-banner-height: 44px;
+        padding-top: 44px;
+      }
+
       .placeholder-page {
         padding: var(--space-xl);
       }
@@ -69,6 +100,8 @@ export class LbApp extends LbBase {
   @state() private isAuthenticated = false;
   @state() private currentRoute: RouteId = 'overview';
   @state() private sidebarOpen = false;
+  @state() private isImpersonating = false;
+  @state() private impersonationEmail = '';
 
   private authUnsubscribe?: () => void;
   private routeUnsubscribe?: () => void;
@@ -81,10 +114,12 @@ export class LbApp extends LbBase {
 
     // Check initial auth state
     this.isAuthenticated = AuthService.isAuthenticated();
+    this.refreshImpersonationState();
 
     // Subscribe to auth changes
     this.authUnsubscribe = AuthService.subscribe((isAuth) => {
       this.isAuthenticated = isAuth;
+      this.refreshImpersonationState();
       if (!isAuth) {
         this.currentRoute = 'login';
       }
@@ -118,6 +153,29 @@ export class LbApp extends LbBase {
 
   private handleMenuToggle() {
     this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  private refreshImpersonationState() {
+    const raw = localStorage.getItem('impersonation_session');
+    if (!raw) {
+      this.isImpersonating = false;
+      this.impersonationEmail = '';
+      return;
+    }
+    try {
+      const data = JSON.parse(raw) as { active?: boolean; targetEmail?: string };
+      this.isImpersonating = !!data.active;
+      this.impersonationEmail = data.targetEmail || '';
+    } catch {
+      this.isImpersonating = false;
+      this.impersonationEmail = '';
+    }
+  }
+
+  private exitImpersonation() {
+    localStorage.removeItem('impersonation_session');
+    AuthService.logout();
+    window.location.assign('/admin');
   }
 
   private renderPage() {
@@ -160,6 +218,13 @@ export class LbApp extends LbBase {
 
     // Render main app layout
     return html`
+      ${this.isImpersonating ? html`
+        <div class="impersonation-banner">
+          <span>Impersonating ${this.impersonationEmail || 'tenant user'}.</span>
+          <button @click=${this.exitImpersonation}>Exit Impersonation</button>
+        </div>
+      ` : ''}
+      <div class="${this.isImpersonating ? 'has-impersonation' : ''}">
       <lb-header 
         @menu-toggle=${this.handleMenuToggle}
       ></lb-header>
@@ -173,6 +238,7 @@ export class LbApp extends LbBase {
         <main class="app-main">
           ${this.renderPage()}
         </main>
+      </div>
       </div>
     `;
   }

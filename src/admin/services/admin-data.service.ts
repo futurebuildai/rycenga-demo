@@ -23,6 +23,7 @@ import type {
     Invoice,
     InvoiceLine,
     Quote,
+    User,
 } from '../../connect/types/domain.js';
 
 // --- UI View Models ---
@@ -111,6 +112,15 @@ export interface AdminAccountDetails extends AdminAccount {
     openOrders: AdminOrder[];
     openInvoices?: AdminInvoice[]; // Now loaded async
     openQuotes: AdminQuote[];
+}
+
+export interface AdminUser {
+    id: number;
+    email: string;
+    name: string;
+    role: string;
+    isActive: boolean;
+    accountId?: number;
 }
 
 interface PaginatedResponse<T> {
@@ -269,6 +279,29 @@ class AdminDataServiceImpl {
             totalCreditExtended: response.totalCreditLimit,
             totalReceivables: response.totalBalance,
             accountsAtRisk: response.accountsAtRisk,
+        };
+    }
+
+    async getUsers(limit = 25, offset = 0, search = ''): Promise<{ items: AdminUser[]; total: number }> {
+        const query = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+        });
+        if (search.trim()) {
+            query.set('search', search.trim());
+        }
+
+        const response = await adminClient.request<{ items: User[]; total: number }>(`/admin/users?${query.toString()}`);
+        return {
+            items: response.items.map((u) => ({
+                id: u.id,
+                email: u.email,
+                name: u.name || '(No Name)',
+                role: u.role,
+                isActive: u.isActive,
+                accountId: u.accountId,
+            })),
+            total: response.total,
         };
     }
 
