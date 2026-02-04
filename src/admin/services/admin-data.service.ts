@@ -113,6 +113,11 @@ export interface AdminAccountDetails extends AdminAccount {
     openQuotes: AdminQuote[];
 }
 
+interface PaginatedResponse<T> {
+    items: T[];
+    total: number;
+}
+
 // --- Helpers ---
 
 const isPastDue = (inv: Invoice): boolean => inv.status === 'past_due';
@@ -269,12 +274,17 @@ class AdminDataServiceImpl {
 
     async getAccountDetails(id: number): Promise<AdminAccountDetails | null> {
         try {
+            const relatedLimit = 25;
             const [account, addresses, financials, orders, quotes] = await Promise.all([
                 adminClient.request<Account>(`/accounts/${id}`),
                 adminClient.request<AccountAddress[]>(`/accounts/${id}/addresses`).catch((): AccountAddress[] => []),
                 adminClient.request<AccountFinancials>(`/accounts/${id}/financials`).catch((): AccountFinancials | null => null),
-                adminClient.request<Order[]>(`/orders?account_id=${id}`).catch((): Order[] => []),
-                adminClient.request<Quote[]>(`/quotes?account_id=${id}`).catch((): Quote[] => []),
+                adminClient.request<PaginatedResponse<Order>>(`/orders?account_id=${id}&limit=${relatedLimit}&offset=0`)
+                    .then(r => r.items)
+                    .catch((): Order[] => []),
+                adminClient.request<PaginatedResponse<Quote>>(`/quotes?account_id=${id}&limit=${relatedLimit}&offset=0`)
+                    .then(r => r.items)
+                    .catch((): Quote[] => []),
             ]);
 
             const base = mapAccount(account, undefined, financials ?? undefined);

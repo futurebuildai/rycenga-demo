@@ -108,10 +108,11 @@ class DataServiceImpl {
     /**
      * Get orders via API
      */
-    async getOrders(): Promise<Order[]> {
-        const backendOrders = await SalesService.getOrders();
-        this.ordersData = backendOrders.map(mapOrderToLegacy);
-        return this.ordersData;
+    async getOrders(limit = 25, offset = 0): Promise<{ items: Order[]; total: number }> {
+        const { items: backendOrders, total } = await SalesService.getOrders({ limit, offset });
+        const items = backendOrders.map(mapOrderToLegacy);
+        this.ordersData = items;
+        return { items, total };
     }
 
     /**
@@ -126,7 +127,7 @@ class DataServiceImpl {
      * Get invoices via API
      */
     async getInvoices(): Promise<Invoice[]> {
-        const backendInvoices = await SalesService.getInvoices();
+        const { items: backendInvoices } = await SalesService.getInvoices();
         this.invoicesData = backendInvoices.map(mapInvoiceToLegacy);
         return this.invoicesData;
     }
@@ -143,10 +144,11 @@ class DataServiceImpl {
     /**
      * Get estimates (Quotes) via API
      */
-    async getEstimates(): Promise<Estimate[]> {
-        const quotes = await SalesService.getQuotes();
-        this.estimatesData = quotes.map(mapQuoteToEstimate);
-        return this.estimatesData;
+    async getEstimates(limit = 25, offset = 0): Promise<{ items: Estimate[]; total: number }> {
+        const { items: quotes, total } = await SalesService.getQuotes({ limit, offset });
+        const items = quotes.map(mapQuoteToEstimate);
+        this.estimatesData = items;
+        return { items, total };
     }
 
     /**

@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccountDetails, AdminInvoice } from '../services/admin-data.service.js';
+import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
 interface RouterLocation {
     params: Record<string, string>;
@@ -277,8 +278,13 @@ export class PageAccountDetails extends LitElement {
         if (id) {
             try {
                 const accId = parseInt(id, 10);
-                this.account = await AdminDataService.getAccountDetails(accId);
-                await this.fetchInvoices();
+                const [account, invoices] = await Promise.all([
+                    AdminDataService.getAccountDetails(accId),
+                    AdminDataService.getInvoices(accId, this.invoicesPageSize, 0),
+                ]);
+                this.account = account;
+                this.invoicesList = invoices.items;
+                this.invoicesTotal = invoices.total;
             } catch {
                 // account stays null
             }
@@ -374,8 +380,7 @@ export class PageAccountDetails extends LitElement {
                 const openInvoices = this.invoicesList;
                 const allSelected = openInvoices.length > 0 && this.selectedInvoices.size === openInvoices.length;
                 const hasSelection = this.selectedInvoices.size > 0;
-                const startItem = (this.invoicesPage - 1) * this.invoicesPageSize + 1;
-                const endItem = Math.min(this.invoicesPage * this.invoicesPageSize, this.invoicesTotal);
+                const { start: startItem, end: endItem } = getPaginationBounds(this.invoicesPage, this.invoicesPageSize, this.invoicesTotal);
 
                 return html`
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; min-height: 42px;">
@@ -389,70 +394,69 @@ export class PageAccountDetails extends LitElement {
                         ` : ''}
                     </div>
 
-                    ${this.invoicesLoading
-                        ? html`<div style="text-align: center; padding: 2rem; color: var(--color-text-muted);">Loading invoices...</div>`
-                        : html`
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 40px;">
-                                            <input type="checkbox" aria-label="Select all invoices" .checked=${allSelected} @change=${this.toggleAllInvoices} />
-                                        </th>
-                                        <th>Invoice #</th>
-                                        <th>Date</th>
-                                        <th>Due Date</th>
-                                        <th>Status</th>
-                                        <th class="text-right">Balance</th>
-                                        <th class="text-right">Total</th>
+                    ${this.invoicesLoading ? html`
+                        <div style="margin-bottom: 0.75rem; color: var(--color-text-muted); font-size: 0.875rem;">Updating invoices...</div>
+                    ` : ''}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" aria-label="Select all invoices" .checked=${allSelected} @change=${this.toggleAllInvoices} />
+                                </th>
+                                <th>Invoice #</th>
+                                <th>Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th class="text-right">Balance</th>
+                                <th class="text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${openInvoices.length === 0 ? html`<tr><td colspan="7" class="text-center">No open invoices.</td></tr>` :
+                        openInvoices.map(i => html`
+                                    <tr class="${this.selectedInvoices.has(i.id) ? 'row-selected' : ''}">
+                                        <td>
+                                            <input type="checkbox" aria-label="Select invoice ${i.id}" .checked=${this.selectedInvoices.has(i.id)} @change=${() => this.toggleInvoice(i.id)} />
+                                        </td>
+                                        <td class="font-medium">
+                                            <a href="/admin/invoices/${i.internalId}" style="color: var(--color-primary); text-decoration: none; font-weight: 500;">
+                                                ${i.id}
+                                            </a>
+                                        </td>
+                                        <td>${i.date}</td>
+                                        <td>${i.dueDate}</td>
+                                        <td><span class="status-badge status-${i.status === 'Past Due' ? 'Overdue' : i.status}">${i.status}</span></td>
+                                        <td class="text-right font-mono ${i.status === 'Past Due' ? 'text-danger' : ''}">$${i.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td class="text-right font-mono text-muted">$${i.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    ${openInvoices.length === 0 ? html`<tr><td colspan="7" class="text-center">No open invoices.</td></tr>` :
-                                openInvoices.map(i => html`
-                                            <tr class="${this.selectedInvoices.has(i.id) ? 'row-selected' : ''}">
-                                                <td>
-                                                    <input type="checkbox" aria-label="Select invoice ${i.id}" .checked=${this.selectedInvoices.has(i.id)} @change=${() => this.toggleInvoice(i.id)} />
-                                                </td>
-                                                <td class="font-medium">
-                                                    <a href="/admin/invoices/${i.internalId}" style="color: var(--color-primary); text-decoration: none; font-weight: 500;">
-                                                        ${i.id}
-                                                    </a>
-                                                </td>
-                                                <td>${i.date}</td>
-                                                <td>${i.dueDate}</td>
-                                                <td><span class="status-badge status-${i.status === 'Past Due' ? 'Overdue' : i.status}">${i.status}</span></td>
-                                                <td class="text-right font-mono ${i.status === 'Past Due' ? 'text-danger' : ''}">$${i.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                                <td class="text-right font-mono text-muted">$${i.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        `)
-                            }
-                                </tbody>
-                            </table>
+                                `)
+                    }
+                        </tbody>
+                    </table>
 
-                            <!-- Pagination Controls -->
-                            <div class="pagination">
-                                <div class="pagination-info">
-                                    Showing <span>${startItem}</span> to <span>${endItem}</span> of <span>${this.invoicesTotal}</span> invoices
-                                </div>
-                                <div class="pagination-actions">
-                                    <button 
-                                        class="pagination-btn" 
-                                        ?disabled=${this.invoicesPage === 1}
-                                        @click=${() => this.handleInvoicePageChange(this.invoicesPage - 1)}
-                                    >
-                                        Previous
-                                    </button>
-                                    ${this.renderInvoicePageNumbers()}
-                                    <button 
-                                        class="pagination-btn" 
-                                        ?disabled=${this.invoicesPage >= Math.ceil(this.invoicesTotal / this.invoicesPageSize)}
-                                        @click=${() => this.handleInvoicePageChange(this.invoicesPage + 1)}
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            </div>
-                        `}
+                    <!-- Pagination Controls -->
+                    <div class="pagination">
+                        <div class="pagination-info">
+                            Showing <span>${startItem}</span> to <span>${endItem}</span> of <span>${this.invoicesTotal}</span> invoices
+                        </div>
+                        <div class="pagination-actions">
+                            <button 
+                                class="pagination-btn" 
+                                ?disabled=${this.invoicesPage === 1 || this.invoicesLoading}
+                                @click=${() => this.handleInvoicePageChange(this.invoicesPage - 1)}
+                            >
+                                Previous
+                            </button>
+                            ${this.renderInvoicePageNumbers()}
+                            <button 
+                                class="pagination-btn" 
+                                ?disabled=${this.invoicesPage >= Math.ceil(this.invoicesTotal / this.invoicesPageSize) || this.invoicesLoading}
+                                @click=${() => this.handleInvoicePageChange(this.invoicesPage + 1)}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
                 `;
             case 'quotes':
                 return html`
@@ -727,12 +731,13 @@ export class PageAccountDetails extends LitElement {
             ` : ''}
         `;
     }
-    private async fetchInvoices() {
-        if (!this.account) return;
+    private async fetchInvoices(accountId?: number) {
+        const id = accountId ?? this.account?.id;
+        if (!id) return;
         this.invoicesLoading = true;
         try {
             const { items, total } = await AdminDataService.getInvoices(
-                this.account.id,
+                id,
                 this.invoicesPageSize,
                 (this.invoicesPage - 1) * this.invoicesPageSize
             );
@@ -755,22 +760,19 @@ export class PageAccountDetails extends LitElement {
         const totalPages = Math.ceil(this.invoicesTotal / this.invoicesPageSize);
         if (totalPages <= 1) return null;
 
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === 1 || i === totalPages || (i >= this.invoicesPage - 1 && i <= this.invoicesPage + 1)) {
-                pages.push(html`
+        return buildPaginationTokens(this.invoicesPage, totalPages).map(token =>
+            token === 'ellipsis'
+                ? html`<span style="align-self: center;">...</span>`
+                : html`
                     <button 
-                        class="pagination-btn ${this.invoicesPage === i ? 'active' : ''}" 
-                        @click=${() => this.handleInvoicePageChange(i)}
+                        class="pagination-btn ${this.invoicesPage === token ? 'active' : ''}" 
+                        ?disabled=${this.invoicesLoading}
+                        @click=${() => this.handleInvoicePageChange(token)}
                     >
-                        ${i}
+                        ${token}
                     </button>
-                `);
-            } else if (i === this.invoicesPage - 2 || i === this.invoicesPage + 2) {
-                pages.push(html`<span style="align-self: center;">...</span>`);
-            }
-        }
-        return pages;
+                `
+        );
     }
 }
 

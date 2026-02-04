@@ -1,22 +1,49 @@
 import { client } from '../client';
 import type { Order, Invoice, Quote, OrderLine, QuoteLine } from '../types/domain';
 
+interface PagingOptions {
+    limit?: number;
+    offset?: number;
+    accountId?: number;
+}
+
+export interface PaginatedResponse<T> {
+    items: T[];
+    total: number;
+}
+
 export const SalesService = {
     // Maps to GET /orders
-    getOrders: () =>
-        client.request<Order[]>('/orders'),
+    getOrders: ({ limit = 25, offset = 0, accountId }: PagingOptions = {}) => {
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+        });
+        if (typeof accountId === 'number') {
+            params.set('account_id', String(accountId));
+        }
+        return client.request<PaginatedResponse<Order>>(`/orders?${params.toString()}`);
+    },
 
     // Maps to GET /orders/{id}
     getOrderDetails: (orderId: number) =>
         client.request<Order>(`/orders/${orderId}`),
 
     // Maps to GET /invoices
-    getInvoices: () =>
-        client.request<Invoice[]>('/invoices'),
+    getInvoices: (limit = 1000, offset = 0) =>
+        client.request<{ items: Invoice[]; total: number }>(`/invoices?limit=${limit}&offset=${offset}`),
 
     // Maps to GET /v1/quotes
-    getQuotes: () =>
-        client.request<Quote[]>('/quotes'),
+    getQuotes: ({ limit = 25, offset = 0, accountId }: PagingOptions = {}) => {
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+        });
+        if (typeof accountId === 'number') {
+            params.set('account_id', String(accountId));
+        }
+        return client.request<PaginatedResponse<Quote>>(`/quotes?${params.toString()}`);
+    },
 
     getQuoteDetails: (quoteId: number) =>
         client.request<Quote>(`/quotes/${quoteId}`),

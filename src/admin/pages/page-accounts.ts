@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccount } from '../services/admin-data.service.js';
+import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
 @customElement('admin-page-accounts')
 export class PageAccounts extends LitElement {
@@ -129,6 +130,7 @@ export class PageAccounts extends LitElement {
     @state() private filter: 'all' | 'past-due' = 'all';
     @state() private sort: 'name' | 'balance-desc' | 'past-due-desc' | 'age-desc' = 'name';
     @state() private loading = true;
+    @state() private accountsLoading = false;
     @state() private error = false;
 
     @state() private page = 1;
@@ -137,12 +139,16 @@ export class PageAccounts extends LitElement {
 
     async connectedCallback() {
         super.connectedCallback();
-        await this.fetchAccounts();
+        await this.fetchAccounts(true);
     }
 
-    private async fetchAccounts() {
-        this.loading = true;
-        this.error = false;
+    private async fetchAccounts(initialLoad = false) {
+        if (initialLoad) {
+            this.loading = true;
+            this.error = false;
+        } else {
+            this.accountsLoading = true;
+        }
         try {
             const limit = this.pageSize;
             const offset = (this.page - 1) * this.pageSize;
@@ -153,6 +159,7 @@ export class PageAccounts extends LitElement {
             this.error = true;
         } finally {
             this.loading = false;
+            this.accountsLoading = false;
         }
     }
 
@@ -226,8 +233,12 @@ export class PageAccounts extends LitElement {
         if (this.error) return html`<p class="error-msg">Failed to load accounts.</p>`;
 
         const rows = this.processedAccounts;
+        const { start, end } = getPaginationBounds(this.page, this.pageSize, this.totalCount);
 
         return html`
+            ${this.accountsLoading ? html`
+                <div style="margin-bottom: 0.75rem; color: var(--color-text-muted); font-size: 0.875rem;">Updating accounts...</div>
+            ` : ''}
             <div class="page-header">
                 <div>
                     <h2>Accounts Dashboard</h2>
@@ -379,8 +390,8 @@ export class PageAccounts extends LitElement {
             <!-- Pagination Controls -->
             <div class="pagination">
                 <div class="pagination-info">
-                    Showing <span>${Math.min((this.page - 1) * this.pageSize + 1, this.totalCount)}</span> to 
-                    <span>${Math.min(this.page * this.pageSize, this.totalCount)}</span> of 
+                    Showing <span>${start}</span> to 
+                    <span>${end}</span> of 
                     <span>${this.totalCount}</span> accounts
                     
                     <span style="margin-left: 1rem; color: var(--color-text-muted);">|</span>
@@ -390,6 +401,7 @@ export class PageAccounts extends LitElement {
                         <select 
                             style="margin-left: 0.5rem; padding: 0.25rem; border-radius: 4px; border: 1px solid var(--color-border);"
                             .value=${String(this.pageSize)}
+                            ?disabled=${this.accountsLoading}
                             @change=${this.handlePageSizeChange}
                         >
                             <option value="10">10</option>
@@ -402,7 +414,7 @@ export class PageAccounts extends LitElement {
                 <div class="pagination-actions">
                     <button 
                         class="pagination-btn" 
-                        ?disabled=${this.page === 1}
+                        ?disabled=${this.page === 1 || this.accountsLoading}
                         @click=${() => this.handlePageChange(this.page - 1)}
                     >
                         Previous
@@ -410,7 +422,7 @@ export class PageAccounts extends LitElement {
                     ${this.renderPageNumbers()}
                     <button 
                         class="pagination-btn" 
-                        ?disabled=${this.page >= Math.ceil(this.totalCount / this.pageSize)}
+                        ?disabled=${this.page >= Math.ceil(this.totalCount / this.pageSize) || this.accountsLoading}
                         @click=${() => this.handlePageChange(this.page + 1)}
                     >
                         Next
@@ -480,22 +492,19 @@ export class PageAccounts extends LitElement {
         const totalPages = Math.ceil(this.totalCount / this.pageSize);
         if (totalPages <= 1) return null;
 
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === 1 || i === totalPages || (i >= this.page - 1 && i <= this.page + 1)) {
-                pages.push(html`
+        return buildPaginationTokens(this.page, totalPages).map(token =>
+            token === 'ellipsis'
+                ? html`<span style="align-self: center;">...</span>`
+                : html`
                     <button 
-                        class="pagination-btn ${this.page === i ? 'active' : ''}" 
-                        @click=${() => this.handlePageChange(i)}
+                        class="pagination-btn ${this.page === token ? 'active' : ''}" 
+                        ?disabled=${this.accountsLoading}
+                        @click=${() => this.handlePageChange(token)}
                     >
-                        ${i}
+                        ${token}
                     </button>
-                `);
-            } else if (i === this.page - 2 || i === this.page + 2) {
-                pages.push(html`<span style="align-self: center;">...</span>`);
-            }
-        }
-        return pages;
+                `
+        );
     }
 }
 

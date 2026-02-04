@@ -208,7 +208,7 @@ export class LbSidebar extends LbBase {
     try {
       this.accountData = await DataService.getAccountData();
       // Fetch pending estimates count
-      const estimates = await DataService.getEstimates();
+      const { items: estimates } = await DataService.getEstimates(1000, 0);
       this.pendingEstimatesCount = estimates.filter((e: Estimate) => e.status === 'sent').length;
       // Fetch open invoices count
       const invoices = await DataService.getInvoices();

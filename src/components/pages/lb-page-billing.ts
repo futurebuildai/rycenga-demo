@@ -8,10 +8,12 @@ import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
 import { DataService } from '../../services/data.service.js';
 import { BillingService } from '../../connect/services/billing.js';
+import { SalesService } from '../../connect/services/sales.js';
 import { DocumentsService } from '../../connect/services/documents.js';
 import { LbToast } from '../atoms/lb-toast.js';
 import type { Invoice, InvoiceLine } from '../../types/index.js';
 import type { Statement } from '../../connect/types/domain.js';
+import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import '../../features/billing/components/lb-payment-history-table.js';
 import '../../features/billing/components/lb-payment-modal.js';
 
@@ -256,6 +258,52 @@ export class LbPageBilling extends LbBase {
         text-align: center;
         color: var(--color-text-muted);
       }
+
+      /* Pagination */
+      .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: var(--space-lg);
+        padding: var(--space-md) 0;
+      }
+
+      .pagination-info {
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+      }
+
+      .pagination-actions {
+        display: flex;
+        gap: var(--space-sm);
+      }
+
+      .pagination-btn {
+        padding: var(--space-sm) var(--space-md);
+        background: var(--color-bg-alt);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-weight: 500;
+        transition: all var(--transition-fast);
+      }
+
+      .pagination-btn:hover:not(:disabled) {
+        background: white;
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      .pagination-btn.active {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+      }
+
+      .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     `,
   ];
 
@@ -267,6 +315,14 @@ export class LbPageBilling extends LbBase {
   @state() private selectedInvoiceLines: InvoiceLine[] = [];
   @state() private loadingLines = false;
   @state() private statements: Statement[] = [];
+  @state() private invoicesLoading = false;
+  @state() private outstandingInvoicesCount = 0;
+  @state() private outstandingBalance = 0;
+
+  // Pagination State
+  @state() private invoicesPage = 1;
+  @state() private invoicesPageSize = 10;
+  @state() private invoicesTotal = 0;
 
   // Payment Modal State
   @state() private paymentModalOpen = false;
@@ -276,19 +332,68 @@ export class LbPageBilling extends LbBase {
   async connectedCallback() {
     super.connectedCallback();
     await Promise.all([
-      this.loadInvoices(),
+      this.loadInvoices(true),
       this.loadStatements(),
+      this.loadInvoiceSummary(),
     ]);
   }
 
-  private async loadInvoices() {
+  private async loadInvoices(initialLoad = false) {
     try {
-      this.invoices = await DataService.getInvoices();
+      if (initialLoad) {
+        this.loading = true;
+      } else {
+        this.invoicesLoading = true;
+      }
+      const offset = (this.invoicesPage - 1) * this.invoicesPageSize;
+      const response = await SalesService.getInvoices(this.invoicesPageSize, offset);
+
+      // Map to legacy format
+      const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
+      this.invoices = response.items.map(mapInvoiceToLegacy);
+      this.invoicesTotal = response.total;
     } catch (e) {
       console.error('Failed to load invoices', e);
     } finally {
       this.loading = false;
+      this.invoicesLoading = false;
     }
+  }
+
+  private async handleInvoicePageChange(newPage: number) {
+    if (newPage < 1 || newPage > Math.ceil(this.invoicesTotal / this.invoicesPageSize)) return;
+    this.invoicesPage = newPage;
+    await this.loadInvoices();
+  }
+
+  private async loadInvoiceSummary() {
+    try {
+      const response = await SalesService.getInvoices(1000, 0);
+      const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
+      const allInvoices = response.items.map(mapInvoiceToLegacy);
+      const outstanding = allInvoices.filter((i: Invoice) => i.status === 'open' || i.status === 'overdue');
+      this.outstandingInvoicesCount = outstanding.length;
+      this.outstandingBalance = outstanding.reduce((sum: number, inv: Invoice) => sum + inv.amountDue, 0);
+    } catch (e) {
+      console.error('Failed to load invoice summary', e);
+    }
+  }
+
+  private renderInvoicePageNumbers() {
+    const totalPages = Math.ceil(this.invoicesTotal / this.invoicesPageSize);
+    return buildPaginationTokens(this.invoicesPage, totalPages).map(token =>
+      token === 'ellipsis'
+        ? html`<span style="align-self: center;">...</span>`
+        : html`
+            <button
+              class="pagination-btn ${token === this.invoicesPage ? 'active' : ''}"
+              ?disabled=${this.invoicesLoading}
+              @click=${() => this.handleInvoicePageChange(token)}
+            >
+              ${token}
+            </button>
+          `,
+    );
   }
 
   private async loadStatements() {
@@ -341,18 +446,6 @@ export class LbPageBilling extends LbBase {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  // TODO: Replace with GET /billing/summary from backend
-  // Backend should provide: balanceDue, openInvoicesCount, overdueInvoicesCount, lastPaymentDate
-  private get totalBalance(): number {
-    // TEMPORARY: Computing until backend provides BillingSummary
-    return this.invoices.reduce((sum, inv) => sum + inv.amountDue, 0);
-  }
-
-  private get openInvoicesCount(): number {
-    // TEMPORARY: Computing until backend provides BillingSummary
-    return this.invoices.filter(i => i.status === 'open' || i.status === 'overdue').length;
-  }
-
   private openPaymentModal(invoice: Invoice) {
     this.paymentInvoiceId = invoice.id;
     this.paymentAmount = invoice.amountDue;
@@ -361,6 +454,7 @@ export class LbPageBilling extends LbBase {
 
   private handlePaymentSuccess() {
     this.loadInvoices(); // Refresh invoices to show updated status
+    this.loadInvoiceSummary();
     if (this.selectedInvoice && this.paymentInvoiceId === this.selectedInvoice.id) {
       // Ideally we'd re-fetch the specific invoice, but for now we can infer payment
       // or just depend on loadInvoices to update the list view.
@@ -416,15 +510,16 @@ export class LbPageBilling extends LbBase {
   }
 
   private renderListView() {
+    const { start, end } = getPaginationBounds(this.invoicesPage, this.invoicesPageSize, this.invoicesTotal);
     return html`
       <div class="billing-summary">
         <div class="summary-card balance">
           <div class="summary-label">Balance Due</div>
-          <div class="summary-value">${this.formatCurrency(this.totalBalance)}</div>
+          <div class="summary-value">${this.formatCurrency(this.outstandingBalance)}</div>
         </div>
         <div class="summary-card">
           <div class="summary-label">Outstanding Invoices</div>
-          <div class="summary-value">${this.openInvoicesCount}</div>
+          <div class="summary-value">${this.outstandingInvoicesCount}</div>
         </div>
         <div class="summary-card">
           <!-- TODO: Backend should provide lastPaymentDate in BillingSummary -->
@@ -440,6 +535,11 @@ export class LbPageBilling extends LbBase {
       </div>
 
       ${this.activeTab === 'invoices' ? html`
+        ${this.invoicesLoading ? html`
+          <div style="margin-bottom: var(--space-md); color: var(--color-text-muted); font-size: var(--text-sm);">
+            Updating invoices...
+          </div>
+        ` : ''}
         ${this.invoices.map(invoice => html`
           <div class="invoice-row">
             <div class="invoice-info">
@@ -456,6 +556,32 @@ export class LbPageBilling extends LbBase {
             >Pay</button>
           </div>
         `)}
+
+        <!-- Pagination Controls -->
+        <div class="pagination">
+          <div class="pagination-info">
+            Showing <span>${start}</span> to 
+            <span>${end}</span> of 
+            <span>${this.invoicesTotal}</span> invoices
+          </div>
+          <div class="pagination-actions">
+            <button
+              class="pagination-btn"
+              ?disabled=${this.invoicesPage === 1 || this.invoicesLoading}
+              @click=${() => this.handleInvoicePageChange(this.invoicesPage - 1)}
+            >
+              Previous
+            </button>
+            ${this.renderInvoicePageNumbers()}
+            <button
+              class="pagination-btn"
+              ?disabled=${this.invoicesPage >= Math.ceil(this.invoicesTotal / this.invoicesPageSize) || this.invoicesLoading}
+              @click=${() => this.handleInvoicePageChange(this.invoicesPage + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </div>
       ` : this.activeTab === 'statements' ? html`
         ${this.statements.length === 0 ? html`
           <p class="text-muted">No monthly account statements found.</p>
