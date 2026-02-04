@@ -57,11 +57,30 @@ export interface Account {
 }
 
 /**
+ * MIRRORS: velocity-backend-main/internal/domain/finance.go
+ * Response from GET /v1/accounts/{id}/financials
+ */
+export interface AccountFinancials {
+    accountId: number;
+    accountNumber: string;
+    accountName: string;
+    currencyCode: string;
+    creditLimit: number;
+    totalBalance: number;
+    availableCredit: number;
+    aging30: number;
+    aging60: number;
+    aging90: number;
+    aging90Plus: number;
+    lastSyncAt: string;
+}
+
+/**
  * MIRRORS: velocity-backend-main/internal/domain/sales.go
  */
 export type OrderStatus = 'pending' | 'confirmed' | 'ready_for_pickup' | 'shipped' | 'delivered' | 'cancelled' | 'closed';
-export type InvoiceStatus = 'open' | 'paid' | 'overdue' | 'cancelled' | 'void';
-export type QuoteStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
+export type InvoiceStatus = 'open' | 'paid' | 'past_due' | 'cancelled' | 'void';
+export type QuoteStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' | 'converted';
 export type LineItemStatus = 'active' | 'cancelled' | 'shipped' | 'returned';
 
 export interface OrderLine {

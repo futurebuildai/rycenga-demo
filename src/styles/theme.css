@@ -77,4 +77,14 @@
     --sidebar-width: 280px;
     --container-max: 1440px;
     --container-padding: 2rem;
+
+    /* Admin Specific Tokens */
+    --admin-sidebar-bg: #0f172a;
+    --admin-sidebar-hover: #1e293b;
+    --admin-sidebar-text: #94a3b8;
+    --admin-sidebar-text-active: #ffffff;
+    --admin-accent: #6366f1; /* Indigo 500 */
+    --admin-accent-hover: #4f46e5; /* Indigo 600 */
+    --admin-card-bg: #ffffff;
+    --admin-bg: #f1f5f9; /* Slate 100 */
 }

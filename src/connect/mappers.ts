@@ -31,7 +31,10 @@ export const mapQuoteToEstimate = (quote: Quote): Estimate => ({
     estimateNumber: quote.quoteNumber,
     status: ((): Estimate['status'] => {
         switch (quote.status) {
-            case 'pending': return 'sent';
+            case 'draft':
+            case 'sent':
+            case 'viewed':
+            case 'converted': return 'sent';
             case 'accepted': return 'accepted';
             case 'rejected': return 'rejected';
             case 'expired': return 'expired';

@@ -12,6 +12,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@vaadin/router": "^2.0.1",
     "lit": "^3.2.0"
   },
   "devDependencies": {
