@@ -101,37 +101,12 @@ export interface AdminAccountDetails extends AdminAccount {
 
 const isPastDue = (inv: Invoice): boolean => inv.status === 'past_due';
 
-/** Compute the aging bucket from the oldest overdue invoice. */
-function computeAgingFromInvoices(invoices: Invoice[]): AdminAccount['aging'] {
-    const now = Date.now();
-    let oldestDaysOverdue = 0;
-
-    for (const inv of invoices) {
-        if (!isPastDue(inv) || !inv.dueDate) continue;
-        const days = Math.floor((now - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24));
-        if (days > oldestDaysOverdue) oldestDaysOverdue = days;
-    }
-
-    if (oldestDaysOverdue > 90) return '90+';
-    if (oldestDaysOverdue > 60) return '90';
-    if (oldestDaysOverdue > 30) return '60';
-    if (oldestDaysOverdue > 0) return '30';
-    return 'Current';
-}
-
 /** Format an ISO date string to "Jan 15, 2026" style. */
 function formatDate(iso: string | undefined): string {
     if (!iso) return '';
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-/** Sum balanceDue for all overdue invoices. */
-function computePastDueBalance(invoices: Invoice[]): number {
-    return invoices
-        .filter(isPastDue)
-        .reduce((sum, inv) => sum + inv.balanceDue, 0);
 }
 
 // --- Mappers ---
@@ -147,12 +122,12 @@ const mapAccount = (raw: Account, invoices?: Invoice[], financials?: AccountFina
     name: raw.name || 'Unknown',
     email: raw.email || '',
     phone: raw.phone || '',
-    status: mapStatus(raw.active, invoices),
+    status: raw.active ? ((financials?.pastDueBalance ?? 0) > 0 ? 'Overdue' : 'Active') : 'Hold',
     creditLimit: financials?.creditLimit ?? raw.creditLimit ?? 0,
     balance: financials?.totalBalance ?? raw.balance ?? 0,
     availableCredit: financials?.availableCredit ?? raw.availableCredit ?? 0,
-    pastDueBalance: invoices ? computePastDueBalance(invoices) : 0,
-    aging: invoices ? computeAgingFromInvoices(invoices) : 'Current',
+    pastDueBalance: financials?.pastDueBalance ?? 0,
+    aging: financials?.aging ?? 'Current',
     openInvoicesCount: invoices
         ? invoices.filter(inv => inv.status === 'open' || isPastDue(inv)).length
         : 0,

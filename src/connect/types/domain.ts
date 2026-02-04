@@ -72,6 +72,8 @@ export interface AccountFinancials {
     aging60: number;
     aging90: number;
     aging90Plus: number;
+    aging: 'Current' | '30' | '60' | '90' | '90+';
+    pastDueBalance: number;
     lastSyncAt: string;
 }
 
