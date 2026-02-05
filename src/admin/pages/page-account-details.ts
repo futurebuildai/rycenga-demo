@@ -610,7 +610,7 @@ export class PageAccountDetails extends LitElement {
                     </div>
 
                     <div class="field">
-                        <span class="label">Current Balance</span>
+                        <span class="label">Total Balance</span>
                         <div class="value value-lg">$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div class="field">
