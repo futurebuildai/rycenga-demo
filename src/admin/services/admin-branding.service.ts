@@ -68,10 +68,10 @@ class AdminBrandingServiceImpl {
      * Returns the new logo URL
      */
     async uploadLogo(file: File): Promise<string> {
-        // Validate file
-        const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+        // Validate file (SVG not supported due to XSS risk)
+        const validTypes = ['image/png', 'image/jpeg'];
         if (!validTypes.includes(file.type)) {
-            throw new Error('Invalid file type. Please upload PNG, JPG, or SVG.');
+            throw new Error('Invalid file type. Please upload PNG or JPG.');
         }
 
         const maxSize = 2 * 1024 * 1024; // 2MB
