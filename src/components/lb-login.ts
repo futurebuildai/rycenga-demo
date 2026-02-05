@@ -1,6 +1,6 @@
 /**
  * LbLogin - Login screen component
- * Implements Boss Lumber branding with email/password authentication
+ * Uses BrandingService for dynamic dealer branding with email/password authentication
  */
 
 import { html, css } from 'lit';
@@ -8,6 +8,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from './lb-base.js';
 import { AuthService } from '../services/auth.service.js';
 import { LbToast } from './atoms/lb-toast.js';
+import { BrandingService, type DealerBranding } from '../services/branding.service.js';
 
 @customElement('lb-login')
 export class LbLogin extends LbBase {
@@ -63,6 +64,13 @@ export class LbLogin extends LbBase {
         color: var(--color-text-muted);
         margin-top: var(--space-xs);
         display: block;
+      }
+
+      .logo-image {
+        max-height: 60px;
+        max-width: 220px;
+        object-fit: contain;
+        margin-bottom: var(--space-md);
       }
 
       .login-error {
@@ -167,6 +175,13 @@ export class LbLogin extends LbBase {
   @state() private password = '';
   @state() private showError = false;
   @state() private isLoading = false;
+  @state() private branding: DealerBranding = BrandingService.getBrandingSync();
+
+  async connectedCallback() {
+    super.connectedCallback();
+    // Fetch branding for login page (public endpoint, no auth needed)
+    this.branding = await BrandingService.getBranding();
+  }
 
   private async handleSubmit(e: Event) {
     e.preventDefault();
@@ -197,9 +212,11 @@ export class LbLogin extends LbBase {
       <div class="login-container">
         <div class="login-card">
           <div class="login-header">
-            <div class="login-logo-icon">⬡</div>
+            ${this.branding.logoUrl
+              ? html`<img class="logo-image" src=${this.branding.logoUrl} alt=${this.branding.companyName} />`
+              : html`<div class="login-logo-icon">⬡</div>`}
             <div class="login-logo-text">
-              <span class="logo-name-main">BOSS LUMBER & MILLWORK</span>
+              <span class="logo-name-main">${this.branding.companyName.toUpperCase()}</span>
               <span class="logo-tagline-lite">My Account Portal</span>
             </div>
           </div>

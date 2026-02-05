@@ -1,11 +1,13 @@
 /**
  * LbHeader - Main header component
  * Displays logo and utility navigation
+ * Uses BrandingService for dynamic dealer branding
  */
 
 import { html, css } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 import { LbBase } from '../lb-base.js';
+import { BrandingService, type DealerBranding } from '../../services/branding.service.js';
 
 @customElement('lb-header')
 export class LbHeader extends LbBase {
@@ -75,6 +77,12 @@ export class LbHeader extends LbBase {
         line-height: 1;
       }
 
+      .logo-image {
+        max-height: 48px;
+        max-width: 180px;
+        object-fit: contain;
+      }
+
       .header-right {
         width: var(--sidebar-width, 280px);
         display: flex;
@@ -137,6 +145,22 @@ export class LbHeader extends LbBase {
     `,
     ];
 
+    @state() private branding: DealerBranding = BrandingService.getBrandingSync();
+    private unsubscribeBranding?: () => void;
+
+    async connectedCallback() {
+        super.connectedCallback();
+        this.branding = await BrandingService.getBranding();
+        this.unsubscribeBranding = BrandingService.subscribe((branding) => {
+            this.branding = branding;
+        });
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.unsubscribeBranding?.();
+    }
+
     private handleMenuToggle() {
         this.dispatchEvent(new CustomEvent('menu-toggle', {
             bubbles: true,
@@ -157,8 +181,12 @@ export class LbHeader extends LbBase {
         </div>
 
         <a href="/" class="logo">
-          <div class="logo-icon">⬡</div>
-          <span class="logo-name">BOSS LUMBER & MILLWORK</span>
+          ${this.branding.logoUrl
+            ? html`<img class="logo-image" src=${this.branding.logoUrl} alt=${this.branding.companyName} />`
+            : html`
+              <div class="logo-icon">⬡</div>
+              <span class="logo-name">${this.branding.companyName.toUpperCase()}</span>
+            `}
         </a>
 
         <div class="header-right">

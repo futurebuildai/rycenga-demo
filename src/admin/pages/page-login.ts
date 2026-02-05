@@ -1,6 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
+import { AdminBrandingService, type DealerBranding, DEFAULT_BRANDING } from '../services/admin-branding.service.js';
+import { API_CONFIG } from '../../connect/config.js';
 
 @customElement('admin-page-login')
 export class PageLogin extends LitElement {
@@ -53,6 +55,13 @@ export class PageLogin extends LitElement {
             font-size: 0.875rem;
             color: #94a3b8;
             margin-top: 0.25rem;
+        }
+
+        .logo-image {
+            max-height: 60px;
+            max-width: 220px;
+            object-fit: contain;
+            margin-bottom: 1rem;
         }
 
         .login-error {
@@ -141,10 +150,40 @@ export class PageLogin extends LitElement {
     @state() private otpExpiresAt = '';
     @state() private errorMessage = '';
     @state() private isLoading = false;
+    @state() private branding: DealerBranding = DEFAULT_BRANDING;
 
-    connectedCallback() {
+    async connectedCallback() {
         super.connectedCallback();
-        document.title = 'Dealer Portal | Lumber Boss';
+        // Fetch branding for login page (uses public endpoint via separate fetch)
+        await this.loadBranding();
+        document.title = `Dealer Portal | ${this.branding.companyName}`;
+    }
+
+    private async loadBranding() {
+        try {
+            // Use direct fetch since admin client requires auth
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+            if (import.meta.env.DEV) {
+                const devTenantId = import.meta.env.VITE_DEV_TENANT_ID as string | undefined;
+                if (devTenantId) {
+                    headers['X-Tenant-ID'] = devTenantId;
+                }
+            }
+            const response = await fetch(`${API_CONFIG.BASE_URL}/branding/public`, { headers });
+            if (response.ok) {
+                const data = await response.json();
+                this.branding = {
+                    companyName: data.companyName || DEFAULT_BRANDING.companyName,
+                    logoUrl: data.logoUrl || null,
+                    contactEmail: data.contactEmail || DEFAULT_BRANDING.contactEmail,
+                    contactPhone: data.contactPhone || DEFAULT_BRANDING.contactPhone,
+                };
+            }
+        } catch {
+            // Use defaults on error
+        }
     }
 
     private async handleSubmit(e: Event) {
@@ -194,8 +233,10 @@ export class PageLogin extends LitElement {
             <div class="login-container">
                 <div class="login-card">
                     <div class="login-header">
-                        <div class="login-logo-icon">⬡</div>
-                        <span class="logo-name">LUMBER BOSS ADMIN</span>
+                        ${this.branding.logoUrl
+                            ? html`<img class="logo-image" src=${this.branding.logoUrl} alt=${this.branding.companyName} />`
+                            : html`<div class="login-logo-icon">⬡</div>`}
+                        <span class="logo-name">${this.branding.companyName.toUpperCase()} ADMIN</span>
                         <span class="logo-tagline">Dealer Portal Access</span>
                     </div>
 

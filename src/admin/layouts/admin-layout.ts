@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
+import { AdminBrandingService, type DealerBranding, DEFAULT_BRANDING } from '../services/admin-branding.service.js';
 import type { User } from '../../connect/types/domain.js';
 
 @customElement('admin-layout')
@@ -44,6 +45,12 @@ export class AdminLayout extends LitElement {
             justify-content: center;
             color: white;
             font-size: 18px;
+        }
+
+        .logo-image {
+            max-height: 32px;
+            max-width: 140px;
+            object-fit: contain;
         }
 
         .nav-links {
@@ -177,10 +184,16 @@ export class AdminLayout extends LitElement {
     `;
 
     @state() private user: User | null = null;
+    @state() private branding: DealerBranding = DEFAULT_BRANDING;
 
-    connectedCallback() {
+    async connectedCallback() {
         super.connectedCallback();
         this.user = AdminAuthService.getUser();
+        try {
+            this.branding = await AdminBrandingService.getBranding();
+        } catch {
+            // Use defaults on error
+        }
     }
 
     private get userInitials(): string {
@@ -211,8 +224,10 @@ export class AdminLayout extends LitElement {
         return html`
             <nav>
                 <div class="logo-area">
-                    <div class="logo-icon">V</div>
-                    Velocity Admin
+                    ${this.branding.logoUrl
+                        ? html`<img class="logo-image" src=${this.branding.logoUrl} alt=${this.branding.companyName} />`
+                        : html`<div class="logo-icon">${this.branding.companyName.charAt(0).toUpperCase()}</div>`}
+                    ${this.branding.companyName} Admin
                 </div>
                 <div class="nav-links">
                     <div class="nav-category">Overview</div>

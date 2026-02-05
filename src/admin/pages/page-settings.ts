@@ -2,6 +2,8 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
 import { AdminDataService } from '../services/admin-data.service.js';
+import { AdminBrandingService, type DealerBranding, DEFAULT_BRANDING } from '../services/admin-branding.service.js';
+import '../components/logo-upload.js';
 
 @customElement('admin-page-settings')
 export class PageSettings extends LitElement {
@@ -97,8 +99,38 @@ export class PageSettings extends LitElement {
             transition: background 0.15s ease;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: var(--admin-accent-hover, #4f46e5);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .branding-preview {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--color-text-muted);
+        }
+
+        .branding-preview strong {
+            color: var(--color-text);
         }
 
         .toast {
@@ -140,7 +172,16 @@ export class PageSettings extends LitElement {
     @state() private inviteEmail = '';
     @state() private inviteRole = 'TENANT_STAFF';
 
-    connectedCallback() {
+    // Branding state
+    @state() private branding: DealerBranding = DEFAULT_BRANDING;
+    @state() private brandingCompanyName = '';
+    @state() private brandingContactEmail = '';
+    @state() private brandingContactPhone = '';
+    @state() private brandingSaving = false;
+    @state() private logoUploading = false;
+    @state() private pendingLogoFile: File | null = null;
+
+    async connectedCallback() {
         super.connectedCallback();
         this.user = AdminAuthService.getUser();
         if (this.user) {
@@ -151,6 +192,87 @@ export class PageSettings extends LitElement {
                 status: 'Active',
                 lastLogin: 'Current session',
             }];
+        }
+
+        // Load branding configuration
+        await this.loadBranding();
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        // Clear toast timer to prevent memory leaks
+        if (this.toastTimer) {
+            clearTimeout(this.toastTimer);
+        }
+    }
+
+    private async loadBranding() {
+        try {
+            this.branding = await AdminBrandingService.getBranding();
+            this.brandingCompanyName = this.branding.companyName;
+            this.brandingContactEmail = this.branding.contactEmail;
+            this.brandingContactPhone = this.branding.contactPhone;
+        } catch {
+            // Use defaults on error
+        }
+    }
+
+    private handleLogoSelected(e: CustomEvent<{ file: File }>) {
+        this.pendingLogoFile = e.detail.file;
+    }
+
+    private handleLogoRemoved() {
+        this.pendingLogoFile = null;
+        // If there's an existing logo, mark it for deletion
+        if (this.branding.logoUrl) {
+            this.branding = { ...this.branding, logoUrl: null };
+        }
+    }
+
+    private async saveBranding() {
+        this.brandingSaving = true;
+
+        try {
+            // Upload logo if there's a pending file
+            if (this.pendingLogoFile) {
+                this.logoUploading = true;
+                try {
+                    await AdminBrandingService.uploadLogo(this.pendingLogoFile);
+                    this.pendingLogoFile = null;
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : 'Failed to upload logo.';
+                    this.showToast(msg, 'error');
+                    return;
+                } finally {
+                    this.logoUploading = false;
+                }
+            }
+
+            // Delete logo if it was removed
+            if (this.branding.logoUrl === null && AdminBrandingService.getBrandingSync().logoUrl) {
+                try {
+                    await AdminBrandingService.deleteLogo();
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : 'Failed to remove logo.';
+                    this.showToast(msg, 'error');
+                    return;
+                }
+            }
+
+            // Update branding metadata
+            const updated = await AdminBrandingService.updateBranding({
+                companyName: this.brandingCompanyName,
+                contactEmail: this.brandingContactEmail,
+                contactPhone: this.brandingContactPhone,
+            });
+
+            this.branding = updated;
+            this.showToast('Branding saved successfully', 'success');
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : 'Failed to save branding.';
+            this.showToast(msg, 'error');
+        } finally {
+            this.brandingSaving = false;
         }
     }
 
@@ -195,18 +317,79 @@ export class PageSettings extends LitElement {
 
     render() {
         return html`
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <div>
-                    <h2>Team Settings</h2>
-                    <p class="subtitle">Manage your organization's team and permissions.</p>
-                </div>
-                <button class="btn-primary" @click=${this.handleInvite} ?disabled=${this.teamUnavailable}>
-                    <svg width="16" height="16" style="margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                    Invite Member${this.teamUnavailable ? html`<span style="margin-left: 8px; font-size: 10px; background: rgba(99, 102, 241, 0.2); color: var(--admin-accent); padding: 2px 6px; border-radius: 4px; font-weight: 600;">SOON</span>` : ''}
-                </button>
+            <div style="margin-bottom: 2rem;">
+                <h2>Settings</h2>
+                <p class="subtitle">Manage your dealer portal branding and team.</p>
             </div>
 
             <div class="settings-container">
+                <!-- Branding Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Branding</h3>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Logo</label>
+                        <logo-upload
+                            .logoUrl=${this.branding.logoUrl}
+                            .uploading=${this.logoUploading}
+                            @logo-selected=${this.handleLogoSelected}
+                            @logo-removed=${this.handleLogoRemoved}
+                        ></logo-upload>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input
+                            type="text"
+                            placeholder="Your Company Name"
+                            .value=${this.brandingCompanyName}
+                            @input=${(e: Event) => this.brandingCompanyName = (e.target as HTMLInputElement).value}
+                        />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Contact Email</label>
+                            <input
+                                type="email"
+                                placeholder="support@company.com"
+                                .value=${this.brandingContactEmail}
+                                @input=${(e: Event) => this.brandingContactEmail = (e.target as HTMLInputElement).value}
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Contact Phone</label>
+                            <input
+                                type="tel"
+                                placeholder="(555) 123-4567"
+                                .value=${this.brandingContactPhone}
+                                @input=${(e: Event) => this.brandingContactPhone = (e.target as HTMLInputElement).value}
+                            />
+                        </div>
+                    </div>
+
+                    <div class="branding-preview">
+                        <strong>Preview:</strong> Your branding will appear on customer login pages, portal headers, and the "Need Help?" section in the customer sidebar.
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button class="btn-primary" @click=${this.saveBranding} ?disabled=${this.brandingSaving}>
+                            ${this.brandingSaving ? 'Saving...' : 'Save Branding'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Team Section Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: var(--color-text);">Team</h3>
+                    <button class="btn-primary" @click=${this.handleInvite} ?disabled=${this.teamUnavailable}>
+                        <svg width="16" height="16" style="margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                        Invite Member${this.teamUnavailable ? html`<span style="margin-left: 8px; font-size: 10px; background: rgba(99, 102, 241, 0.2); color: var(--admin-accent); padding: 2px 6px; border-radius: 4px; font-weight: 600;">SOON</span>` : ''}
+                    </button>
+                </div>
                 <!-- Team Members List -->
                 <div class="card">
                     <div class="card-header">
