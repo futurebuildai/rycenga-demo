@@ -9,7 +9,7 @@ import { PvBase } from '../pv-base.js';
 import { RouterService } from '../../services/router.service.js';
 import { AuthService } from '../../services/auth.service.js';
 import { DataService } from '../../services/data.service.js';
-import { BrandingService, type DealerBranding } from '../../services/branding.service.js';
+import { BrandingService, type BrandingInfo } from '../../services/branding.service.js';
 import type { RouteId, AccountData, Estimate, Invoice } from '../../types/index.js';
 
 @customElement('pv-sidebar')
@@ -190,7 +190,7 @@ export class PvSidebar extends PvBase {
   @state() private pendingEstimatesCount = 0;
   @state() private openInvoicesCount = 0;
   @state() private overdueInvoicesCount = 0;
-  @state() private branding: DealerBranding = BrandingService.getBrandingSync();
+  @state() private branding: BrandingInfo = BrandingService.getBrandingSync();
   private unsubscribeBranding?: () => void;
 
   private get navItems(): { id: RouteId; label: string; icon: string; badge?: number; alertBadge?: number }[] {
