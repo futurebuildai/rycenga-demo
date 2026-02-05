@@ -1,33 +1,34 @@
 /**
- * LbApp - Root application shell component
+ * PvApp - Root application shell component
  * Handles auth state, routing, and global toast events
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from './lb-base.js';
+import { PvBase } from './pv-base.js';
 import { AuthService } from '../services/auth.service.js';
 import { RouterService } from '../services/router.service.js';
-import { LbToast } from './atoms/lb-toast.js';
+import { PvToast } from './atoms/pv-toast.js';
 import type { RouteId, ToastEvent } from '../types/index.js';
+import { BrandingService } from '../services/branding.service.js';
 
 // Import components
-import './lb-login.js';
-import './organisms/lb-header.js';
-import './organisms/lb-sidebar.js';
-import './pages/lb-page-overview.js';
-import './pages/lb-page-orders.js';
-import './pages/lb-page-estimates.js';
-import './pages/lb-page-billing.js';
-import './pages/lb-page-projects.js';
-import './pages/lb-page-wallet.js';
-import './pages/lb-page-team.js';
-import './pages/lb-page-settings.js';
+import './pv-login.js';
+import './organisms/pv-header.js';
+import './organisms/pv-sidebar.js';
+import './pages/pv-page-overview.js';
+import './pages/pv-page-orders.js';
+import './pages/pv-page-estimates.js';
+import './pages/pv-page-billing.js';
+import './pages/pv-page-projects.js';
+import './pages/pv-page-wallet.js';
+import './pages/pv-page-team.js';
+import './pages/pv-page-settings.js';
 
-@customElement('lb-app')
-export class LbApp extends LbBase {
+@customElement('pv-app')
+export class PvApp extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -120,6 +121,7 @@ export class LbApp extends LbBase {
     this.authUnsubscribe = AuthService.subscribe((isAuth) => {
       this.isAuthenticated = isAuth;
       this.refreshImpersonationState();
+      this.updateTitle();
       if (!isAuth) {
         this.currentRoute = 'login';
       }
@@ -128,10 +130,13 @@ export class LbApp extends LbBase {
     // Subscribe to route changes
     this.routeUnsubscribe = RouterService.subscribe((route) => {
       this.currentRoute = route;
+      this.updateTitle();
     });
 
     // Listen for global toast events
     window.addEventListener('show-toast', this.handleToastEvent as EventListener);
+
+    this.updateTitle();
   }
 
   disconnectedCallback() {
@@ -143,8 +148,13 @@ export class LbApp extends LbBase {
 
   private handleToastEvent = (e: CustomEvent<ToastEvent>) => {
     const { message, type, duration } = e.detail;
-    LbToast.show(message, type, duration);
+    PvToast.show(message, type, duration);
   };
+
+  private async updateTitle() {
+    await BrandingService.getBranding();
+    document.title = BrandingService.getAccountTitle();
+  }
 
   private handleLoginSuccess() {
     this.isAuthenticated = true;
@@ -181,23 +191,23 @@ export class LbApp extends LbBase {
   private renderPage() {
     switch (this.currentRoute) {
       case 'overview':
-        return html`<lb-page-overview></lb-page-overview>`;
+        return html`<pv-page-overview></pv-page-overview>`;
       case 'billing':
-        return html`<lb-page-billing></lb-page-billing>`;
+        return html`<pv-page-billing></pv-page-billing>`;
       case 'projects':
-        return html`<lb-page-projects></lb-page-projects>`;
+        return html`<pv-page-projects></pv-page-projects>`;
       case 'orders':
-        return html`<lb-page-orders></lb-page-orders>`;
+        return html`<pv-page-orders></pv-page-orders>`;
       case 'estimates':
-        return html`<lb-page-estimates></lb-page-estimates>`;
+        return html`<pv-page-estimates></pv-page-estimates>`;
       case 'wallet':
-        return html`<lb-page-wallet></lb-page-wallet>`;
+        return html`<pv-page-wallet></pv-page-wallet>`;
       case 'team':
-        return html`<lb-page-team></lb-page-team>`;
+        return html`<pv-page-team></pv-page-team>`;
       case 'settings':
-        return html`<lb-page-settings></lb-page-settings>`;
+        return html`<pv-page-settings></pv-page-settings>`;
       default:
-        return html`<lb-page-overview></lb-page-overview>`;
+        return html`<pv-page-overview></pv-page-overview>`;
     }
   }
 
@@ -213,7 +223,7 @@ export class LbApp extends LbBase {
   render() {
     // Show login if not authenticated
     if (!this.isAuthenticated) {
-      return html`<lb-login @login-success=${this.handleLoginSuccess}></lb-login>`;
+      return html`<pv-login @login-success=${this.handleLoginSuccess}></pv-login>`;
     }
 
     // Render main app layout
@@ -225,15 +235,15 @@ export class LbApp extends LbBase {
         </div>
       ` : ''}
       <div class="${this.isImpersonating ? 'has-impersonation' : ''}">
-      <lb-header 
+      <pv-header 
         @menu-toggle=${this.handleMenuToggle}
-      ></lb-header>
+      ></pv-header>
       
       <div class="app-layout">
-        <lb-sidebar 
+        <pv-sidebar 
           class="${this.sidebarOpen ? 'open' : ''}"
           .activeRoute=${this.currentRoute}
-        ></lb-sidebar>
+        ></pv-sidebar>
         
         <main class="app-main">
           ${this.renderPage()}
@@ -246,6 +256,6 @@ export class LbApp extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-app': LbApp;
+    'pv-app': PvApp;
   }
 }

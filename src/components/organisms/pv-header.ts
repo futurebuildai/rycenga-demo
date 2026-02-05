@@ -1,16 +1,17 @@
 /**
- * LbHeader - Main header component
+ * PvHeader - Main header component
  * Displays logo and utility navigation
  */
 
 import { html, css } from 'lit';
-import { customElement } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { customElement, state } from 'lit/decorators.js';
+import { PvBase } from '../pv-base.js';
+import { BrandingService } from '../../services/branding.service.js';
 
-@customElement('lb-header')
-export class LbHeader extends LbBase {
+@customElement('pv-header')
+export class PvHeader extends PvBase {
     static styles = [
-        ...LbBase.styles,
+        ...PvBase.styles,
         css`
       :host {
         display: block;
@@ -144,11 +145,21 @@ export class LbHeader extends LbBase {
         }));
     }
 
+    @state() private tenantName = '';
+
+    connectedCallback() {
+        super.connectedCallback();
+        BrandingService.getBranding().then((branding) => {
+            this.tenantName = branding.tenantName;
+        });
+    }
+
     render() {
+        const tenantName = this.tenantName || 'Velocity';
         return html`
       <div class="header-inner">
         <div class="header-left">
-          <a href="https://builderwire.com" class="home-link" title="Boss Home Site" target="_blank">
+          <a href="https://builderwire.com" class="home-link" title="${tenantName} Home" target="_blank">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -158,7 +169,7 @@ export class LbHeader extends LbBase {
 
         <a href="/" class="logo">
           <div class="logo-icon">⬡</div>
-          <span class="logo-name">BOSS LUMBER & MILLWORK</span>
+          <span class="logo-name">${tenantName}</span>
         </a>
 
         <div class="header-right">
@@ -186,6 +197,6 @@ export class LbHeader extends LbBase {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'lb-header': LbHeader;
+        'pv-header': PvHeader;
     }
 }

@@ -2,6 +2,6 @@
  * Billing Components - Barrel export
  */
 
-export { LbAddPaymentModal } from './lb-add-payment-modal.js';
-export { LbPaymentHistoryTable } from './lb-payment-history-table.js';
-export { LbPaymentMethodList } from './lb-payment-method-list.js';
+export { PvAddPaymentModal } from './pv-add-payment-modal.js';
+export { PvPaymentHistoryTable } from './pv-payment-history-table.js';
+export { PvPaymentMethodList } from './pv-payment-method-list.js';

@@ -1,12 +1,12 @@
 /**
- * LbPageProjects - Projects page component
+ * PvPageProjects - Projects page component
  * Displays project cards with stats and navigation
  * Fetches real project data from DataService
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { RouterService } from '../../services/router.service.js';
 import { DataService } from '../../services/data.service.js';
 import type { Project, Address } from '../../types/index.js';
@@ -52,10 +52,10 @@ function mapProjectToCard(project: Project, index: number): ProjectCard {
   };
 }
 
-@customElement('lb-page-projects')
-export class LbPageProjects extends LbBase {
+@customElement('pv-page-projects')
+export class PvPageProjects extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -219,7 +219,7 @@ export class LbPageProjects extends LbBase {
       const apiProjects: Project[] = await DataService.getProjects();
       this.projects = apiProjects.map(mapProjectToCard);
     } catch (err) {
-      console.error('[LbPageProjects] Failed to fetch projects:', err);
+      console.error('[PvPageProjects] Failed to fetch projects:', err);
       this.error = err instanceof Error ? err.message : 'Failed to load projects.';
     } finally {
       this.loading = false;
@@ -306,6 +306,6 @@ export class LbPageProjects extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-page-projects': LbPageProjects;
+    'pv-page-projects': PvPageProjects;
   }
 }

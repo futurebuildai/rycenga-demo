@@ -102,7 +102,7 @@ A lightweight wrapper around `fetch` that handles:
 - **Write Operations (Pushes)**: Components call service methods directly, implementing:
     - **Loading States**: Visual feedback during the request.
     - **Optimistic UI**: Immediate UI updates for high-latency actions (e.g., toggling notifications).
-    - **Error Handling**: Standardized toast notifications via `LbToast`.
+    - **Error Handling**: Standardized toast notifications via `PvToast`.
 
 ---
 

@@ -2,11 +2,12 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { initRouter } from './router.js';
 import { AdminAuthService } from './services/admin-auth.service.js';
+import { BrandingService } from '../services/branding.service.js';
 import './layouts/admin-layout.js';
 import './pages/page-login.js';
 
-@customElement('lb-admin-app')
-export class LbAdminApp extends LitElement {
+@customElement('pv-admin-app')
+export class PvAdminApp extends LitElement {
     static styles = css`
         :host {
             display: block;
@@ -22,8 +23,10 @@ export class LbAdminApp extends LitElement {
     connectedCallback() {
         super.connectedCallback();
         this.isAuthenticated = AdminAuthService.isAuthenticated();
+        this.updateTitle();
         this.unsubscribe = AdminAuthService.subscribe((authed) => {
             this.isAuthenticated = authed;
+            this.updateTitle();
             if (!authed) {
                 this.routerInitialized = false;
             }
@@ -33,6 +36,11 @@ export class LbAdminApp extends LitElement {
     disconnectedCallback() {
         super.disconnectedCallback();
         this.unsubscribe?.();
+    }
+
+    private async updateTitle() {
+        await BrandingService.getBranding();
+        document.title = BrandingService.getAdminTitle();
     }
 
     protected updated() {
@@ -60,6 +68,6 @@ export class LbAdminApp extends LitElement {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'lb-admin-app': LbAdminApp;
+        'pv-admin-app': PvAdminApp;
     }
 }

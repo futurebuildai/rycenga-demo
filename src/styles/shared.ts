@@ -301,7 +301,7 @@ export const cardStyles = css`
 `;
 
 /**
- * Combined shared styles for LbBase
+ * Combined shared styles for PvBase
  */
 export const sharedStyles = [
   resetStyles,

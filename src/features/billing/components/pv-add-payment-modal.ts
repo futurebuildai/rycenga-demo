@@ -1,19 +1,19 @@
 /**
- * LbAddPaymentModal - Modal for adding Card or ACH payment methods
+ * PvAddPaymentModal - Modal for adding Card or ACH payment methods
  * PCI-DSS compliant: sensitive data stored only in @state, cleared after tokenization
  */
 
 import { html, css, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { LbBase } from '../../../components/lb-base.js';
+import { PvBase } from '../../../components/pv-base.js';
 import { PaymentSDKService } from '../../../connect/services/payment-sdk.js';
 import { BillingService } from '../../../connect/services/billing.js';
-import { LbToast } from '../../../components/atoms/lb-toast.js';
+import { PvToast } from '../../../components/atoms/pv-toast.js';
 
-@customElement('lb-add-payment-modal')
-export class LbAddPaymentModal extends LbBase {
+@customElement('pv-add-payment-modal')
+export class PvAddPaymentModal extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -439,7 +439,7 @@ export class LbAddPaymentModal extends LbBase {
       // Clear remaining form data
       this.clearForm();
 
-      LbToast.show('Payment method added successfully', 'success');
+      PvToast.show('Payment method added successfully', 'success');
       this.dispatchEvent(new CustomEvent('payment-method-added', {
         detail: paymentMethod,
         bubbles: true,
@@ -447,7 +447,7 @@ export class LbAddPaymentModal extends LbBase {
       }));
     } catch (error) {
       console.error('Failed to add payment method:', error);
-      LbToast.show('Failed to add payment method. Please try again.', 'error');
+      PvToast.show('Failed to add payment method. Please try again.', 'error');
     } finally {
       this.submitting = false;
     }
@@ -701,6 +701,6 @@ export class LbAddPaymentModal extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-add-payment-modal': LbAddPaymentModal;
+    'pv-add-payment-modal': PvAddPaymentModal;
   }
 }

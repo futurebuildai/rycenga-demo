@@ -1,19 +1,19 @@
 /**
- * LbPaymentMethodList - Displays list of saved payment methods with delete capability
+ * PvPaymentMethodList - Displays list of saved payment methods with delete capability
  * Shows card/ACH icons, last4 digits, expiry, and default badge
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../../../components/lb-base.js';
+import { PvBase } from '../../../components/pv-base.js';
 import { BillingService } from '../../../connect/services/billing.js';
-import { LbToast } from '../../../components/atoms/lb-toast.js';
+import { PvToast } from '../../../components/atoms/pv-toast.js';
 import type { PaymentMethod } from '../../../connect/types/domain.js';
 
-@customElement('lb-payment-method-list')
-export class LbPaymentMethodList extends LbBase {
+@customElement('pv-payment-method-list')
+export class PvPaymentMethodList extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -141,7 +141,7 @@ export class LbPaymentMethodList extends LbBase {
     } catch (e) {
       console.error('Failed to load payment methods', e);
       this.error = 'Failed to load payment methods. Please try again.';
-      LbToast.show('Failed to load payment methods', 'error');
+      PvToast.show('Failed to load payment methods', 'error');
     } finally {
       this.loading = false;
     }
@@ -156,7 +156,7 @@ export class LbPaymentMethodList extends LbBase {
 
   private async handleRemove(method: PaymentMethod) {
     if (method.isDefault) {
-      LbToast.show('Cannot remove default payment method', 'warning');
+      PvToast.show('Cannot remove default payment method', 'warning');
       return;
     }
 
@@ -164,7 +164,7 @@ export class LbPaymentMethodList extends LbBase {
     try {
       await BillingService.removePaymentMethod(method.id);
       this.paymentMethods = this.paymentMethods.filter(m => m.id !== method.id);
-      LbToast.show('Payment method removed', 'success');
+      PvToast.show('Payment method removed', 'success');
 
       this.dispatchEvent(new CustomEvent('payment-method-removed', {
         bubbles: true,
@@ -173,7 +173,7 @@ export class LbPaymentMethodList extends LbBase {
       }));
     } catch (e) {
       console.error('Failed to remove payment method', e);
-      LbToast.show('Failed to remove payment method', 'error');
+      PvToast.show('Failed to remove payment method', 'error');
     } finally {
       this.removingId = null;
     }
@@ -278,6 +278,6 @@ export class LbPaymentMethodList extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-payment-method-list': LbPaymentMethodList;
+    'pv-payment-method-list': PvPaymentMethodList;
   }
 }

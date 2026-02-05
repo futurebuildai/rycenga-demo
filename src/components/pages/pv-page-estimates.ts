@@ -1,21 +1,21 @@
 /**
- * LbPageEstimates - Estimates page component
+ * PvPageEstimates - Estimates page component
  * Displays estimate list with drill-down to detail view
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { DocumentsService } from '../../connect/services/documents.js';
-import { LbToast } from '../atoms/lb-toast.js';
+import { PvToast } from '../atoms/pv-toast.js';
 import type { Estimate } from '../../types/index.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
-@customElement('lb-page-estimates')
-export class LbPageEstimates extends LbBase {
+@customElement('pv-page-estimates')
+export class PvPageEstimates extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -256,7 +256,7 @@ export class LbPageEstimates extends LbBase {
       if (initialLoad) {
         this.error = 'Failed to load estimates. Please try again later.';
       }
-      LbToast.show('Failed to load estimates. Please try again later.', 'error');
+      PvToast.show('Failed to load estimates. Please try again later.', 'error');
     } finally {
       this.loading = false;
       this.estimatesLoading = false;
@@ -327,7 +327,7 @@ export class LbPageEstimates extends LbBase {
 
   private async downloadEstimatePdf(estimate: Estimate) {
     try {
-      LbToast.show('Preparing PDF...', 'info');
+      PvToast.show('Preparing PDF...', 'info');
       const response = await DocumentsService.getDocumentPdf({
         type: 'quote',
         id: estimate.id,
@@ -342,8 +342,8 @@ export class LbPageEstimates extends LbBase {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      console.error('[LbPageEstimates] Failed to download estimate PDF', err);
-      LbToast.show('Failed to download PDF. Please try again.', 'error');
+      console.error('[PvPageEstimates] Failed to download estimate PDF', err);
+      PvToast.show('Failed to download PDF. Please try again.', 'error');
     }
   }
 
@@ -462,7 +462,7 @@ export class LbPageEstimates extends LbBase {
         </button>
         <div class="estimate-actions-group">
           <button class="btn btn-outline btn-sm" @click=${() => this.downloadEstimatePdf(estimate)}>Download PDF</button>
-          <button class="btn btn-outline btn-sm" @click=${() => LbToast.show('Data export coming soon', 'info')}>Export Data</button>
+          <button class="btn btn-outline btn-sm" @click=${() => PvToast.show('Data export coming soon', 'info')}>Export Data</button>
         </div>
       </div>
 
@@ -567,6 +567,6 @@ export class LbPageEstimates extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-page-estimates': LbPageEstimates;
+    'pv-page-estimates': PvPageEstimates;
   }
 }

@@ -1,26 +1,26 @@
 /**
- * LbPageBilling - Billing page component
+ * PvPageBilling - Billing page component
  * Displays invoices with tabs and drill-down detail view
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { SalesService } from '../../connect/services/sales.js';
 import { DocumentsService } from '../../connect/services/documents.js';
-import { LbToast } from '../atoms/lb-toast.js';
+import { PvToast } from '../atoms/pv-toast.js';
 import type { Invoice, InvoiceLine } from '../../types/index.js';
 import type { Statement } from '../../connect/types/domain.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
-import '../../features/billing/components/lb-payment-history-table.js';
-import '../../features/billing/components/lb-payment-modal.js';
+import '../../features/billing/components/pv-payment-history-table.js';
+import '../../features/billing/components/pv-payment-modal.js';
 
-@customElement('lb-page-billing')
-export class LbPageBilling extends LbBase {
+@customElement('pv-page-billing')
+export class PvPageBilling extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -415,7 +415,7 @@ export class LbPageBilling extends LbBase {
       this.selectedInvoiceLines = await DataService.getInvoiceLines(invoice.id);
     } catch (e) {
       console.error('Failed to load invoice lines', e);
-      LbToast.show('Failed to load line items', 'error');
+      PvToast.show('Failed to load line items', 'error');
     } finally {
       this.loadingLines = false;
     }
@@ -467,7 +467,7 @@ export class LbPageBilling extends LbBase {
 
   private async downloadInvoicePdf(invoice: Invoice) {
     try {
-      LbToast.show('Preparing PDF...', 'info');
+      PvToast.show('Preparing PDF...', 'info');
       const response = await DocumentsService.getDocumentPdf({
         type: 'invoice',
         id: invoice.id,
@@ -482,14 +482,14 @@ export class LbPageBilling extends LbBase {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      console.error('[LbPageBilling] Failed to download invoice PDF', err);
-      LbToast.show('Failed to download PDF. Please try again.', 'error');
+      console.error('[PvPageBilling] Failed to download invoice PDF', err);
+      PvToast.show('Failed to download PDF. Please try again.', 'error');
     }
   }
 
   private async downloadStatementPdf(statement: Statement) {
     try {
-      LbToast.show('Preparing PDF...', 'info');
+      PvToast.show('Preparing PDF...', 'info');
       const response = await DocumentsService.getDocumentPdf({
         type: 'statement',
         id: statement.id,
@@ -504,8 +504,8 @@ export class LbPageBilling extends LbBase {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      console.error('[LbPageBilling] Failed to download statement PDF', err);
-      LbToast.show('Failed to download PDF. Please try again.', 'error');
+      console.error('[PvPageBilling] Failed to download statement PDF', err);
+      PvToast.show('Failed to download PDF. Please try again.', 'error');
     }
   }
 
@@ -598,7 +598,7 @@ export class LbPageBilling extends LbBase {
           </div>
         `)}
       ` : html`
-        <lb-payment-history-table></lb-payment-history-table>
+        <pv-payment-history-table></pv-payment-history-table>
       `}
     `;
   }
@@ -710,20 +710,20 @@ export class LbPageBilling extends LbBase {
 
       ${this.currentView === 'list' ? this.renderListView() : this.renderDetailView()}
 
-      <lb-payment-modal
+      <pv-payment-modal
         .open=${this.paymentModalOpen}
         .amount=${this.paymentAmount}
         .invoiceId=${this.paymentInvoiceId}
         type="invoice"
         @close=${() => this.paymentModalOpen = false}
         @payment-success=${this.handlePaymentSuccess}
-      ></lb-payment-modal>
+      ></pv-payment-modal>
     `;
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-page-billing': LbPageBilling;
+    'pv-page-billing': PvPageBilling;
   }
 }

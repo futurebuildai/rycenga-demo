@@ -1,11 +1,11 @@
 /**
- * LbBase - Base class for all Lumber Boss Lit components
+ * PvBase - Base class for all tenant Lit components
  * Extends LitElement with shared styles for Shadow DOM consistency
  */
 
 import { LitElement } from 'lit';
 import { sharedStyles } from '../styles/shared.js';
 
-export class LbBase extends LitElement {
+export class PvBase extends LitElement {
     static styles = sharedStyles;
 }

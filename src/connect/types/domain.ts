@@ -16,6 +16,12 @@ export interface User {
     accountAssignments?: AccountAssignment[];
 }
 
+export interface TenantInfo {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 /**
  * MIRRORS: velocity-backend-main/internal/domain/account.go
  */

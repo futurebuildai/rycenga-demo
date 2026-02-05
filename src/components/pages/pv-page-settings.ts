@@ -1,21 +1,21 @@
 /**
- * LbPageSettings - Account settings page component
+ * PvPageSettings - Account settings page component
  * Displays user profile and preferences
  */
 
 import { html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { AuthService } from '../../connect/services/auth.js';
-import { LbToast } from '../atoms/lb-toast.js';
+import { PvToast } from '../atoms/pv-toast.js';
 import type { AccountData } from '../../types/index.js';
 import type { NotificationPreferences } from '../../connect/types/domain.js';
 
-@customElement('lb-page-settings')
-export class LbPageSettings extends LbBase {
+@customElement('pv-page-settings')
+export class PvPageSettings extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -210,7 +210,7 @@ export class LbPageSettings extends LbBase {
       this.phoneValue = this.accountData?.user?.phone ?? '';
     } catch (e) {
       console.error('Failed to load account data', e);
-      LbToast.show('Failed to load settings', 'error');
+      PvToast.show('Failed to load settings', 'error');
     } finally {
       this.loading = false;
     }
@@ -219,7 +219,7 @@ export class LbPageSettings extends LbBase {
   private async handleSave() {
     const phone = this.phoneValue.trim();
     if (phone && !/^[+]?[\d\s()-]{7,20}$/.test(phone)) {
-      LbToast.show('Please enter a valid phone number', 'warning');
+      PvToast.show('Please enter a valid phone number', 'warning');
       return;
     }
 
@@ -229,10 +229,10 @@ export class LbPageSettings extends LbBase {
       if (!userId) throw new Error('User ID not found');
 
       await AuthService.updateProfile(parseInt(userId), { phone });
-      LbToast.show('Profile saved successfully', 'success');
+      PvToast.show('Profile saved successfully', 'success');
     } catch (e) {
       console.error('Failed to save profile', e);
-      LbToast.show('Failed to save profile', 'error');
+      PvToast.show('Failed to save profile', 'error');
     } finally {
       this.savingProfile = false;
     }
@@ -240,16 +240,16 @@ export class LbPageSettings extends LbBase {
 
   private handleCancel() {
     this.phoneValue = this.accountData?.user?.phone ?? '';
-    LbToast.show('Changes discarded', 'info');
+    PvToast.show('Changes discarded', 'info');
   }
 
   private async handlePasswordChange() {
     if (!this.currentPassword || !this.newPassword) {
-      LbToast.show('Please fill in both password fields', 'warning');
+      PvToast.show('Please fill in both password fields', 'warning');
       return;
     }
     if (this.newPassword.length < 8) {
-      LbToast.show('New password must be at least 8 characters', 'warning');
+      PvToast.show('New password must be at least 8 characters', 'warning');
       return;
     }
 
@@ -261,10 +261,10 @@ export class LbPageSettings extends LbBase {
       });
       this.currentPassword = '';
       this.newPassword = '';
-      LbToast.show('Password changed successfully', 'success');
+      PvToast.show('Password changed successfully', 'success');
     } catch (e) {
       console.error('Failed to change password', e);
-      LbToast.show('Failed to change password', 'error');
+      PvToast.show('Failed to change password', 'error');
     } finally {
       this.savingPassword = false;
     }
@@ -286,14 +286,14 @@ export class LbPageSettings extends LbBase {
         smsNotifications: this.smsNotifications,
         orderUpdates: this.orderUpdates,
       });
-      LbToast.show('Notification preference updated', 'success');
+      PvToast.show('Notification preference updated', 'success');
     } catch (e) {
       console.error('Failed to update notifications', e);
       // Revert optimistic update
       if (key === 'emailNotifications') this.emailNotifications = !this.emailNotifications;
       else if (key === 'smsNotifications') this.smsNotifications = !this.smsNotifications;
       else if (key === 'orderUpdates') this.orderUpdates = !this.orderUpdates;
-      LbToast.show('Failed to update notification preference', 'error');
+      PvToast.show('Failed to update notification preference', 'error');
     } finally {
       this.savingNotifications = false;
     }
@@ -421,6 +421,6 @@ export class LbPageSettings extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-page-settings': LbPageSettings;
+    'pv-page-settings': PvPageSettings;
   }
 }

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
+import { BrandingService } from '../../services/branding.service.js';
 
 @customElement('admin-page-login')
 export class PageLogin extends LitElement {
@@ -141,10 +142,17 @@ export class PageLogin extends LitElement {
     @state() private otpExpiresAt = '';
     @state() private errorMessage = '';
     @state() private isLoading = false;
+    @state() private tenantName = '';
 
     connectedCallback() {
         super.connectedCallback();
-        document.title = 'Dealer Portal | Lumber Boss';
+        this.loadBranding();
+    }
+
+    private async loadBranding() {
+        const branding = await BrandingService.getBranding();
+        this.tenantName = branding.tenantName;
+        document.title = BrandingService.getAdminTitle();
     }
 
     private async handleSubmit(e: Event) {
@@ -190,12 +198,13 @@ export class PageLogin extends LitElement {
     }
 
     render() {
+        const tenantName = this.tenantName || 'Velocity';
         return html`
             <div class="login-container">
                 <div class="login-card">
                     <div class="login-header">
                         <div class="login-logo-icon">⬡</div>
-                        <span class="logo-name">LUMBER BOSS ADMIN</span>
+                        <span class="logo-name">${tenantName} Admin</span>
                         <span class="logo-tagline">Dealer Portal Access</span>
                     </div>
 

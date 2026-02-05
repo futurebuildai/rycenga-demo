@@ -1,19 +1,19 @@
 /**
- * LbPaymentModal - Reusable modal for processing payments
+ * PvPaymentModal - Reusable modal for processing payments
  * Supports Paying Invoices and paying Total Balance
  */
 
 import { html, css, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { LbBase } from '../../../components/lb-base.js';
+import { PvBase } from '../../../components/pv-base.js';
 import { BillingService } from '../../../connect/services/billing.js';
-import { LbToast } from '../../../components/atoms/lb-toast.js';
+import { PvToast } from '../../../components/atoms/pv-toast.js';
 import type { PaymentMethod } from '../../../connect/types/domain.js';
 
-@customElement('lb-payment-modal')
-export class LbPaymentModal extends LbBase {
+@customElement('pv-payment-modal')
+export class PvPaymentModal extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -280,7 +280,7 @@ export class LbPaymentModal extends LbBase {
       }
     } catch (e) {
       console.error('Failed to load payment methods', e);
-      LbToast.show('Failed to load payment methods', 'error');
+      PvToast.show('Failed to load payment methods', 'error');
     } finally {
       this.loading = false;
     }
@@ -304,7 +304,7 @@ export class LbPaymentModal extends LbBase {
 
   private async handlePay() {
     if (!this.selectedMethodId) {
-      LbToast.show('Please select a payment method', 'warning');
+      PvToast.show('Please select a payment method', 'warning');
       return;
     }
 
@@ -331,13 +331,13 @@ export class LbPaymentModal extends LbBase {
 
       await BillingService.createPayment(payload);
 
-      LbToast.show('Payment successful!', 'success');
+      PvToast.show('Payment successful!', 'success');
       this.dispatchEvent(new CustomEvent('payment-success'));
       this.handleClose();
 
     } catch (e) {
       console.error('Payment failed', e);
-      LbToast.show('Payment failed. Please try again.', 'error');
+      PvToast.show('Payment failed. Please try again.', 'error');
     } finally {
       this.processing = false;
     }
@@ -444,6 +444,6 @@ export class LbPaymentModal extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-payment-modal': LbPaymentModal;
+    'pv-payment-modal': PvPaymentModal;
   }
 }

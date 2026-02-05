@@ -123,6 +123,8 @@ export interface AdminUser {
     accountId?: number;
 }
 
+export type AdminAccountSort = 'name' | 'balance-desc' | 'past-due-desc' | 'age-desc';
+
 interface PaginatedResponse<T> {
     items: T[];
     total: number;
@@ -220,8 +222,14 @@ const mapQuote = (raw: Quote): AdminQuote => ({
 // --- Service ---
 
 class AdminDataServiceImpl {
-    async getAccounts(limit = 10, offset = 0, pastDueOnly = false): Promise<{ items: AdminAccount[], total: number }> {
-        const response = await adminClient.request<{ items: any[], total: number }>(`/admin/account-dashboard?limit=${limit}&offset=${offset}&past_due_only=${pastDueOnly}`);
+    async getAccounts(limit = 10, offset = 0, pastDueOnly = false, sort: AdminAccountSort = 'name'): Promise<{ items: AdminAccount[], total: number }> {
+        const query = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+            past_due_only: String(pastDueOnly),
+            sort,
+        });
+        const response = await adminClient.request<{ items: any[], total: number }>(`/admin/account-dashboard?${query.toString()}`);
         const { items: accounts, total } = response;
 
         const items: AdminAccount[] = accounts.map(a => ({

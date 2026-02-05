@@ -1,5 +1,5 @@
 // ========================================
-// LUMBER BOSS - API SERVICE
+// VELOCITY - API SERVICE
 // Fetch wrapper for product data
 // ========================================
 

@@ -1,18 +1,19 @@
 /**
- * LbLogin - Login screen component
- * Implements Boss Lumber branding with email/password authentication
+ * PvLogin - Login screen component
+ * Implements tenant branding with email/password authentication
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from './lb-base.js';
+import { PvBase } from './pv-base.js';
 import { AuthService } from '../services/auth.service.js';
-import { LbToast } from './atoms/lb-toast.js';
+import { PvToast } from './atoms/pv-toast.js';
+import { BrandingService } from '../services/branding.service.js';
 
-@customElement('lb-login')
-export class LbLogin extends LbBase {
+@customElement('pv-login')
+export class PvLogin extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: flex;
@@ -167,6 +168,18 @@ export class LbLogin extends LbBase {
   @state() private password = '';
   @state() private showError = false;
   @state() private isLoading = false;
+  @state() private tenantName = '';
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.loadBranding();
+  }
+
+  private async loadBranding() {
+    const branding = await BrandingService.getBranding();
+    this.tenantName = branding.tenantName;
+    document.title = BrandingService.getAccountTitle();
+  }
 
   private async handleSubmit(e: Event) {
     e.preventDefault();
@@ -177,7 +190,7 @@ export class LbLogin extends LbBase {
       const success = await AuthService.login(this.email, this.password);
 
       if (success) {
-        LbToast.show('Welcome back!', 'success');
+        PvToast.show('Welcome back!', 'success');
         this.dispatchEvent(new CustomEvent('login-success', {
           bubbles: true,
           composed: true
@@ -193,13 +206,14 @@ export class LbLogin extends LbBase {
   }
 
   render() {
+    const tenantName = this.tenantName || 'Velocity';
     return html`
       <div class="login-container">
         <div class="login-card">
           <div class="login-header">
             <div class="login-logo-icon">⬡</div>
             <div class="login-logo-text">
-              <span class="logo-name-main">BOSS LUMBER & MILLWORK</span>
+              <span class="logo-name-main">${tenantName}</span>
               <span class="logo-tagline-lite">My Account Portal</span>
             </div>
           </div>
@@ -267,6 +281,6 @@ export class LbLogin extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-login': LbLogin;
+    'pv-login': PvLogin;
   }
 }

@@ -11,7 +11,8 @@ export interface Session {
     user?: User;
 }
 
-const STORAGE_KEY = 'lumberboss_session';
+const STORAGE_KEY = 'velocity_session';
+const LEGACY_STORAGE_KEY = 'lumberboss_session';
 const IMPERSONATION_KEY = 'impersonation_session';
 
 class AuthServiceImpl {
@@ -23,9 +24,9 @@ class AuthServiceImpl {
         import('../connect/client').then(({ client }) => {
             client.onUnauthorized = () => {
                 console.warn('Session expired - performing auto-logout');
-                import('../components/atoms/lb-toast').then(({ LbToast }) => {
-                    LbToast.suppressErrors = true;
-                    LbToast.show('Your session has expired. Please log in again.', 'warning');
+                import('../components/atoms/pv-toast').then(({ PvToast }) => {
+                    PvToast.suppressErrors = true;
+                    PvToast.show('Your session has expired. Please log in again.', 'warning');
                 });
                 this.logout();
             };
@@ -41,8 +42,8 @@ class AuthServiceImpl {
             const response = await ConnectorAuth.login(email, password);
 
             // Reset error suppression on successful login
-            import('../components/atoms/lb-toast').then(({ LbToast }) => {
-                LbToast.suppressErrors = false;
+            import('../components/atoms/pv-toast').then(({ PvToast }) => {
+                PvToast.suppressErrors = false;
             });
 
             // Store session
@@ -54,6 +55,7 @@ class AuthServiceImpl {
 
             this.currentUser = response.user;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+            localStorage.removeItem(LEGACY_STORAGE_KEY);
             localStorage.removeItem(IMPERSONATION_KEY);
             this.notifyListeners(true);
             return true;
@@ -69,6 +71,7 @@ class AuthServiceImpl {
     logout(): void {
         ConnectorAuth.logout();
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
         localStorage.removeItem(IMPERSONATION_KEY);
         this.currentUser = null;
         this.notifyListeners(false);
@@ -85,7 +88,20 @@ class AuthServiceImpl {
      * Get current session data
      */
     getSession(): Session | null {
-        const data = localStorage.getItem(STORAGE_KEY);
+        if (!localStorage.getItem('auth_token')) {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(LEGACY_STORAGE_KEY);
+            return null;
+        }
+        let data = localStorage.getItem(STORAGE_KEY);
+        if (!data) {
+            const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+            if (legacy) {
+                localStorage.setItem(STORAGE_KEY, legacy);
+                localStorage.removeItem(LEGACY_STORAGE_KEY);
+                data = legacy;
+            }
+        }
         if (!data) return null;
 
         try {

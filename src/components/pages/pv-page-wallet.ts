@@ -1,20 +1,20 @@
 /**
- * LbPageWallet - Wallet/Payment Methods page component
+ * PvPageWallet - Wallet/Payment Methods page component
  * Displays saved payment methods and allows management
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { BillingService } from '../../connect/services/billing.js';
-import { LbToast } from '../atoms/lb-toast.js';
+import { PvToast } from '../atoms/pv-toast.js';
 import type { PaymentMethod } from '../../connect/types/domain.js';
-import '../../features/billing/components/lb-add-payment-modal.js';
+import '../../features/billing/components/pv-add-payment-modal.js';
 
-@customElement('lb-page-wallet')
-export class LbPageWallet extends LbBase {
+@customElement('pv-page-wallet')
+export class PvPageWallet extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -168,7 +168,7 @@ export class LbPageWallet extends LbBase {
     } catch (e) {
       console.error('Failed to load payment methods', e);
       this.error = 'Failed to load payment methods. Please try again.';
-      LbToast.show('Failed to load payment methods', 'error');
+      PvToast.show('Failed to load payment methods', 'error');
     } finally {
       this.loading = false;
     }
@@ -199,10 +199,10 @@ export class LbPageWallet extends LbBase {
   //       ...m,
   //       isDefault: m.id === method.id,
   //     }));
-  //     LbToast.show(`${this.getPaymentLabel(method)} set as default`, 'success');
+  //     PvToast.show(`${this.getPaymentLabel(method)} set as default`, 'success');
   //   } catch (e) {
   //     console.error('Failed to set default', e);
-  //     LbToast.show('Failed to set default payment method', 'error');
+  //     PvToast.show('Failed to set default payment method', 'error');
   //   } finally {
   //     this.processingId = null;
   //   }
@@ -224,7 +224,7 @@ export class LbPageWallet extends LbBase {
 
   private async handleRemove(method: PaymentMethod) {
     if (method.isDefault) {
-      LbToast.show('Cannot remove default payment method', 'warning');
+      PvToast.show('Cannot remove default payment method', 'warning');
       return;
     }
 
@@ -232,10 +232,10 @@ export class LbPageWallet extends LbBase {
     try {
       await BillingService.removePaymentMethod(method.id);
       this.paymentMethods = this.paymentMethods.filter(m => m.id !== method.id);
-      LbToast.show('Payment method removed', 'success');
+      PvToast.show('Payment method removed', 'success');
     } catch (e) {
       console.error('Failed to remove payment method', e);
-      LbToast.show('Failed to remove payment method', 'error');
+      PvToast.show('Failed to remove payment method', 'error');
     } finally {
       this.processingId = null;
     }
@@ -292,11 +292,11 @@ export class LbPageWallet extends LbBase {
         </button>
       </div>
 
-      <lb-add-payment-modal
+      <pv-add-payment-modal
         .open=${this.showAddModal}
         @close=${this.handleModalClose}
         @payment-method-added=${this.handlePaymentMethodAdded}
-      ></lb-add-payment-modal>
+      ></pv-add-payment-modal>
 
       ${this.paymentMethods.length > 0 ? html`
         <div class="payment-methods">
@@ -352,7 +352,7 @@ export class LbPageWallet extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-page-wallet': LbPageWallet;
+    'pv-page-wallet': PvPageWallet;
   }
 }
 

@@ -1,21 +1,21 @@
 /**
- * LbPageOverview - Dashboard overview page
+ * PvPageOverview - Dashboard overview page
  * Displays quick stats and account summary
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
-import { LbToast } from '../atoms/lb-toast.js';
+import { PvToast } from '../atoms/pv-toast.js';
 import type { AccountData } from '../../types/index.js';
-import '../../features/billing/components/lb-payment-modal.js';
+import '../../features/billing/components/pv-payment-modal.js';
 
-@customElement('lb-page-overview')
-export class LbPageOverview extends LbBase {
+@customElement('pv-page-overview')
+export class PvPageOverview extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -192,7 +192,7 @@ export class LbPageOverview extends LbBase {
 
     } catch (e) {
       console.error('Failed to load dashboard data', e);
-      LbToast.show('Failed to load dashboard summary', 'error');
+      PvToast.show('Failed to load dashboard summary', 'error');
     } finally {
       this.loading = false;
     }
@@ -272,19 +272,19 @@ export class LbPageOverview extends LbBase {
         </div>
       </div>
 
-      <lb-payment-modal
+      <pv-payment-modal
         .open=${this.paymentModalOpen}
         .amount=${this.paymentAmount}
         type="balance"
         @close=${() => this.paymentModalOpen = false}
         @payment-success=${this.handlePaymentSuccess}
-      ></lb-payment-modal>
+      ></pv-payment-modal>
     `;
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-page-overview': LbPageOverview;
+    'pv-page-overview': PvPageOverview;
   }
 }

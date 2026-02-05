@@ -20,12 +20,14 @@ import { JobsService } from '../connect/services/jobs.js';
 import { DashboardService } from '../connect/services/dashboard.js';
 import { AccountService, type AccountFinancials } from '../connect/services/account.js';
 import { BillingService } from '../connect/services/billing.js';
+import { BrandingService } from './branding.service.js';
 import type { Account } from '../connect/types/domain.js';
 import { mapQuoteToEstimate, mapJobToProject, mapOrderToLegacy, mapInvoiceToLegacy, mapOrderLineToLegacy, mapInvoiceLineToLegacy } from '../connect/mappers.js';
 
 /**
  * Maps backend Account + AccountFinancials to legacy AccountData format
  * Provides backward compatibility for existing UI components
+ * Support info now comes from BrandingService instead of hardcoded defaults
  */
 function mapAccountToLegacy(account: Account, financials: AccountFinancials): AccountData {
     // Parse name into first/last (backend may provide just 'name')
@@ -34,6 +36,9 @@ function mapAccountToLegacy(account: Account, financials: AccountFinancials): Ac
     const lastName = nameParts.slice(1).join(' ') || '';
     const fullName = account.name ?? 'User';
     const initials = `${firstName.charAt(0)}${lastName.charAt(0) || firstName.charAt(1) || ''}`.toUpperCase();
+
+    // Get support info from branding service (will be the cached sync value or defaults)
+    const branding = BrandingService.getBrandingSync();
 
     return {
         user: {
@@ -53,8 +58,8 @@ function mapAccountToLegacy(account: Account, financials: AccountFinancials): Ac
             balance: financials.balance,
         },
         support: {
-            phone: '(555) 123-4567',  // Default support info
-            email: 'support@velocity.com',
+            phone: branding.contactPhone,
+            email: branding.contactEmail,
         },
         team: [],  // Team data fetched separately if needed
         location: '',  // Location can be derived from addresses if needed

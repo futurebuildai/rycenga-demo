@@ -1,20 +1,21 @@
 /**
- * LbSidebar - Navigation sidebar component
+ * PvSidebar - Navigation sidebar component
  * Displays user info, navigation links, and support footer
  */
 
 import { html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { RouterService } from '../../services/router.service.js';
 import { AuthService } from '../../services/auth.service.js';
 import { DataService } from '../../services/data.service.js';
+import { BrandingService, type DealerBranding } from '../../services/branding.service.js';
 import type { RouteId, AccountData, Estimate, Invoice } from '../../types/index.js';
 
-@customElement('lb-sidebar')
-export class LbSidebar extends LbBase {
+@customElement('pv-sidebar')
+export class PvSidebar extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -189,6 +190,8 @@ export class LbSidebar extends LbBase {
   @state() private pendingEstimatesCount = 0;
   @state() private openInvoicesCount = 0;
   @state() private overdueInvoicesCount = 0;
+  @state() private branding: DealerBranding = BrandingService.getBrandingSync();
+  private unsubscribeBranding?: () => void;
 
   private get navItems(): { id: RouteId; label: string; icon: string; badge?: number; alertBadge?: number }[] {
     return [
@@ -206,6 +209,12 @@ export class LbSidebar extends LbBase {
   async connectedCallback() {
     super.connectedCallback();
     try {
+      // Fetch branding for sidebar support info
+      this.branding = await BrandingService.getBranding();
+      this.unsubscribeBranding = BrandingService.subscribe((branding) => {
+        this.branding = branding;
+      });
+
       this.accountData = await DataService.getAccountData();
       // Fetch pending estimates count
       const { items: estimates } = await DataService.getEstimates(1000, 0);
@@ -217,6 +226,11 @@ export class LbSidebar extends LbBase {
     } catch (e) {
       console.error('Failed to load account data', e);
     }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.unsubscribeBranding?.();
   }
 
   private handleNavClick(route: RouteId) {
@@ -275,7 +289,9 @@ export class LbSidebar extends LbBase {
   render() {
     const user = this.accountData?.user;
     const company = this.accountData?.company;
-    const support = this.accountData?.support;
+    // Use branding service for support info, fallback to account data for backwards compatibility
+    const supportPhone = this.branding.contactPhone || this.accountData?.support?.phone;
+    const supportEmail = this.branding.contactEmail || this.accountData?.support?.email;
 
     return html`
       <div class="account-user">
@@ -303,11 +319,11 @@ export class LbSidebar extends LbBase {
       <div class="account-sidebar-footer">
         <div class="account-support">
           <p class="support-label">Need Help?</p>
-          <a href="tel:${(support?.phone ?? '(555) 123-4567').replace(/\D/g, '')}" class="support-phone">
-            ${support?.phone ?? '(555) 123-4567'}
+          <a href="tel:${(supportPhone ?? '').replace(/\D/g, '')}" class="support-phone">
+            ${supportPhone}
           </a>
-          <a href="mailto:${support?.email ?? 'support@velocity.com'}" class="support-email">
-            ${support?.email ?? 'support@velocity.com'}
+          <a href="mailto:${supportEmail ?? ''}" class="support-email">
+            ${supportEmail}
           </a>
         </div>
         <button class="sign-out-btn" @click=${this.handleSignOut}>
@@ -325,6 +341,6 @@ export class LbSidebar extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-sidebar': LbSidebar;
+    'pv-sidebar': PvSidebar;
   }
 }

@@ -5,7 +5,7 @@
 **Context**:
 - **Target File**: `src/admin/pages/page-login.ts`
 - **Component Tag**: `admin-page-login`
-- **UI Reference**: `src/components/lb-login.ts` (for pattern only — do NOT import)
+- **UI Reference**: `src/components/pv-login.ts` (for pattern only — do NOT import)
 - **Auth Dep**: `src/admin/services/admin-auth.service.ts`
 
 ## Backend Integration Contract (Strict Guardrails)
@@ -26,9 +26,9 @@ No direct API calls from this component. Auth is delegated to `AdminAuthService`
         - Full viewport centered card (like customer login).
         - Dark background using CSS vars from theme.
         - Card: white background, rounded corners, shadow.
-        - Heading: "Lumber Boss" with tagline "Dealer Admin Portal".
+        - Heading: "Project Velocity" with tagline "Dealer Admin Portal".
         - Button: "Sign In" / "Signing In..." loading state.
-    - **Guardrail**: Do NOT import `LbBase`, `LbToast`, or any component from `src/components/`.
+    - **Guardrail**: Do NOT import `PvBase`, `PvToast`, or any component from `src/components/`.
 
 ## Definition of Done
 - `src/admin/pages/page-login.ts` compiles.
