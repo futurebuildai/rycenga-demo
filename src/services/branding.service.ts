@@ -4,9 +4,17 @@ export interface BrandingInfo {
     tenantId?: string;
     tenantName: string;
     tenantSlug: string;
+    logoUrl: string | null;
+    contactEmail: string;
+    contactPhone: string;
 }
 
-const DEFAULT_TENANT_NAME = 'Velocity';
+const DEFAULT_BRANDING = {
+    companyName: 'BuilderWire',
+    logoUrl: null,
+    contactEmail: 'support@builderwire.com',
+    contactPhone: '(555) 000-0000',
+};
 
 class BrandingServiceImpl {
     private branding: BrandingInfo | null = null;
@@ -19,6 +27,18 @@ class BrandingServiceImpl {
             this.pending = this.loadBranding();
         }
         return this.pending;
+    }
+
+    getBrandingSync(): BrandingInfo {
+        if (this.branding) return this.branding;
+        return {
+            tenantId: undefined,
+            tenantName: DEFAULT_BRANDING.companyName,
+            tenantSlug: '',
+            logoUrl: DEFAULT_BRANDING.logoUrl,
+            contactEmail: DEFAULT_BRANDING.contactEmail,
+            contactPhone: DEFAULT_BRANDING.contactPhone,
+        };
     }
 
     getCached(): BrandingInfo | null {
@@ -34,12 +54,12 @@ class BrandingServiceImpl {
     }
 
     getAccountTitle(): string {
-        const name = this.branding?.tenantName || DEFAULT_TENANT_NAME;
+        const name = this.branding?.tenantName || DEFAULT_BRANDING.companyName;
         return `My Account | ${name}`;
     }
 
     getAdminTitle(): string {
-        const name = this.branding?.tenantName || DEFAULT_TENANT_NAME;
+        const name = this.branding?.tenantName || DEFAULT_BRANDING.companyName;
         return `Dealer Portal | ${name}`;
     }
 
@@ -65,8 +85,11 @@ class BrandingServiceImpl {
 
         const branding: BrandingInfo = {
             tenantId,
-            tenantName: tenantName.trim() || DEFAULT_TENANT_NAME,
+            tenantName: tenantName.trim() || DEFAULT_BRANDING.companyName,
             tenantSlug: tenantSlug.trim(),
+            logoUrl: DEFAULT_BRANDING.logoUrl,
+            contactEmail: DEFAULT_BRANDING.contactEmail,
+            contactPhone: DEFAULT_BRANDING.contactPhone,
         };
 
         this.branding = branding;
@@ -126,3 +149,4 @@ class BrandingServiceImpl {
 }
 
 export const BrandingService = new BrandingServiceImpl();
+export { DEFAULT_BRANDING };
