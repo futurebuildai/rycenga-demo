@@ -3,7 +3,7 @@
 **Objective**: Wire authentication into the admin app shell — gate the layout behind login, and establish the branding foundation.
 
 **Context**:
-- **Target Files**: `src/admin/lb-admin-app.ts`, `src/admin/layouts/admin-layout.ts`
+- **Target Files**: `src/admin/pv-admin-app.ts`, `src/admin/layouts/admin-layout.ts`
 - **Auth Dep**: `src/admin/services/admin-auth.service.ts`
 
 ## Backend Integration Contract (Strict Guardrails)
@@ -12,7 +12,7 @@ No new endpoints. Auth state is managed by `AdminAuthService`.
 
 ## Step-by-Step Instructions
 
-1. **Update `src/admin/lb-admin-app.ts`**:
+1. **Update `src/admin/pv-admin-app.ts`**:
     - Import `AdminAuthService`.
     - Import `./pages/page-login.js`.
     - Add `@state() private isAuthenticated = false`.
@@ -28,7 +28,7 @@ No new endpoints. Auth state is managed by `AdminAuthService`.
 2. **Update `src/admin/layouts/admin-layout.ts`**:
     - Add a user section in the sidebar footer with a "Sign Out" button/link.
     - On click: call `AdminAuthService.logout()`.
-    - **Branding defaults**: The sidebar logo area already says "Lumber Boss". This is the default branding. In future phases, this will be overridden by tenant config. No API call needed now.
+    - **Branding defaults**: The sidebar logo area already says "Project Velocity". This is the default branding. In future phases, this will be overridden by tenant config. No API call needed now.
 
 3. **Update `src/admin/router.ts`**:
     - Ensure the router handles the case where it's initialized after login (not on page load).

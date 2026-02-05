@@ -46,6 +46,7 @@ class AdminAuthServiceImpl {
             // Ensure platform-admin login cannot inherit any prior user-area session.
             localStorage.removeItem('auth_token');
             localStorage.removeItem('lumberboss_session');
+            localStorage.removeItem('velocity_session');
             localStorage.removeItem(IMPERSONATION_KEY);
 
             const response = await adminClient.request<LoginResponse>('/auth/login?portal=admin', {

@@ -24,20 +24,20 @@ While this task is primarily scaffolding, any future API service initialization 
 
 2.  **Create `src/admin/main.ts`**:
     - **Import**: `../../styles/theme.css` to ensure the brand colors are available.
-    - **Import**: The root component (`./lb-admin-app.js`) you are about to create.
-    - **Action**: Add a console log `console.log('🪵 Lumber Boss Admin initialized');` to verify load.
+    - **Import**: The root component (`./pv-admin-app.js`) you are about to create.
+    - **Action**: Add a console log `console.log('🪵 Project Velocity Admin initialized');` to verify load.
 
-3.  **Create Root Component `src/admin/lb-admin-app.ts`**:
-    - Define a Lit component named `LbAdminApp`.
-    - **Tag Name**: `lb-admin-app`.
+3.  **Create Root Component `src/admin/pv-admin-app.ts`**:
+    - Define a Lit component named `PvAdminApp`.
+    - **Tag Name**: `pv-admin-app`.
     - **Content**: For now, just render a simple `<h1>Velocity Admin Portal</h1>` to prove the component mounts.
     - **Styles**: Use standard Lit `css` tag. Apply `display: block; height: 100vh;` to the host.
 
 ## Guardrails
-- **Naming Convention**: All new files must use kebab-case (e.g., `lb-admin-app.ts`).
+- **Naming Convention**: All new files must use kebab-case (e.g., `pv-admin-app.ts`).
 - **Dependencies**: Do NOT introduce new npm packages. Use existing Lit and Vite dependencies.
 - **Isolation**: Do NOT import components from `src/components/` yet unless they are purely presentational atoms. We want to avoid pulling in existing app business logic.
 
 ## Definition of Done
 - `src/admin/main.ts` exists.
-- `src/admin/lb-admin-app.ts` exists and compiles.
+- `src/admin/pv-admin-app.ts` exists and compiles.

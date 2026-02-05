@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
 import type { User } from '../../connect/types/domain.js';
+import { BrandingService } from '../../services/branding.service.js';
 
 @customElement('admin-layout')
 export class AdminLayout extends LitElement {
@@ -177,10 +178,14 @@ export class AdminLayout extends LitElement {
     `;
 
     @state() private user: User | null = null;
+    @state() private tenantName = '';
 
     connectedCallback() {
         super.connectedCallback();
         this.user = AdminAuthService.getUser();
+        BrandingService.getBranding().then((branding) => {
+            this.tenantName = branding.tenantName;
+        });
     }
 
     private get userInitials(): string {
@@ -207,12 +212,13 @@ export class AdminLayout extends LitElement {
     render() {
         const path = window.location.pathname;
         const isActive = (p: string) => path === p || path.startsWith(p + '/');
+        const tenantName = this.tenantName || 'Velocity';
 
         return html`
             <nav>
                 <div class="logo-area">
                     <div class="logo-icon">V</div>
-                    Velocity Admin
+                    ${tenantName} Admin
                 </div>
                 <div class="nav-links">
                     <div class="nav-category">Overview</div>

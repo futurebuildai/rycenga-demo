@@ -1,21 +1,21 @@
 /**
- * LbPageTeam - Team management page component
+ * PvPageTeam - Team management page component
  * Displays team members with roles
  */
 
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { MembersService } from '../../connect/services/members.js';
-import { LbToast } from '../atoms/lb-toast.js';
+import { PvToast } from '../atoms/pv-toast.js';
 import type { TeamMember as LegacyTeamMember } from '../../types/index.js';
 import type { TeamMember, TeamMemberRole, InviteMemberPayload } from '../../connect/types/domain.js';
 
-@customElement('lb-page-team')
-export class LbPageTeam extends LbBase {
+@customElement('pv-page-team')
+export class PvPageTeam extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -166,7 +166,7 @@ export class LbPageTeam extends LbBase {
       this.teamMembers = accountData.team;
     } catch (e) {
       console.error('Failed to load team data', e);
-      LbToast.show('Failed to load team', 'error');
+      PvToast.show('Failed to load team', 'error');
     } finally {
       this.loading = false;
     }
@@ -185,7 +185,7 @@ export class LbPageTeam extends LbBase {
 
     // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      LbToast.show('Please enter a valid email address', 'warning');
+      PvToast.show('Please enter a valid email address', 'warning');
       return;
     }
 
@@ -197,10 +197,10 @@ export class LbPageTeam extends LbBase {
     this.inviting = true;
     try {
       await MembersService.inviteMember(this.getAccountId(), payload);
-      LbToast.show(`Invitation sent to ${email}`, 'success');
+      PvToast.show(`Invitation sent to ${email}`, 'success');
     } catch (e) {
       console.error('Failed to invite member', e);
-      LbToast.show('Failed to send invitation', 'error');
+      PvToast.show('Failed to send invitation', 'error');
     } finally {
       this.inviting = false;
     }
@@ -213,21 +213,21 @@ export class LbPageTeam extends LbBase {
 
     const validRoles: TeamMemberRole[] = ['owner', 'admin', 'purchaser', 'viewer'];
     if (!validRoles.includes(newRole as TeamMemberRole)) {
-      LbToast.show('Invalid role. Use: owner, admin, purchaser, or viewer', 'warning');
+      PvToast.show('Invalid role. Use: owner, admin, purchaser, or viewer', 'warning');
       return;
     }
 
     try {
       // Using placeholder ID since legacy TeamMember doesn't have id - backend would lookup by email
       await MembersService.updateMember(this.getAccountId(), 0, newRole as TeamMemberRole);
-      LbToast.show(`Role updated for ${member.name}`, 'success');
+      PvToast.show(`Role updated for ${member.name}`, 'success');
       // Optimistic update using email for matching
       this.teamMembers = this.teamMembers.map(m =>
         m.email === member.email ? { ...m, role: newRole.charAt(0).toUpperCase() + newRole.slice(1) } : m
       );
     } catch (e) {
       console.error('Failed to update member', e);
-      LbToast.show('Failed to update member', 'error');
+      PvToast.show('Failed to update member', 'error');
     }
   }
 
@@ -293,6 +293,6 @@ export class LbPageTeam extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-page-team': LbPageTeam;
+    'pv-page-team': PvPageTeam;
   }
 }

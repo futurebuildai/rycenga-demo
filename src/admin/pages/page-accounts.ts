@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccount } from '../services/admin-data.service.js';
+import type { AdminAccountSort } from '../services/admin-data.service.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
 @customElement('admin-page-accounts')
@@ -128,7 +129,7 @@ export class PageAccounts extends LitElement {
     @state() private accounts: AdminAccount[] = [];
     @state() private searchQuery = '';
     @state() private filter: 'all' | 'past-due' = 'all';
-    @state() private sort: 'name' | 'balance-desc' | 'past-due-desc' | 'age-desc' = 'name';
+    @state() private sort: AdminAccountSort = 'name';
     @state() private loading = true;
     @state() private accountsLoading = false;
     @state() private error = false;
@@ -152,7 +153,7 @@ export class PageAccounts extends LitElement {
         try {
             const limit = this.pageSize;
             const offset = (this.page - 1) * this.pageSize;
-            const { items, total } = await AdminDataService.getAccounts(limit, offset, this.filter === 'past-due');
+            const { items, total } = await AdminDataService.getAccounts(limit, offset, this.filter === 'past-due', this.sort);
             this.accounts = items;
             this.totalCount = total;
         } catch {
@@ -177,23 +178,6 @@ export class PageAccounts extends LitElement {
         // 2. Quick Filters
         // Handled by backend now
 
-        // 3. Sorting
-        switch (this.sort) {
-            case 'name':
-                result.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-            case 'balance-desc':
-                result.sort((a, b) => b.balance - a.balance);
-                break;
-            case 'past-due-desc':
-                result.sort((a, b) => b.pastDueBalance - a.pastDueBalance);
-                break;
-            case 'age-desc':
-                const ageMap = { 'Current': 0, '30': 1, '60': 2, '90': 3, '90+': 4 };
-                result.sort((a, b) => ageMap[b.aging] - ageMap[a.aging]);
-                break;
-        }
-
         return result;
     }
 
@@ -207,8 +191,10 @@ export class PageAccounts extends LitElement {
         await this.fetchAccounts();
     }
 
-    private setSort(sort: typeof this.sort) {
+    private async setSort(sort: AdminAccountSort) {
         this.sort = sort;
+        this.page = 1; // Reset to first page
+        await this.fetchAccounts();
     }
 
     private navigateToAccount(id: number) {
@@ -264,7 +250,12 @@ export class PageAccounts extends LitElement {
                 
                 <div class="filter-group" style="margin-left: auto;">
                     <span style="font-size: 0.875rem; font-weight: 500; margin-right: 8px;">Sort By:</span>
-                    <select class="sort-select" aria-label="Sort accounts" @change=${(e: Event) => this.setSort((e.target as HTMLSelectElement).value as any)}>
+                    <select
+                        class="sort-select"
+                        aria-label="Sort accounts"
+                        .value=${this.sort}
+                        @change=${(e: Event) => this.setSort((e.target as HTMLSelectElement).value as AdminAccountSort)}
+                    >
                         <option value="name">Name (A-Z)</option>
                         <option value="balance-desc">Highest Balance</option>
                         <option value="past-due-desc">Highest Past Due</option>

@@ -28,7 +28,7 @@ The Admin App MUST communicate with the following backend endpoints. All API req
 2.  **Create `admin.html`**:
     - Create a new file named `admin.html` in the **project root** (same level as `index.html`).
     - Copy the basic HTML structure (doctype, html, head, body) from `index.html`.
-    - **Modification**: Change the `<title>` tag to `Velocity Admin | Lumber Boss`.
+    - **Modification**: Change the `<title>` tag to `Velocity Admin | Project Velocity`.
     - **Modification**: In the `<body>`, ensure there is a root element `<div id="app"></div>` (or whatever ID the main app uses, commonly just body or a specific div).
     - **Modification**: Add a script module tag pointing to the new entry point: `<script type="module" src="/src/admin/main.ts"></script>`.
     - **Guardrail**: Do not reference `/src/main.ts` in this file. It must be completely isolated.

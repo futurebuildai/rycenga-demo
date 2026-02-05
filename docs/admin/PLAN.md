@@ -14,7 +14,7 @@ Goal: collaborative setup of the multi-page Vite app, admin entry point, and bas
 - [x] **Source Structure Setup**
     > **Spec**: [specs/TASK_2_SOURCE_INIT.md](specs/TASK_2_SOURCE_INIT.md)
     - [x] Create `src/admin` directory structure.
-    - [x] Initialize `src/admin/main.ts` and `src/admin/lb-admin-app.ts`.
+    - [x] Initialize `src/admin/main.ts` and `src/admin/pv-admin-app.ts`.
 - [x] **Routing & Layout**
     > **Spec**: [specs/TASK_3_ROUTING_LAYOUT.md](specs/TASK_3_ROUTING_LAYOUT.md)
     - [x] Install/Setup router for Admin (separate from main app).
@@ -40,7 +40,7 @@ Goal: Isolated admin auth layer, login gate, and branding foundation.
     > **Spec**: [specs/TASK_7_AUTH_INTEGRATION.md](specs/TASK_7_AUTH_INTEGRATION.md)
     - [x] Gate admin app behind login (render login vs layout based on auth state).
     - [x] Add Sign Out to sidebar.
-    - [x] Establish default "Lumber Boss" branding (overridable via tenant config later).
+    - [x] Establish default "Project Velocity" branding (overridable via tenant config later).
 - [x] **Verification**
     > **Spec**: [specs/TASK_8_PHASE2_VERIFY.md](specs/TASK_8_PHASE2_VERIFY.md)
     - [x] Build passes, both entry points present.

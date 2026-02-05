@@ -43,7 +43,7 @@ The "Claude Code" agent MUST ensure that any data fetching logic associated with
     - Create `page-accounts.ts`: Renders `<h2>Accounts</h2><p>Account list loading...</p>`.
     - Register these components (e.g., `customElements.define('admin-page-dashboard', PageDashboard)`).
 
-4.  **Integrate in `src/admin/lb-admin-app.ts`**:
+4.  **Integrate in `src/admin/pv-admin-app.ts`**:
     - Update the root component to render the `<admin-layout>` shell.
     - Inside the layout, render a container `<div id="outlet"></div>`.
     - In `firstUpdated()`, call `initRouter` passing this outlet.

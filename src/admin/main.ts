@@ -7,4 +7,4 @@
 import '../styles/theme.css';
 
 // Import root component
-import './lb-admin-app.js';
+import './pv-admin-app.js';

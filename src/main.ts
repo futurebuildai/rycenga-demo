@@ -7,21 +7,21 @@
 import './styles/theme.css';
 
 // Import root component
-import './components/lb-app.js';
+import './components/pv-app.js';
 
 // Global toast helper for backward compatibility with account.js
-import { LbToast } from './components/atoms/lb-toast.js';
+import { PvToast } from './components/atoms/pv-toast.js';
 import type { ToastType } from './types/index.js';
 
 // Expose global showToast for compatibility
 declare global {
     interface Window {
-        showToast: (message: string, type?: ToastType, duration?: number) => LbToast | null;
+        showToast: (message: string, type?: ToastType, duration?: number) => PvToast | null;
     }
 }
 
 window.showToast = (message: string, type: ToastType = 'info', duration = 3000) => {
-    return LbToast.show(message, type, duration);
+    return PvToast.show(message, type, duration);
 };
 
-console.log('🪵 Lumber Boss - My Account Lite initialized');
+console.log('Velocity - My Account Lite initialized');

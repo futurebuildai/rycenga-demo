@@ -19,7 +19,7 @@ Dealers need a central, professional interface to monitor sync health, manage th
 
 ### 3.2 Branding & White-labeling
 *   **Tenant Branding**: The Admin UI must reflect the dealer's brand identity (Logo, Primary Colors) just like the customer portal.
-*   **Professional Aesthetic**: "Lumber Boss" defaults, overridden by tenant configuration.
+*   **Professional Aesthetic**: "Project Velocity" defaults, overridden by tenant configuration.
 
 ### 3.3 accounts Dashboard (Core Feature)
 *   **Unified Account List**: A searchable, sortable list of all customer accounts pulled from the ERP.

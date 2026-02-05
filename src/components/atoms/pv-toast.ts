@@ -1,17 +1,17 @@
 /**
- * LbToast - Toast notification component
+ * PvToast - Toast notification component
  * Provides visual feedback for user actions
  */
 
 import { html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import type { ToastType } from '../../types/index.js';
 
-@customElement('lb-toast')
-export class LbToast extends LbBase {
+@customElement('pv-toast')
+export class PvToast extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         position: fixed;
@@ -148,17 +148,17 @@ export class LbToast extends LbBase {
   /**
    * Static method to show a toast globally
    */
-  static show(message: string, type: ToastType = 'info', duration = 3000): LbToast | null {
+  static show(message: string, type: ToastType = 'info', duration = 3000): PvToast | null {
     // Suppress error toasts if flag is set
-    if (type === 'error' && LbToast.suppressErrors) {
+    if (type === 'error' && PvToast.suppressErrors) {
       return null;
     }
 
     // Find or create toast container
-    let toast = document.querySelector('lb-toast') as LbToast | null;
+    let toast = document.querySelector('pv-toast') as PvToast | null;
 
     if (!toast) {
-      toast = document.createElement('lb-toast') as LbToast;
+      toast = document.createElement('pv-toast') as PvToast;
       document.body.appendChild(toast);
     }
 
@@ -195,6 +195,6 @@ export class LbToast extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-toast': LbToast;
+    'pv-toast': PvToast;
   }
 }

@@ -99,7 +99,7 @@ The backend MUST use these exact string values for statuses:
 
 ## 5. Page & Component Reference
 
-### 5.1 Overview Page (`lb-page-overview.ts`)
+### 5.1 Overview Page (`pv-page-overview.ts`)
 **Purpose**: Dashboard showing account summary and quick stats.
 
 | Data Rendered | Source Endpoint | Notes |
@@ -116,7 +116,7 @@ The backend MUST use these exact string values for statuses:
 
 ---
 
-### 5.2 Billing Page (`lb-page-billing.ts`)
+### 5.2 Billing Page (`pv-page-billing.ts`)
 **Purpose**: Displays invoices with drill-down detail view and account statements.
 
 | Data Rendered | Source Endpoint | Notes |
@@ -132,7 +132,7 @@ The backend MUST use these exact string values for statuses:
 
 ---
 
-### 5.3 Orders Page (`lb-page-orders.ts`)
+### 5.3 Orders Page (`pv-page-orders.ts`)
 **Purpose**: Displays order list with status filters and drill-down detail.
 
 | Data Rendered | Source Endpoint | Notes |
@@ -147,7 +147,7 @@ The backend MUST use these exact string values for statuses:
 
 ---
 
-### 5.4 Estimates Page (`lb-page-estimates.ts`)
+### 5.4 Estimates Page (`pv-page-estimates.ts`)
 **Purpose**: Displays quotes/estimates with detail view.
 
 | Data Rendered | Source Endpoint | Notes |
@@ -162,7 +162,7 @@ The backend MUST use these exact string values for statuses:
 
 ---
 
-### 5.5 Projects Page (`lb-page-projects.ts`)
+### 5.5 Projects Page (`pv-page-projects.ts`)
 **Purpose**: Displays job sites with aggregated order/invoice counts.
 
 | Data Rendered | Source Endpoint | Notes |
@@ -229,7 +229,7 @@ The frontend Wallet and Billing pages are **fully integrated with the service la
 
 This section documents all frontend user actions that trigger backend state changes (POST/PUT/DELETE).
 
-### 9.1 Settings Page (`lb-page-settings.ts`)
+### 9.1 Settings Page (`pv-page-settings.ts`)
 
 | Action | Endpoint | Method | Payload |
 |--------|----------|--------|---------|
@@ -263,7 +263,7 @@ This section documents all frontend user actions that trigger backend state chan
 
 ---
 
-### 9.2 Team Page (`lb-page-team.ts`)
+### 9.2 Team Page (`pv-page-team.ts`)
 
 | Action | Endpoint | Method | Payload |
 |--------|----------|--------|---------|
@@ -284,7 +284,7 @@ This section documents all frontend user actions that trigger backend state chan
 
 ---
 
-### 9.3 Wallet Page (`lb-page-wallet.ts`)
+### 9.3 Wallet Page (`pv-page-wallet.ts`)
 
 | Action | Endpoint | Method | Payload |
 |--------|----------|--------|---------|
@@ -308,7 +308,7 @@ This section documents all frontend user actions that trigger backend state chan
 
 ---
 
-### 9.4 Billing & Overview Pages (`lb-page-billing.ts`, `lb-page-overview.ts`)
+### 9.4 Billing & Overview Pages (`pv-page-billing.ts`, `pv-page-overview.ts`)
 
 | Action | Endpoint | Method | Payload |
 |--------|----------|--------|---------|
@@ -342,5 +342,5 @@ The frontend performs the following client-side validation before sending reques
 
 All push actions include:
 - **Loading States**: Buttons show "Saving...", "Paying...", etc. and are disabled during requests.
-- **Error Feedback**: Failed requests trigger `LbToast.show(message, 'error')`.
+- **Error Feedback**: Failed requests trigger `PvToast.show(message, 'error')`.
 - **Optimistic Updates**: Some actions update UI immediately and revert on failure (e.g., notification toggles).

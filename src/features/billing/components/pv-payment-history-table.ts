@@ -1,19 +1,19 @@
 /**
- * LbPaymentHistoryTable - Read-only table displaying payment transactions
+ * PvPaymentHistoryTable - Read-only table displaying payment transactions
  * Shows status badges with color + text for accessibility
  */
 
 import { html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { LbBase } from '../../../components/lb-base.js';
+import { PvBase } from '../../../components/pv-base.js';
 import { BillingService } from '../../../connect/services/billing.js';
-import { LbToast } from '../../../components/atoms/lb-toast.js';
+import { PvToast } from '../../../components/atoms/pv-toast.js';
 import type { PaymentTransaction, PaymentStatus } from '../../../connect/types/domain.js';
 
-@customElement('lb-payment-history-table')
-export class LbPaymentHistoryTable extends LbBase {
+@customElement('pv-payment-history-table')
+export class PvPaymentHistoryTable extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -198,7 +198,7 @@ export class LbPaymentHistoryTable extends LbBase {
     } catch (e) {
       console.error('Failed to load payment history', e);
       this.error = 'Failed to load payment history. Please try again.';
-      LbToast.show('Failed to load payment history', 'error');
+      PvToast.show('Failed to load payment history', 'error');
     } finally {
       this.loading = false;
     }
@@ -326,6 +326,6 @@ export class LbPaymentHistoryTable extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-payment-history-table': LbPaymentHistoryTable;
+    'pv-payment-history-table': PvPaymentHistoryTable;
   }
 }

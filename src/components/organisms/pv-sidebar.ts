@@ -1,20 +1,20 @@
 /**
- * LbSidebar - Navigation sidebar component
+ * PvSidebar - Navigation sidebar component
  * Displays user info, navigation links, and support footer
  */
 
 import { html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { LbBase } from '../lb-base.js';
+import { PvBase } from '../pv-base.js';
 import { RouterService } from '../../services/router.service.js';
 import { AuthService } from '../../services/auth.service.js';
 import { DataService } from '../../services/data.service.js';
 import type { RouteId, AccountData, Estimate, Invoice } from '../../types/index.js';
 
-@customElement('lb-sidebar')
-export class LbSidebar extends LbBase {
+@customElement('pv-sidebar')
+export class PvSidebar extends PvBase {
   static styles = [
-    ...LbBase.styles,
+    ...PvBase.styles,
     css`
       :host {
         display: block;
@@ -325,6 +325,6 @@ export class LbSidebar extends LbBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'lb-sidebar': LbSidebar;
+    'pv-sidebar': PvSidebar;
   }
 }
