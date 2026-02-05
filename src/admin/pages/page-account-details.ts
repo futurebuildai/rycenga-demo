@@ -267,6 +267,7 @@ export class PageAccountDetails extends LitElement {
     @state() private invoicesTotal = 0;
     @state() private invoicesList: AdminInvoice[] = [];
     @state() private invoicesLoading = false;
+    @state() private allOpenInvoices: AdminInvoice[] = [];
 
     private setTab(tab: TransactionTab) {
         this.activeTab = tab;
@@ -280,11 +281,18 @@ export class PageAccountDetails extends LitElement {
                 const accId = parseInt(id, 10);
                 const [account, invoices] = await Promise.all([
                     AdminDataService.getAccountDetails(accId),
-                    AdminDataService.getInvoices(accId, this.invoicesPageSize, 0),
+                    AdminDataService.getInvoices(accId, 1000, 0),
                 ]);
                 this.account = account;
-                this.invoicesList = invoices.items;
-                this.invoicesTotal = invoices.total;
+
+                // Filter to only open/overdue invoices
+                this.allOpenInvoices = invoices.items.filter(inv =>
+                    inv.status === 'Open' || inv.status === 'Past Due'
+                );
+                this.invoicesTotal = this.allOpenInvoices.length;
+
+                // Apply local pagination
+                this.updateInvoicesPage();
             } catch {
                 // account stays null
             }
@@ -736,13 +744,20 @@ export class PageAccountDetails extends LitElement {
         if (!id) return;
         this.invoicesLoading = true;
         try {
-            const { items, total } = await AdminDataService.getInvoices(
-                id,
-                this.invoicesPageSize,
-                (this.invoicesPage - 1) * this.invoicesPageSize
+            // Fetch all invoices (large limit, no offset)
+            const { items } = await AdminDataService.getInvoices(id, 1000, 0);
+
+            // Filter to only open/overdue invoices
+            this.allOpenInvoices = items.filter(inv =>
+                inv.status === 'Open' || inv.status === 'Past Due'
             );
-            this.invoicesList = items;
-            this.invoicesTotal = total;
+            this.invoicesTotal = this.allOpenInvoices.length;
+
+            // Reset to page 1 on refresh to avoid empty pages
+            this.invoicesPage = 1;
+
+            // Apply local pagination
+            this.updateInvoicesPage();
         } catch {
             this.showToast('Failed to load invoices', 'error');
         } finally {
@@ -750,10 +765,16 @@ export class PageAccountDetails extends LitElement {
         }
     }
 
-    private async handleInvoicePageChange(newPage: number) {
+    private updateInvoicesPage() {
+        const start = (this.invoicesPage - 1) * this.invoicesPageSize;
+        const end = start + this.invoicesPageSize;
+        this.invoicesList = this.allOpenInvoices.slice(start, end);
+    }
+
+    private handleInvoicePageChange(newPage: number) {
         if (newPage < 1 || newPage > Math.ceil(this.invoicesTotal / this.invoicesPageSize)) return;
         this.invoicesPage = newPage;
-        await this.fetchInvoices();
+        this.updateInvoicesPage();  // Local pagination, no API call
     }
 
     private renderInvoicePageNumbers() {
