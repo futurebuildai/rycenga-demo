@@ -22,6 +22,8 @@ export interface TenantInfo {
     slug: string;
     logoBase64?: string | null;
     logoType?: string | null;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
 }
 
 /**

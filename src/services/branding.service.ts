@@ -76,6 +76,8 @@ class BrandingServiceImpl {
         let tenantId: string | undefined;
         let logoBase64: string | null = null;
         let logoType: string | null = null;
+        let contactEmail: string | null = null;
+        let contactPhone: string | null = null;
 
         try {
             const tenant = await TenantService.getTenant();
@@ -84,6 +86,8 @@ class BrandingServiceImpl {
             tenantId = tenant.id;
             logoBase64 = tenant.logoBase64 ?? null;
             logoType = tenant.logoType ?? null;
+            contactEmail = tenant.contactEmail ?? null;
+            contactPhone = tenant.contactPhone ?? null;
         } catch {
             // Fall back to token/hostname-derived values.
         }
@@ -100,8 +104,8 @@ class BrandingServiceImpl {
             tenantSlug: tenantSlug.trim(),
             logoBase64: logoBase64 ?? DEFAULT_BRANDING.logoBase64,
             logoType: logoType ?? DEFAULT_BRANDING.logoType,
-            contactEmail: DEFAULT_BRANDING.contactEmail,
-            contactPhone: DEFAULT_BRANDING.contactPhone,
+            contactEmail: contactEmail ?? DEFAULT_BRANDING.contactEmail,
+            contactPhone: contactPhone ?? DEFAULT_BRANDING.contactPhone,
         };
 
         this.branding = branding;
