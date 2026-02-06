@@ -4,14 +4,16 @@ export interface BrandingInfo {
     tenantId?: string;
     tenantName: string;
     tenantSlug: string;
-    logoUrl: string | null;
+    logoBase64: string | null;
+    logoType: string | null;
     contactEmail: string;
     contactPhone: string;
 }
 
 const DEFAULT_BRANDING = {
     companyName: 'BuilderWire',
-    logoUrl: null,
+    logoBase64: null,
+    logoType: null,
     contactEmail: 'support@builderwire.com',
     contactPhone: '(555) 000-0000',
 };
@@ -35,7 +37,8 @@ class BrandingServiceImpl {
             tenantId: undefined,
             tenantName: DEFAULT_BRANDING.companyName,
             tenantSlug: '',
-            logoUrl: DEFAULT_BRANDING.logoUrl,
+            logoBase64: DEFAULT_BRANDING.logoBase64,
+            logoType: DEFAULT_BRANDING.logoType,
             contactEmail: DEFAULT_BRANDING.contactEmail,
             contactPhone: DEFAULT_BRANDING.contactPhone,
         };
@@ -67,12 +70,16 @@ class BrandingServiceImpl {
         let tenantName = '';
         let tenantSlug = '';
         let tenantId: string | undefined;
+        let logoBase64: string | null = null;
+        let logoType: string | null = null;
 
         try {
             const tenant = await TenantService.getTenant();
             tenantName = tenant.name ?? '';
             tenantSlug = tenant.slug ?? '';
             tenantId = tenant.id;
+            logoBase64 = tenant.logoBase64 ?? null;
+            logoType = tenant.logoType ?? null;
         } catch {
             // Fall back to token/hostname-derived values.
         }
@@ -87,7 +94,8 @@ class BrandingServiceImpl {
             tenantId,
             tenantName: tenantName.trim() || DEFAULT_BRANDING.companyName,
             tenantSlug: tenantSlug.trim(),
-            logoUrl: DEFAULT_BRANDING.logoUrl,
+            logoBase64: logoBase64 ?? DEFAULT_BRANDING.logoBase64,
+            logoType: logoType ?? DEFAULT_BRANDING.logoType,
             contactEmail: DEFAULT_BRANDING.contactEmail,
             contactPhone: DEFAULT_BRANDING.contactPhone,
         };

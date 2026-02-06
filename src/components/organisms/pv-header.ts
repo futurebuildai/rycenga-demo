@@ -6,7 +6,7 @@
 import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
-import { BrandingService } from '../../services/branding.service.js';
+import { BrandingService, type BrandingInfo } from '../../services/branding.service.js';
 
 @customElement('pv-header')
 export class PvHeader extends PvBase {
@@ -62,9 +62,22 @@ export class PvHeader extends PvBase {
       }
 
       .logo-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        color: var(--color-primary);
+        display: grid;
+        place-items: center;
         font-size: 1.25rem;
         line-height: 1;
-        color: var(--color-primary);
+      }
+
+      .logo-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
       }
 
       .logo-name {
@@ -145,17 +158,29 @@ export class PvHeader extends PvBase {
         }));
     }
 
-    @state() private tenantName = '';
+    @state() private branding: BrandingInfo = BrandingService.getBrandingSync();
+    private unsubscribeBranding?: () => void;
 
     connectedCallback() {
         super.connectedCallback();
         BrandingService.getBranding().then((branding) => {
-            this.tenantName = branding.tenantName;
+            this.branding = branding;
+        });
+        this.unsubscribeBranding = BrandingService.subscribe((branding) => {
+            this.branding = branding;
         });
     }
 
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.unsubscribeBranding?.();
+    }
+
     render() {
-        const tenantName = this.tenantName || 'Velocity';
+        const tenantName = this.branding.tenantName || 'Velocity';
+        const logoUrl = this.branding.logoBase64 && this.branding.logoType
+            ? `data:${this.branding.logoType};base64,${this.branding.logoBase64}`
+            : null;
         return html`
       <div class="header-inner">
         <div class="header-left">
@@ -168,7 +193,11 @@ export class PvHeader extends PvBase {
         </div>
 
         <a href="/" class="logo">
-          <div class="logo-icon">⬡</div>
+          <div class="logo-icon">
+            ${logoUrl
+                ? html`<img class="logo-image" src="${logoUrl}" alt="${tenantName} logo">`
+                : html`⬡`}
+          </div>
           <span class="logo-name">${tenantName}</span>
         </a>
 

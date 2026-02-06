@@ -175,10 +175,8 @@ export class PvPageOverview extends PvBase {
 
   private async refreshDashboard() {
     try {
-      const [account, summary] = await Promise.all([
-        DataService.getAccountData(),
-        DataService.getDashboardSummary() // Fetches aggregated stats from /dashboard/summary
-      ]);
+      const summary = await DataService.getDashboardSummary(); // Fetches aggregated stats from /dashboard/summary
+      const account = await DataService.getAccountData();
 
       this.accountData = account;
 

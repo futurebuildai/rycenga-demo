@@ -68,6 +68,7 @@ function mapAccountToLegacy(account: Account, financials: AccountFinancials): Ac
 
 class DataServiceImpl {
     private accountData: AccountData | null = null;
+    private pendingAccountData?: Promise<AccountData>;
     private currentAccountId: number | null = null;
     private ordersData: Order[] | null = null;
     private invoicesData: Invoice[] | null = null;
@@ -81,26 +82,35 @@ class DataServiceImpl {
      */
     async getAccountData(): Promise<AccountData> {
         if (this.accountData) return this.accountData;
+        if (this.pendingAccountData) return this.pendingAccountData;
 
-        // Fetch accounts list to get the user's account
-        const accounts = await AccountService.getAccounts();
-        if (!accounts || accounts.length === 0) {
-            throw new Error('No accounts found for user');
+        this.pendingAccountData = (async () => {
+            // Fetch accounts list to get the user's account
+            const accounts = await AccountService.getAccounts();
+            if (!accounts || accounts.length === 0) {
+                throw new Error('No accounts found for user');
+            }
+
+            // Use the first account (primary account)
+            const primaryAccount = accounts[0];
+            this.currentAccountId = primaryAccount.id;
+
+            // Fetch full account details and financials in parallel
+            const [accountDetails, financials] = await Promise.all([
+                AccountService.getAccount(primaryAccount.id),
+                AccountService.getAccountFinancials(primaryAccount.id),
+            ]);
+
+            // Map to legacy format
+            this.accountData = mapAccountToLegacy(accountDetails, financials);
+            return this.accountData;
+        })();
+
+        try {
+            return await this.pendingAccountData;
+        } finally {
+            this.pendingAccountData = undefined;
         }
-
-        // Use the first account (primary account)
-        const primaryAccount = accounts[0];
-        this.currentAccountId = primaryAccount.id;
-
-        // Fetch full account details and financials in parallel
-        const [accountDetails, financials] = await Promise.all([
-            AccountService.getAccount(primaryAccount.id),
-            AccountService.getAccountFinancials(primaryAccount.id),
-        ]);
-
-        // Map to legacy format
-        this.accountData = mapAccountToLegacy(accountDetails, financials);
-        return this.accountData;
     }
 
     /**

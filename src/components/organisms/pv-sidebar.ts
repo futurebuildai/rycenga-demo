@@ -10,7 +10,7 @@ import { RouterService } from '../../services/router.service.js';
 import { AuthService } from '../../services/auth.service.js';
 import { DataService } from '../../services/data.service.js';
 import { BrandingService, type BrandingInfo } from '../../services/branding.service.js';
-import type { RouteId, AccountData, Estimate, Invoice } from '../../types/index.js';
+import type { RouteId, AccountData } from '../../types/index.js';
 
 @customElement('pv-sidebar')
 export class PvSidebar extends PvBase {
@@ -216,13 +216,10 @@ export class PvSidebar extends PvBase {
       });
 
       this.accountData = await DataService.getAccountData();
-      // Fetch pending estimates count
-      const { items: estimates } = await DataService.getEstimates(1000, 0);
-      this.pendingEstimatesCount = estimates.filter((e: Estimate) => e.status === 'sent').length;
-      // Fetch open invoices count
-      const invoices = await DataService.getInvoices();
-      this.openInvoicesCount = invoices.filter((i: Invoice) => i.status === 'open').length;
-      this.overdueInvoicesCount = invoices.filter((i: Invoice) => i.status === 'overdue').length;
+      const summary = await DataService.getDashboardSummary();
+      this.pendingEstimatesCount = summary.pendingQuotesCount ?? 0;
+      this.openInvoicesCount = summary.openInvoicesCount ?? 0;
+      this.overdueInvoicesCount = summary.overdueInvoicesCount ?? 0;
     } catch (e) {
       console.error('Failed to load account data', e);
     }
