@@ -20,6 +20,8 @@ export interface TenantInfo {
     id: string;
     name: string;
     slug: string;
+    logoBase64?: string | null;
+    logoType?: string | null;
 }
 
 /**
@@ -206,6 +208,8 @@ export interface DashboardSummary {
     creditLimit: number | null;
     currentBalance: number;
     pastDueInvoicesCount: number;
+    openInvoicesCount: number;
+    overdueInvoicesCount: number;
     activeOrdersCount: number;
     pendingQuotesCount: number;
     recentInvoices: unknown[];

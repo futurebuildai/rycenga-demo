@@ -328,6 +328,8 @@ export interface DashboardSummary {
     creditLimit: number | null;
     currentBalance: number;
     pastDueInvoicesCount: number;
+    openInvoicesCount: number;
+    overdueInvoicesCount: number;
     activeOrdersCount: number;
     pendingQuotesCount: number;
     recentInvoices: unknown[];
