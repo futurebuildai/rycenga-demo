@@ -22,6 +22,7 @@ class BrandingServiceImpl {
     private branding: BrandingInfo | null = null;
     private pending?: Promise<BrandingInfo>;
     private listeners = new Set<(branding: BrandingInfo) => void>();
+    private cacheKey = 'branding_cache_v1';
 
     async getBranding(): Promise<BrandingInfo> {
         if (this.branding) return this.branding;
@@ -32,6 +33,9 @@ class BrandingServiceImpl {
     }
 
     getBrandingSync(): BrandingInfo {
+        if (!this.branding) {
+            this.branding = this.readCachedBranding();
+        }
         if (this.branding) return this.branding;
         return {
             tenantId: undefined,
@@ -101,9 +105,28 @@ class BrandingServiceImpl {
         };
 
         this.branding = branding;
+        this.writeCachedBranding(branding);
         this.pending = undefined;
         this.listeners.forEach((listener) => listener(branding));
         return branding;
+    }
+
+    private readCachedBranding(): BrandingInfo | null {
+        try {
+            const raw = localStorage.getItem(this.cacheKey);
+            if (!raw) return null;
+            return JSON.parse(raw) as BrandingInfo;
+        } catch {
+            return null;
+        }
+    }
+
+    private writeCachedBranding(branding: BrandingInfo): void {
+        try {
+            localStorage.setItem(this.cacheKey, JSON.stringify(branding));
+        } catch {
+            // Ignore storage errors (quota/private mode).
+        }
     }
 
     private resolveFallback(): { name: string; slug: string } {

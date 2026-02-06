@@ -8,7 +8,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from './pv-base.js';
 import { AuthService } from '../services/auth.service.js';
 import { PvToast } from './atoms/pv-toast.js';
-import { BrandingService } from '../services/branding.service.js';
+import { BrandingService, type BrandingInfo } from '../services/branding.service.js';
 
 @customElement('pv-login')
 export class PvLogin extends PvBase {
@@ -45,9 +45,23 @@ export class PvLogin extends PvBase {
       }
 
       .login-logo-icon {
-        font-size: 3rem;
+        font-size: 2.5rem;
         color: var(--color-primary);
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        display: grid;
+        place-items: center;
         margin-bottom: var(--space-md);
+        overflow: hidden;
+      }
+
+      .login-logo-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
       }
 
       .logo-name-main {
@@ -168,16 +182,25 @@ export class PvLogin extends PvBase {
   @state() private password = '';
   @state() private showError = false;
   @state() private isLoading = false;
-  @state() private tenantName = '';
+  @state() private branding: BrandingInfo = BrandingService.getBrandingSync();
+  private unsubscribeBranding?: () => void;
 
   connectedCallback() {
     super.connectedCallback();
     this.loadBranding();
+    this.unsubscribeBranding = BrandingService.subscribe((branding) => {
+      this.branding = branding;
+    });
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.unsubscribeBranding?.();
   }
 
   private async loadBranding() {
     const branding = await BrandingService.getBranding();
-    this.tenantName = branding.tenantName;
+    this.branding = branding;
     document.title = BrandingService.getAccountTitle();
   }
 
@@ -206,12 +229,19 @@ export class PvLogin extends PvBase {
   }
 
   render() {
-    const tenantName = this.tenantName || 'Velocity';
+    const tenantName = this.branding.tenantName || 'Velocity';
+    const logoUrl = this.branding.logoBase64 && this.branding.logoType
+      ? `data:${this.branding.logoType};base64,${this.branding.logoBase64}`
+      : null;
     return html`
       <div class="login-container">
         <div class="login-card">
           <div class="login-header">
-            <div class="login-logo-icon">⬡</div>
+            <div class="login-logo-icon">
+              ${logoUrl
+                ? html`<img class="login-logo-image" src="${logoUrl}" alt="${tenantName} logo">`
+                : html`⬡`}
+            </div>
             <div class="login-logo-text">
               <span class="logo-name-main">${tenantName}</span>
               <span class="logo-tagline-lite">My Account Portal</span>

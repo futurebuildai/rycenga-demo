@@ -21,6 +21,7 @@ import { DashboardService } from '../connect/services/dashboard.js';
 import { AccountService, type AccountFinancials } from '../connect/services/account.js';
 import { BillingService } from '../connect/services/billing.js';
 import { BrandingService } from './branding.service.js';
+import { AuthService } from './auth.service.js';
 import type { Account } from '../connect/types/domain.js';
 import { mapQuoteToEstimate, mapJobToProject, mapOrderToLegacy, mapInvoiceToLegacy, mapOrderLineToLegacy, mapInvoiceLineToLegacy } from '../connect/mappers.js';
 
@@ -70,6 +71,8 @@ class DataServiceImpl {
     private accountData: AccountData | null = null;
     private pendingAccountData?: Promise<AccountData>;
     private currentAccountId: number | null = null;
+    private dashboardSummary: DashboardSummary | null = null;
+    private pendingDashboardSummary?: Promise<DashboardSummary>;
     private ordersData: Order[] | null = null;
     private invoicesData: Invoice[] | null = null;
     private estimatesData: Estimate[] | null = null;
@@ -85,20 +88,26 @@ class DataServiceImpl {
         if (this.pendingAccountData) return this.pendingAccountData;
 
         this.pendingAccountData = (async () => {
-            // Fetch accounts list to get the user's account
-            const accounts = await AccountService.getAccounts();
-            if (!accounts || accounts.length === 0) {
-                throw new Error('No accounts found for user');
-            }
+            const user = AuthService.getUser();
+            const userAccountId = user?.accountId ?? null;
 
-            // Use the first account (primary account)
-            const primaryAccount = accounts[0];
-            this.currentAccountId = primaryAccount.id;
+            if (userAccountId) {
+                this.currentAccountId = userAccountId;
+            } else {
+                // Fetch accounts list to get the user's account
+                const accounts = await AccountService.getAccounts();
+                if (!accounts || accounts.length === 0) {
+                    throw new Error('No accounts found for user');
+                }
+                // Use the first account (primary account)
+                const primaryAccount = accounts[0];
+                this.currentAccountId = primaryAccount.id;
+            }
 
             // Fetch full account details and financials in parallel
             const [accountDetails, financials] = await Promise.all([
-                AccountService.getAccount(primaryAccount.id),
-                AccountService.getAccountFinancials(primaryAccount.id),
+                AccountService.getAccount(this.currentAccountId!),
+                AccountService.getAccountFinancials(this.currentAccountId!),
             ]);
 
             // Map to legacy format
@@ -204,11 +213,23 @@ class DataServiceImpl {
      * Uses auth/account context on backend.
      */
     async getDashboardSummary(): Promise<DashboardSummary> {
+        if (this.dashboardSummary) return this.dashboardSummary;
+        if (this.pendingDashboardSummary) return this.pendingDashboardSummary;
         if (!this.currentAccountId) {
             // Keep account context available for compatibility fallback only.
             await this.getAccountData();
         }
-        return DashboardService.getSummary();
+        this.pendingDashboardSummary = (async () => {
+            const summary = await DashboardService.getSummary();
+            this.dashboardSummary = summary;
+            return summary;
+        })();
+
+        try {
+            return await this.pendingDashboardSummary;
+        } finally {
+            this.pendingDashboardSummary = undefined;
+        }
     }
 
     /**
@@ -217,6 +238,8 @@ class DataServiceImpl {
     clearCache(): void {
         this.accountData = null;
         this.currentAccountId = null;
+        this.dashboardSummary = null;
+        this.pendingDashboardSummary = undefined;
         this.ordersData = null;
         this.invoicesData = null;
         this.estimatesData = null;
