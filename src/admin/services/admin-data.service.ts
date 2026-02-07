@@ -24,6 +24,7 @@ import type {
     InvoiceLine,
     Quote,
     User,
+    UserRole,
 } from '../../connect/types/domain.js';
 
 // --- UI View Models ---
@@ -121,6 +122,42 @@ export interface AdminUser {
     role: string;
     isActive: boolean;
     accountId?: number;
+    phone?: string;
+    accountAssignments?: AdminAccountAssignment[];
+}
+
+export interface CreateAdminUserInput {
+    name: string;
+    email: string;
+    role: UserRole;
+    password: string;
+    isActive: boolean;
+    phone?: string;
+    accountAssignments?: AdminAccountAssignmentInput[];
+}
+
+export interface UpdateAdminUserInput {
+    id: number;
+    name: string;
+    email: string;
+    role: UserRole;
+    isActive: boolean;
+    phone?: string;
+    accountAssignments?: AdminAccountAssignmentInput[];
+}
+
+export interface AdminAccountAssignment {
+    id: number;
+    accountId: number;
+    assignmentType: string;
+    isPrimary: boolean;
+    createdAt: string;
+}
+
+export interface AdminAccountAssignmentInput {
+    accountId: number;
+    assignmentType: string;
+    isPrimary: boolean;
 }
 
 export type AdminAccountSort = 'name' | 'balance-desc' | 'past-due-desc' | 'age-desc';
@@ -219,6 +256,23 @@ const mapQuote = (raw: Quote): AdminQuote => ({
     name: raw.quoteNumber,
 });
 
+const mapAdminUser = (u: User): AdminUser => ({
+    id: u.id,
+    email: u.email,
+    name: u.name || '(No Name)',
+    role: u.role,
+    isActive: u.isActive,
+    accountId: u.accountId,
+    phone: u.phone || undefined,
+    accountAssignments: u.accountAssignments?.map((a) => ({
+        id: a.id,
+        accountId: a.accountId,
+        assignmentType: a.assignmentType,
+        isPrimary: a.isPrimary,
+        createdAt: a.createdAt,
+    })),
+});
+
 // --- Service ---
 
 class AdminDataServiceImpl {
@@ -251,7 +305,7 @@ class AdminDataServiceImpl {
     }
 
     async getInvoices(accountId: number, limit = 10, offset = 0): Promise<{ items: AdminInvoice[]; total: number }> {
-        const response = await adminClient.request<{ items: any[]; total: number }>(`/invoices?account_id=${accountId}&limit=${limit}&offset=${offset}`);
+        const response = await adminClient.request<{ items: any[]; total: number }>(`/invoices?account_id=${accountId}&limit=${limit}&offset=${offset}&status=open`);
         const { items: invoices, total } = response;
         return {
             items: invoices.map(mapInvoice),
@@ -301,16 +355,53 @@ class AdminDataServiceImpl {
 
         const response = await adminClient.request<{ items: User[]; total: number }>(`/admin/users?${query.toString()}`);
         return {
-            items: response.items.map((u) => ({
-                id: u.id,
-                email: u.email,
-                name: u.name || '(No Name)',
-                role: u.role,
-                isActive: u.isActive,
-                accountId: u.accountId,
-            })),
+            items: response.items.map(mapAdminUser),
             total: response.total,
         };
+    }
+
+    async createUser(input: CreateAdminUserInput): Promise<AdminUser> {
+        const payload: Record<string, unknown> = {
+            name: input.name,
+            email: input.email,
+            role: input.role,
+            password: input.password,
+            isActive: input.isActive,
+            accountAssignments: input.accountAssignments ?? [],
+        };
+        if (input.phone) {
+            payload.phone = input.phone;
+        }
+
+        const response = await adminClient.request<User>('/admin/users', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+
+        return mapAdminUser(response);
+    }
+
+    async getUser(id: number): Promise<AdminUser> {
+        const response = await adminClient.request<User>(`/admin/users/${id}`);
+        return mapAdminUser(response);
+    }
+
+    async updateUser(input: UpdateAdminUserInput): Promise<AdminUser> {
+        const payload: Record<string, unknown> = {
+            name: input.name,
+            email: input.email,
+            role: input.role,
+            isActive: input.isActive,
+            phone: input.phone ?? null,
+            accountAssignments: input.accountAssignments ?? [],
+        };
+
+        const response = await adminClient.request<User>(`/admin/users/${input.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+
+        return mapAdminUser(response);
     }
 
     async getAccountDetails(id: number): Promise<AdminAccountDetails | null> {
@@ -320,10 +411,10 @@ class AdminDataServiceImpl {
                 adminClient.request<Account>(`/accounts/${id}`),
                 adminClient.request<AccountAddress[]>(`/accounts/${id}/addresses`).catch((): AccountAddress[] => []),
                 adminClient.request<AccountFinancials>(`/accounts/${id}/financials`).catch((): AccountFinancials | null => null),
-                adminClient.request<PaginatedResponse<Order>>(`/orders?account_id=${id}&limit=${relatedLimit}&offset=0`)
+                adminClient.request<PaginatedResponse<Order>>(`/orders?account_id=${id}&limit=${relatedLimit}&offset=0&status=open`)
                     .then(r => r.items)
                     .catch((): Order[] => []),
-                adminClient.request<PaginatedResponse<Quote>>(`/quotes?account_id=${id}&limit=${relatedLimit}&offset=0`)
+                adminClient.request<PaginatedResponse<Quote>>(`/quotes?account_id=${id}&limit=${relatedLimit}&offset=0&status=open`)
                     .then(r => r.items)
                     .catch((): Quote[] => []),
             ]);

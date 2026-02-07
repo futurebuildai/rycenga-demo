@@ -29,6 +29,7 @@ export const mapJobToProject = (job: Job): Project => {
 export const mapQuoteToEstimate = (quote: Quote): Estimate => ({
     id: quote.id,
     estimateNumber: quote.quoteNumber,
+    projectId: quote.jobId?.toString() ?? null,
     status: ((): Estimate['status'] => {
         switch (quote.status) {
             case 'draft':
@@ -66,7 +67,7 @@ export const mapOrderToLegacy = (order: BackendOrder): Order => ({
 export const mapInvoiceToLegacy = (invoice: BackendInvoice): Invoice => ({
     id: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
-    projectId: null,
+    projectId: invoice.jobId?.toString() ?? null,
     status: invoice.status as Invoice['status'],
     dueDate: invoice.dueDate,
     total: invoice.total,

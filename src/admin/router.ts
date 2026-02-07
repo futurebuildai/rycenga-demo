@@ -8,6 +8,7 @@ import './pages/page-settings.js';
 import './pages/page-messaging.js';
 import './pages/page-ar-center.js';
 import './pages/page-users.js';
+import './pages/page-user-details.js';
 
 export function initRouter(outlet: HTMLElement): Router {
     const router = new Router(outlet);
@@ -16,6 +17,7 @@ export function initRouter(outlet: HTMLElement): Router {
         { path: '/admin', component: 'admin-page-dashboard' },
         { path: '/admin/accounts', component: 'admin-page-accounts' },
         { path: '/admin/users', component: 'admin-page-users' },
+        { path: '/admin/users/:id', component: 'admin-page-user-details' },
         { path: '/admin/accounts/:id', component: 'admin-page-account-details' },
         { path: '/admin/invoices/:id', component: 'admin-page-invoice-details' },
         { path: '/admin/settings', component: 'admin-page-settings' },

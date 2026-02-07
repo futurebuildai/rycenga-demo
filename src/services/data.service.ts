@@ -22,7 +22,7 @@ import { AccountService, type AccountFinancials } from '../connect/services/acco
 import { BillingService } from '../connect/services/billing.js';
 import { BrandingService } from './branding.service.js';
 import { AuthService } from './auth.service.js';
-import type { Account } from '../connect/types/domain.js';
+import type { Account, JobSummary } from '../connect/types/domain.js';
 import { mapQuoteToEstimate, mapJobToProject, mapOrderToLegacy, mapInvoiceToLegacy, mapOrderLineToLegacy, mapInvoiceLineToLegacy } from '../connect/mappers.js';
 
 /**
@@ -77,6 +77,7 @@ class DataServiceImpl {
     private invoicesData: Invoice[] | null = null;
     private estimatesData: Estimate[] | null = null;
     private projectsData: Project[] | null = null;
+    private jobSummariesData: JobSummary[] | null = null;
 
     /**
      * Fetch account data from API
@@ -209,6 +210,15 @@ class DataServiceImpl {
     }
 
     /**
+     * Get Job Summaries via API
+     */
+    async getJobSummaries(): Promise<JobSummary[]> {
+        if (this.jobSummariesData) return this.jobSummariesData;
+        this.jobSummariesData = await JobsService.getJobSummaries();
+        return this.jobSummariesData;
+    }
+
+    /**
      * Get Dashboard Summary
      * Uses auth/account context on backend.
      */
@@ -244,6 +254,7 @@ class DataServiceImpl {
         this.invoicesData = null;
         this.estimatesData = null;
         this.projectsData = null;
+        this.jobSummariesData = null;
     }
 }
 

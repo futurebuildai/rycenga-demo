@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { AdminDataService } from '../services/admin-data.service.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
 import type { AdminUser } from '../services/admin-data.service.js';
+import type { UserRole } from '../../connect/types/domain.js';
 
 @customElement('admin-page-users')
 export class PageUsers extends LitElement {
@@ -50,7 +51,133 @@ export class PageUsers extends LitElement {
         }
         .btn-primary:hover:not(:disabled) { background: #1e293b; }
         .danger { color: #b91c1c; font-size: 0.88rem; }
+        .success { color: #15803d; font-size: 0.88rem; }
         .muted { color: #64748b; font-size: 0.88rem; }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 0.8rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.25rem;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .card-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-family: var(--font-heading, 'Space Grotesk', sans-serif);
+            color: var(--color-text, #0f172a);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            color: var(--color-text, #0f172a);
+        }
+        .form-group label {
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #475569;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 0.55rem 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+        .form-actions {
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.88rem;
+            color: #475569;
+        }
+        .pill {
+            background: #eef2ff;
+            color: #4338ca;
+            border-radius: 999px;
+            padding: 0.15rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .link {
+            color: #0f172a;
+            text-decoration: none;
+        }
+        .link:hover { text-decoration: underline; }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            width: min(720px, 100%);
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+        }
+        .modal-title {
+            margin: 0 0 0.4rem 0;
+            font-size: 1.1rem;
+            font-family: var(--font-heading, 'Space Grotesk', sans-serif);
+            color: var(--color-text, #0f172a);
+        }
+        .modal-subtitle {
+            margin: 0 0 1.2rem 0;
+            color: var(--color-text-muted, #64748b);
+            font-size: 0.9rem;
+        }
+        .modal-actions {
+            margin-top: 1.25rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .btn-secondary {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .card-header { align-items: flex-start; flex-direction: column; }
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -102,6 +229,17 @@ export class PageUsers extends LitElement {
     @state() private pageSize = 25;
     @state() private search = '';
 
+    @state() private createName = '';
+    @state() private createEmail = '';
+    @state() private createRole: UserRole = 'account_user';
+    @state() private createPassword = '';
+    @state() private createActive = true;
+    @state() private createLoading = false;
+    @state() private createError = '';
+    @state() private createSuccess = '';
+    @state() private showCreateModal = false;
+    @state() private createAssignments: { accountId: string; assignmentType: string; isPrimary: boolean }[] = [];
+
     @state() private selectedUserID: number | null = null;
     @state() private impersonationError = '';
     @state() private impersonationLoading = false;
@@ -130,6 +268,95 @@ export class PageUsers extends LitElement {
         this.search = (e.target as HTMLInputElement).value;
         this.page = 1;
         await this.loadUsers();
+    }
+
+    private openCreateModal() {
+        this.createError = '';
+        this.createSuccess = '';
+        this.showCreateModal = true;
+    }
+
+    private closeCreateModal() {
+        if (this.createLoading) return;
+        this.showCreateModal = false;
+    }
+
+    private addCreateAssignment() {
+        this.createAssignments = [
+            ...this.createAssignments,
+            { accountId: '', assignmentType: 'primary_sales_rep', isPrimary: this.createAssignments.length === 0 }
+        ];
+    }
+
+    private updateCreateAssignment(index: number, patch: Partial<{ accountId: string; assignmentType: string; isPrimary: boolean }>) {
+        this.createAssignments = this.createAssignments.map((assignment, i) => {
+            if (i !== index) {
+                return patch.isPrimary ? { ...assignment, isPrimary: false } : assignment;
+            }
+            return { ...assignment, ...patch };
+        });
+    }
+
+    private removeCreateAssignment(index: number) {
+        const next = this.createAssignments.filter((_, i) => i !== index);
+        if (next.length > 0 && !next.some(a => a.isPrimary)) {
+            next[0] = { ...next[0], isPrimary: true };
+        }
+        this.createAssignments = next;
+    }
+
+    private async submitCreateUser() {
+        if (this.createLoading) return;
+        this.createError = '';
+        this.createSuccess = '';
+
+        const name = this.createName.trim();
+        const email = this.createEmail.trim();
+        const password = this.createPassword.trim();
+        const assignmentsPayload = [];
+
+        if (!name || !email || !password) {
+            this.createError = 'Name, email, and temporary password are required.';
+            return;
+        }
+        for (const assignment of this.createAssignments) {
+            const parsed = Number(assignment.accountId.trim());
+            if (!Number.isFinite(parsed) || parsed <= 0) {
+                this.createError = 'Each account assignment needs a valid Account ID.';
+                return;
+            }
+            assignmentsPayload.push({
+                accountId: parsed,
+                assignmentType: assignment.assignmentType,
+                isPrimary: assignment.isPrimary,
+            });
+        }
+
+        this.createLoading = true;
+        try {
+            const created = await AdminDataService.createUser({
+                name,
+                email,
+                password,
+                role: this.createRole,
+                isActive: this.createActive,
+                accountAssignments: assignmentsPayload,
+            });
+
+            this.createSuccess = `Created ${created.email}.`;
+            this.createName = '';
+            this.createEmail = '';
+            this.createPassword = '';
+            this.createRole = 'account_user';
+            this.createActive = true;
+            this.createAssignments = [];
+            await this.loadUsers();
+            this.showCreateModal = false;
+        } catch (e) {
+            this.createError = e instanceof Error ? e.message : 'Failed to create user.';
+        } finally {
+            this.createLoading = false;
+        }
     }
 
     private async startImpersonation(user: AdminUser) {
@@ -169,6 +396,18 @@ export class PageUsers extends LitElement {
                 />
             </div>
 
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Admin Actions</h3>
+                        <div class="subtitle">Add a new user or manage existing users.</div>
+                    </div>
+                    <button class="btn btn-primary" @click=${this.openCreateModal}>
+                        Create User
+                    </button>
+                </div>
+            </div>
+
             ${this.impersonationError ? html`<p class="danger">${this.impersonationError}</p>` : ''}
 
             ${this.loading ? html`<p>Loading users...</p>` : ''}
@@ -192,7 +431,9 @@ export class PageUsers extends LitElement {
                             : this.users.map((user) => html`
                                 <tr>
                                     <td>
-                                        <div>${user.name}</div>
+                                        <a class="link" href="/admin/users/${user.id}">
+                                            ${user.name}
+                                        </a>
                                         <div class="mono">ID: ${user.id}</div>
                                     </td>
                                     <td>${user.email}</td>
@@ -218,6 +459,131 @@ export class PageUsers extends LitElement {
                     <button class="btn" ?disabled=${this.page >= maxPage} @click=${() => this.changePage(this.page + 1)}>Next</button>
                 </div>
             ` : ''}
+
+            ${this.showCreateModal ? html`
+                <div class="modal-overlay" @click=${this.closeCreateModal} role="dialog" aria-modal="true" aria-label="Create user">
+                    <div class="modal" @click=${(e: Event) => e.stopPropagation()}>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                            <div>
+                                <h3 class="modal-title">Create User</h3>
+                                <p class="modal-subtitle">Add a new user and optionally assign them to an account.</p>
+                            </div>
+                            <span class="pill">Admin Only</span>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="Jane Doe"
+                                    .value=${this.createName}
+                                    @input=${(e: Event) => this.createName = (e.target as HTMLInputElement).value}
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input
+                                    type="email"
+                                    placeholder="jane@company.com"
+                                    .value=${this.createEmail}
+                                    @input=${(e: Event) => this.createEmail = (e.target as HTMLInputElement).value}
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label>Role</label>
+                                <select
+                                    .value=${this.createRole}
+                                    @change=${(e: Event) => this.createRole = (e.target as HTMLSelectElement).value}
+                                >
+                                    <option value="tenant_owner">Tenant Owner</option>
+                                    <option value="tenant_staff">Tenant Staff</option>
+                                    <option value="account_admin">Account Admin</option>
+                                    <option value="account_manager">Account Manager</option>
+                                    <option value="account_user">Account User</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Temporary Password</label>
+                                <input
+                                    type="password"
+                                    placeholder="Set a temporary password"
+                                    .value=${this.createPassword}
+                                    @input=${(e: Event) => this.createPassword = (e.target as HTMLInputElement).value}
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <div class="toggle">
+                                    <input
+                                        type="checkbox"
+                                        .checked=${this.createActive}
+                                        @change=${(e: Event) => this.createActive = (e.target as HTMLInputElement).checked}
+                                    />
+                                    <span>${this.createActive ? 'Active' : 'Disabled'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn" @click=${this.addCreateAssignment}>Add Account Assignment</button>
+                        </div>
+                        ${this.createAssignments.length > 0 ? html`
+                            <div style="margin-top: 0.75rem;">
+                                ${this.createAssignments.map((assignment, index) => html`
+                                    <div class="form-grid" style="align-items: end;">
+                                        <div class="form-group">
+                                            <label>Account ID</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                placeholder="1234"
+                                                .value=${assignment.accountId}
+                                                @input=${(e: Event) => this.updateCreateAssignment(index, { accountId: (e.target as HTMLInputElement).value })}
+                                            />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Assignment Type</label>
+                                            <select
+                                                .value=${assignment.assignmentType}
+                                                @change=${(e: Event) => this.updateCreateAssignment(index, { assignmentType: (e.target as HTMLSelectElement).value })}
+                                            >
+                                                <option value="primary_sales_rep">Primary Sales Rep</option>
+                                                <option value="inside_sales_rep">Inside Sales Rep</option>
+                                                <option value="credit_manager">Credit Manager</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Primary</label>
+                                            <div class="toggle">
+                                                <input
+                                                    type="checkbox"
+                                                    .checked=${assignment.isPrimary}
+                                                    @change=${(e: Event) => this.updateCreateAssignment(index, { isPrimary: (e.target as HTMLInputElement).checked })}
+                                                />
+                                                <span>${assignment.isPrimary ? 'Primary' : 'Secondary'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <button class="btn" @click=${() => this.removeCreateAssignment(index)}>Remove</button>
+                                        </div>
+                                    </div>
+                                `)}
+                            </div>
+                        ` : ''}
+                        ${this.createError ? html`<p class="danger">${this.createError}</p>` : ''}
+                        ${this.createSuccess ? html`<p class="success">${this.createSuccess}</p>` : ''}
+                        <div class="form-actions">
+                            <span class="muted">Passwords can be updated after the first login.</span>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn-secondary" @click=${this.closeCreateModal}>Cancel</button>
+                            <button class="btn btn-primary" ?disabled=${this.createLoading} @click=${this.submitCreateUser}>
+                                ${this.createLoading ? 'Creating...' : 'Create User'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+
         `;
     }
 }
