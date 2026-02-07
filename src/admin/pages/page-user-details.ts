@@ -157,7 +157,7 @@ export class PageUserDetails extends LitElement {
     @state() private name = '';
     @state() private email = '';
     @state() private phone = '';
-    @state() private role: UserRole = 'account_user';
+    @state() private userRole: UserRole = 'account_user';
     @state() private isActive = true;
     @state() private assignments: { accountId: string; assignmentType: string; isPrimary: boolean }[] = [];
 
@@ -196,7 +196,7 @@ export class PageUserDetails extends LitElement {
         this.name = user.name === '(No Name)' ? '' : user.name;
         this.email = user.email;
         this.phone = user.phone ?? '';
-        this.role = user.role as UserRole;
+        this.userRole = user.role as UserRole;
         this.isActive = user.isActive;
         this.assignments = (user.accountAssignments ?? []).map((assignment) => ({
             accountId: String(assignment.accountId),
@@ -288,7 +288,7 @@ export class PageUserDetails extends LitElement {
                 name,
                 email,
                 phone: phone || undefined,
-                role: this.role,
+                role: this.userRole,
                 isActive: this.isActive,
                 accountAssignments: assignmentsPayload,
             });
@@ -352,8 +352,8 @@ export class PageUserDetails extends LitElement {
                     <div class="form-group">
                         <label>Role</label>
                         <select
-                            .value=${this.role}
-                            @change=${(e: Event) => this.role = (e.target as HTMLSelectElement).value as UserRole}
+                            .value=${this.userRole}
+                            @change=${(e: Event) => this.userRole = (e.target as HTMLSelectElement).value as UserRole}
                         >
                             <option value="tenant_owner">Tenant Owner</option>
                             <option value="tenant_staff">Tenant Staff</option>

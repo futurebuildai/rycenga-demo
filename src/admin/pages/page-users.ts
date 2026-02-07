@@ -493,7 +493,7 @@ export class PageUsers extends LitElement {
                                 <label>Role</label>
                                 <select
                                     .value=${this.createRole}
-                                    @change=${(e: Event) => this.createRole = (e.target as HTMLSelectElement).value}
+                                    @change=${(e: Event) => this.createRole = (e.target as HTMLSelectElement).value as UserRole}
                                 >
                                     <option value="tenant_owner">Tenant Owner</option>
                                     <option value="tenant_staff">Tenant Staff</option>
