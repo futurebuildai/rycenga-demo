@@ -5,6 +5,7 @@ interface PagingOptions {
     limit?: number;
     offset?: number;
     accountId?: number;
+    jobId?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -14,13 +15,16 @@ export interface PaginatedResponse<T> {
 
 export const SalesService = {
     // Maps to GET /orders
-    getOrders: ({ limit = 25, offset = 0, accountId }: PagingOptions = {}) => {
+    getOrders: ({ limit = 25, offset = 0, accountId, jobId }: PagingOptions = {}) => {
         const params = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
         });
         if (typeof accountId === 'number') {
             params.set('account_id', String(accountId));
+        }
+        if (typeof jobId === 'number') {
+            params.set('jobId', String(jobId));
         }
         return client.request<PaginatedResponse<Order>>(`/orders?${params.toString()}`);
     },
@@ -30,17 +34,28 @@ export const SalesService = {
         client.request<Order>(`/orders/${orderId}`),
 
     // Maps to GET /invoices
-    getInvoices: (limit = 1000, offset = 0) =>
-        client.request<{ items: Invoice[]; total: number }>(`/invoices?limit=${limit}&offset=${offset}`),
+    getInvoices: (limit = 1000, offset = 0, jobId?: number) => {
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+        });
+        if (typeof jobId === 'number') {
+            params.set('jobId', String(jobId));
+        }
+        return client.request<{ items: Invoice[]; total: number }>(`/invoices?${params.toString()}`);
+    },
 
     // Maps to GET /v1/quotes
-    getQuotes: ({ limit = 25, offset = 0, accountId }: PagingOptions = {}) => {
+    getQuotes: ({ limit = 25, offset = 0, accountId, jobId }: PagingOptions = {}) => {
         const params = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
         });
         if (typeof accountId === 'number') {
             params.set('account_id', String(accountId));
+        }
+        if (typeof jobId === 'number') {
+            params.set('jobId', String(jobId));
         }
         return client.request<PaginatedResponse<Quote>>(`/quotes?${params.toString()}`);
     },

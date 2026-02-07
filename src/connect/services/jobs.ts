@@ -1,5 +1,5 @@
 import { client } from '../client';
-import type { Job } from '../types/domain';
+import type { Job, JobSummary } from '../types/domain';
 
 export const JobsService = {
     getJobs: () =>
@@ -7,4 +7,7 @@ export const JobsService = {
 
     getJobDetails: (jobId: number) =>
         client.request<Job>(`/jobs/${jobId}`),
+
+    getJobSummaries: () =>
+        client.request<JobSummary[]>('/jobs/summary'),
 };

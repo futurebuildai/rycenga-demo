@@ -36,19 +36,22 @@ function formatAddress(address?: Address): string {
 
 /**
  * Maps a Project from the API to a ProjectCard for display.
- * NOTE: orderCount, totalSpent, and openInvoices are not available from backend.
- * These are set to default values. This is a known data gap.
  */
-function mapProjectToCard(project: Project, index: number): ProjectCard {
+function mapProjectToCard(
+  project: Project,
+  index: number,
+  summary: { orderCount: number; totalOrdered: number; openInvoicesCount: number },
+  formatCurrency: (value: number) => string
+): ProjectCard {
   return {
     id: project.id,
     name: project.name,
     address: formatAddress(project.address),
     color: project.color ?? PROJECT_COLORS[index % PROJECT_COLORS.length],
     status: project.status === 'active' ? 'Active' : project.status === 'completed' ? 'Completed' : 'Archived',
-    orderCount: 0,       // Gap: Not provided by backend
-    totalSpent: '$0.00', // Gap: Not provided by backend
-    openInvoices: 0,     // Gap: Not provided by backend
+    orderCount: summary.orderCount,
+    totalSpent: formatCurrency(summary.totalOrdered),
+    openInvoices: summary.openInvoicesCount,
   };
 }
 
@@ -212,12 +215,34 @@ export class PvPageProjects extends PvBase {
     this.fetchProjects();
   }
 
+  private formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
   private async fetchProjects(): Promise<void> {
     this.loading = true;
     this.error = null;
     try {
-      const apiProjects: Project[] = await DataService.getProjects();
-      this.projects = apiProjects.map(mapProjectToCard);
+      const [apiProjects, summaries] = await Promise.all([
+        DataService.getProjects(),
+        DataService.getJobSummaries(),
+      ]);
+      const summaryByJobId = new Map<string, { orderCount: number; totalOrdered: number; openInvoicesCount: number }>();
+      for (const summary of summaries) {
+        summaryByJobId.set(String(summary.jobId), {
+          orderCount: summary.orderCount,
+          totalOrdered: summary.totalOrdered,
+          openInvoicesCount: summary.openInvoicesCount,
+        });
+      }
+      this.projects = apiProjects.map((project, index) => {
+        const summary = summaryByJobId.get(project.id) ?? { orderCount: 0, totalOrdered: 0, openInvoicesCount: 0 };
+        return mapProjectToCard(project, index, summary, this.formatCurrency.bind(this));
+      });
     } catch (err) {
       console.error('[PvPageProjects] Failed to fetch projects:', err);
       this.error = err instanceof Error ? err.message : 'Failed to load projects.';
@@ -284,7 +309,7 @@ export class PvPageProjects extends PvBase {
                 </div>
                 <div class="project-stat">
                   <span class="stat-number">${project.totalSpent}</span>
-                  <span class="stat-label">Total Spent</span>
+                  <span class="stat-label">Total Ordered</span>
                 </div>
                 <div class="project-stat">
                   <span class="stat-number">${project.openInvoices}</span>

@@ -131,6 +131,7 @@ export interface Invoice {
     total: number;
     balanceDue: number;
     status: InvoiceStatus;
+    jobId?: number;
     pdfUrl?: string; // Potential future field
     lines?: InvoiceLine[];
 }
@@ -154,6 +155,7 @@ export interface Quote {
     expiresOn?: string;
     total: number;
     status: QuoteStatus;
+    jobId?: number;
 }
 
 export interface QuoteLine {
@@ -198,6 +200,13 @@ export interface Job {
     updatedAt?: string;
     address?: JobAddress;      // Primary address (optional)
     addresses?: JobAddress[];  // All addresses
+}
+
+export interface JobSummary {
+    jobId: number;
+    orderCount: number;
+    totalOrdered: number;
+    openInvoicesCount: number;
 }
 
 /**
