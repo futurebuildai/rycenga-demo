@@ -21,6 +21,7 @@ export type ChannelType = 'sms' | 'whatsapp' | 'email';
 export interface BackendCommunicationMessage {
     id: number;
     accountId?: number;
+    conversationId?: number;
     direction: 'inbound' | 'outbound';
     channel: string;
     provider: string;
@@ -142,6 +143,7 @@ export interface MessageListResponse {
 
 export interface SendMessagePayload {
     threadId: string;
+    recipient?: string;
     type: MessageType;
     content: MessageContent;
 }
@@ -203,8 +205,28 @@ export function getMessageContactPhone(msg: BackendCommunicationMessage): string
         : (msg.recipient || 'unknown');
 }
 
+const conversationThreadPrefix = 'conversation:';
+
+export function parseConversationThreadId(threadId: string): number | null {
+    if (!threadId.startsWith(conversationThreadPrefix)) {
+        return null;
+    }
+    const value = Number.parseInt(threadId.slice(conversationThreadPrefix.length), 10);
+    return Number.isFinite(value) ? value : null;
+}
+
+export function getBackendThreadId(msg: BackendCommunicationMessage): string {
+    if (typeof msg.conversationId === 'number' && Number.isFinite(msg.conversationId)) {
+        return `${conversationThreadPrefix}${msg.conversationId}`;
+    }
+    const channel = (msg.channel || 'sms').toLowerCase();
+    const contact = getMessageContactPhone(msg).trim().toLowerCase();
+    return `fallback:${channel}:${contact}`;
+}
+
 /**
- * Group flat messages into virtual threads by phone number
+ * Group flat messages into virtual threads by backend conversation ID,
+ * with channel/contact fallback when conversation IDs are missing.
  */
 export function groupMessagesIntoThreads(messages: BackendCommunicationMessage[]): Thread[] {
     const threadMap = new Map<string, {
@@ -212,13 +234,13 @@ export function groupMessagesIntoThreads(messages: BackendCommunicationMessage[]
         latestMessage: BackendCommunicationMessage;
     }>();
 
-    // Group by contact phone number
+    // Group by backend conversation ID when available; fallback to channel + contact.
     for (const msg of messages) {
-        const phone = getMessageContactPhone(msg);
-        const existing = threadMap.get(phone);
+        const threadId = getBackendThreadId(msg);
+        const existing = threadMap.get(threadId);
 
         if (!existing) {
-            threadMap.set(phone, { messages: [msg], latestMessage: msg });
+            threadMap.set(threadId, { messages: [msg], latestMessage: msg });
         } else {
             existing.messages.push(msg);
             // Update latest if this message is newer
@@ -230,9 +252,9 @@ export function groupMessagesIntoThreads(messages: BackendCommunicationMessage[]
 
     // Convert to Thread objects
     const threads: Thread[] = [];
-    for (const [phone, data] of threadMap) {
+    for (const [threadId, data] of threadMap) {
         const latest = data.latestMessage;
-        const threadId = phone; // Use phone as thread ID
+        const phone = getMessageContactPhone(latest);
 
         threads.push({
             id: threadId,

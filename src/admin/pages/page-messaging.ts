@@ -128,22 +128,33 @@ export class PageMessaging extends LitElement {
 
     private async handleSendMessage(e: CustomEvent<{ text: string }>) {
         if (!this.selectedThread) return;
+        const currentThread = this.selectedThread;
 
         try {
             const message = await AdminMessagingService.sendMessage({
-                threadId: this.selectedThread.id,
+                threadId: currentThread.id,
+                recipient: currentThread.contact.phone,
                 type: 'text',
                 content: { text: e.detail.text },
             });
 
             this.messages = [...this.messages, message];
+            const nextThreadId = message.threadId;
 
             // Update thread in list with new lastMessage
             this.threads = this.threads.map((t) =>
-                t.id === this.selectedThread!.id
-                    ? { ...t, lastMessage: message, updatedAt: message.createdAt }
+                t.id === currentThread.id
+                    ? { ...t, id: nextThreadId, lastMessage: message, updatedAt: message.createdAt }
                     : t
             );
+            if (this.selectedThread?.id === currentThread.id) {
+                this.selectedThread = {
+                    ...currentThread,
+                    id: nextThreadId,
+                    lastMessage: message,
+                    updatedAt: message.createdAt,
+                };
+            }
 
             // Re-sort threads (most recent first)
             this.threads = [...this.threads].sort(
@@ -156,6 +167,7 @@ export class PageMessaging extends LitElement {
 
     private async handleAttachFile(e: CustomEvent<{ file: File }>) {
         if (!this.selectedThread) return;
+        const currentThread = this.selectedThread;
 
         const file = e.detail.file;
 
@@ -182,7 +194,8 @@ export class PageMessaging extends LitElement {
         setTimeout(async () => {
             try {
                 const message = await AdminMessagingService.sendMessage({
-                    threadId: this.selectedThread!.id,
+                    threadId: currentThread.id,
+                    recipient: currentThread.contact.phone,
                     type: 'file',
                     content: {
                         mediaUrl: `/uploads/${file.name}`,
@@ -199,10 +212,18 @@ export class PageMessaging extends LitElement {
 
                 // Update thread
                 this.threads = this.threads.map((t) =>
-                    t.id === this.selectedThread!.id
-                        ? { ...t, lastMessage: message, updatedAt: message.createdAt }
+                    t.id === currentThread.id
+                        ? { ...t, id: message.threadId, lastMessage: message, updatedAt: message.createdAt }
                         : t
                 );
+                if (this.selectedThread?.id === currentThread.id) {
+                    this.selectedThread = {
+                        ...currentThread,
+                        id: message.threadId,
+                        lastMessage: message,
+                        updatedAt: message.createdAt,
+                    };
+                }
             } catch (err) {
                 console.error('Failed to upload file:', err);
                 // Remove uploading message on failure
@@ -258,7 +279,7 @@ export class PageMessaging extends LitElement {
         // If no initial message, just create a local placeholder thread
         if (!initialMessage.trim()) {
             const newThread: Thread = {
-                id: contactPhone, // Use phone as thread ID
+                id: contactPhone, // Temporary key until first backend message returns conversationId
                 contact: {
                     id: contactPhone,
                     name: contactName || contactPhone,

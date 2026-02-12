@@ -2,12 +2,12 @@
  * Admin Messaging Service
  * Provides messaging functionality via the Bird integration.
  *
- * Backend API: /v1/communications/messages
+ * Backend API: /communications/messages (resolved under API base URL)
  * - POST: Send SMS or email
  * - GET: List messages with filters
  *
- * Virtual Threads: Messages are grouped by phone number client-side
- * to create a conversation view. The backend stores flat messages.
+ * Virtual Threads: Messages are grouped by backend conversation ID
+ * (with contact/channel fallback for legacy records).
  */
 
 import { adminClient } from './admin-client.js';
@@ -27,9 +27,11 @@ import type {
 } from './messaging-types.js';
 import {
     groupMessagesIntoThreads,
+    getBackendThreadId,
     mapBackendMessage,
     getMessageContactPhone,
     isTextContent,
+    parseConversationThreadId,
 } from './messaging-types.js';
 
 // === Helper Functions ===
@@ -70,7 +72,7 @@ class AdminMessagingServiceImpl {
         try {
             // Fetch recent messages (both inbound and outbound)
             const response = await adminClient.request<BackendMessagesResponse>(
-                '/v1/communications/messages?limit=500&offset=0'
+                '/communications/messages?limit=500&offset=0'
             );
             this.messageCache = response.items || [];
             this.lastFetchTime = now;
@@ -82,7 +84,7 @@ class AdminMessagingServiceImpl {
     }
 
     /**
-     * Get conversation threads (virtual - grouped by phone number).
+     * Get conversation threads (virtual - grouped by conversation ID).
      * The 'tab' filter is not yet supported by backend.
      */
     async getThreads(
@@ -117,8 +119,7 @@ class AdminMessagingServiceImpl {
     }
 
     /**
-     * Get messages for a thread (phone number).
-     * threadId is the phone number used to group messages.
+     * Get messages for a thread key.
      */
     async getMessages(
         threadId: string,
@@ -126,9 +127,16 @@ class AdminMessagingServiceImpl {
         before?: string
     ): Promise<MessageListResponse> {
         const allMessages = await this.fetchAllMessages();
+        const conversationId = parseConversationThreadId(threadId);
 
-        // Filter messages for this thread (phone number)
+        // Filter messages for this thread by conversation ID when available.
         let threadMessages = allMessages.filter(msg => {
+            if (conversationId !== null) {
+                return msg.conversationId === conversationId;
+            }
+            if (getBackendThreadId(msg) === threadId) {
+                return true;
+            }
             const contactPhone = getMessageContactPhone(msg);
             return contactPhone === threadId;
         });
@@ -158,10 +166,11 @@ class AdminMessagingServiceImpl {
 
     /**
      * Send a message via Bird.
-     * Backend endpoint: POST /v1/communications/messages
+     * Backend endpoint: POST /communications/messages
      */
     async sendMessage(payload: SendMessagePayload): Promise<Message> {
-        const { threadId, content } = payload;
+        const { threadId, recipient, content } = payload;
+        const allMessages = await this.fetchAllMessages();
 
         // Extract message text
         let messageText = '';
@@ -171,15 +180,28 @@ class AdminMessagingServiceImpl {
             throw new Error('Only text messages are currently supported');
         }
 
-        // threadId is the phone number
+        let to = recipient?.trim() || '';
+        if (!to) {
+            const conversationId = parseConversationThreadId(threadId);
+            const fromConversation = conversationId !== null
+                ? allMessages.find((msg) => msg.conversationId === conversationId)
+                : allMessages.find((msg) => getBackendThreadId(msg) === threadId);
+            if (fromConversation) {
+                to = getMessageContactPhone(fromConversation);
+            }
+        }
+        if (!to || to === 'unknown') {
+            throw new Error('Unable to resolve recipient for selected thread');
+        }
+
         const request: BackendSendMessageRequest = {
             channel: 'sms',
-            to: threadId,
+            to,
             message: messageText,
         };
 
         const response = await adminClient.request<BackendCommunicationMessage>(
-            '/v1/communications/messages',
+            '/communications/messages',
             {
                 method: 'POST',
                 body: JSON.stringify(request),
@@ -189,7 +211,8 @@ class AdminMessagingServiceImpl {
         // Invalidate cache to pick up the new message
         this.lastFetchTime = 0;
 
-        return mapBackendMessage(response, threadId);
+        const responseThreadId = getBackendThreadId(response);
+        return mapBackendMessage(response, responseThreadId);
     }
 
     /**
@@ -210,7 +233,7 @@ class AdminMessagingServiceImpl {
         };
 
         const response = await adminClient.request<BackendCommunicationMessage>(
-            '/v1/communications/messages',
+            '/communications/messages',
             {
                 method: 'POST',
                 body: JSON.stringify(request),
@@ -220,11 +243,12 @@ class AdminMessagingServiceImpl {
         // Invalidate cache
         this.lastFetchTime = 0;
 
-        const mappedMessage = mapBackendMessage(response, phone);
+        const threadId = getBackendThreadId(response);
+        const mappedMessage = mapBackendMessage(response, threadId);
 
         // Create virtual thread
         const thread: Thread = {
-            id: phone,
+            id: threadId,
             contact: {
                 id: phone,
                 name: phone,
