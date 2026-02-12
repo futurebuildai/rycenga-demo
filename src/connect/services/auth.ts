@@ -2,8 +2,12 @@ import { client } from '../client';
 import type { User, NotificationPreferences, UpdateProfilePayload, ChangePasswordPayload } from '../types/domain';
 
 interface LoginResponse {
-    token: string;
-    user: User;
+    token?: string;
+    user?: User;
+    requiresOtp?: boolean;
+    otpRequestId?: number;
+    expiresAt?: string;
+    portal?: string;
 }
 
 export const AuthService = {

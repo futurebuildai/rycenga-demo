@@ -146,6 +146,23 @@ export class PageLogin extends LitElement {
 
     connectedCallback() {
         super.connectedCallback();
+        const params = new URLSearchParams(window.location.search);
+        const email = params.get('email');
+        const otpRequestId = params.get('otpRequestId');
+        const expiresAt = params.get('expiresAt');
+        if (email) {
+            this.email = email;
+        }
+        if (otpRequestId && email) {
+            const parsed = Number(otpRequestId);
+            if (Number.isFinite(parsed)) {
+                this.otpRequestId = parsed;
+                this.otpEmail = email;
+                if (expiresAt) {
+                    this.otpExpiresAt = expiresAt;
+                }
+            }
+        }
         this.loadBranding();
     }
 

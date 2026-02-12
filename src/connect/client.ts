@@ -56,8 +56,11 @@ class ApiClient {
             }
 
             if (!response.ok) {
-                // Handle 401 Unauthorized, etc.
-                throw new Error(`API Error: ${response.statusText}`);
+                const detail = await this.readErrorDetail(response);
+                const message = detail
+                    ? `API Error: ${detail}`
+                    : `API Error: ${response.status} ${response.statusText}`;
+                throw new Error(message);
             }
 
             return response.json();
@@ -98,7 +101,11 @@ class ApiClient {
             }
 
             if (!response.ok) {
-                throw new Error(`API Error: ${response.statusText}`);
+                const detail = await this.readErrorDetail(response);
+                const message = detail
+                    ? `API Error: ${detail}`
+                    : `API Error: ${response.status} ${response.statusText}`;
+                throw new Error(message);
             }
 
             return {
@@ -108,6 +115,27 @@ class ApiClient {
             };
         } finally {
             clearTimeout(timeoutId);
+        }
+    }
+
+    private async readErrorDetail(response: Response): Promise<string> {
+        try {
+            const contentType = response.headers.get('Content-Type') || '';
+            if (contentType.includes('application/json')) {
+                const payload = await response.json();
+                if (typeof payload === 'string') return payload;
+                if (payload && typeof payload === 'object') {
+                    if ('message' in payload && typeof payload.message === 'string') return payload.message;
+                    if ('error' in payload && typeof payload.error === 'string') return payload.error;
+                    if ('detail' in payload && typeof payload.detail === 'string') return payload.detail;
+                }
+                return '';
+            }
+
+            const text = await response.text();
+            return text.trim();
+        } catch {
+            return '';
         }
     }
 }

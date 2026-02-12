@@ -116,12 +116,20 @@ export class PvApp extends PvBase {
     // Check initial auth state
     this.isAuthenticated = AuthService.isAuthenticated();
     this.refreshImpersonationState();
+    if (this.isAuthenticated && AuthService.isPlatformAdminSession() && !this.isImpersonating) {
+      window.location.assign('/admin');
+      return;
+    }
 
     // Subscribe to auth changes
     this.authUnsubscribe = AuthService.subscribe((isAuth) => {
       this.isAuthenticated = isAuth;
       this.refreshImpersonationState();
       this.updateTitle();
+      if (isAuth && AuthService.isPlatformAdminSession() && !this.isImpersonating) {
+        window.location.assign('/admin');
+        return;
+      }
       if (!isAuth) {
         this.currentRoute = 'login';
       }
