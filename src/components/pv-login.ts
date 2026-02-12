@@ -181,6 +181,7 @@ export class PvLogin extends PvBase {
   @state() private email = '';
   @state() private password = '';
   @state() private showError = false;
+  @state() private errorMessage = 'Invalid email or password. Please try again.';
   @state() private isLoading = false;
   @state() private branding: BrandingInfo = BrandingService.getBrandingSync();
   private unsubscribeBranding?: () => void;
@@ -210,18 +211,26 @@ export class PvLogin extends PvBase {
     this.isLoading = true;
 
     try {
-      const success = await AuthService.login(this.email, this.password);
+      const result = await AuthService.login(this.email, this.password);
 
-      if (success) {
+      if (result.redirectTo) {
+        window.location.assign(result.redirectTo);
+        return;
+      }
+
+      if (result.success) {
         PvToast.show('Welcome back!', 'success');
         this.dispatchEvent(new CustomEvent('login-success', {
           bubbles: true,
           composed: true
         }));
       } else {
+        const reason = result.reason || 'Invalid email or password. Please try again.';
+        this.errorMessage = reason;
         this.showError = true;
       }
     } catch (e) {
+      this.errorMessage = 'Invalid email or password. Please try again.';
       this.showError = true;
     } finally {
       this.isLoading = false;
@@ -251,7 +260,7 @@ export class PvLogin extends PvBase {
           <form @submit=${this.handleSubmit}>
             ${this.showError ? html`
               <div class="login-error">
-                Invalid email or password. Please try again.
+                ${this.errorMessage}
               </div>
             ` : ''}
 

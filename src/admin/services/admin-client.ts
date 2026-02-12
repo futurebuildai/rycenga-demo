@@ -1,12 +1,12 @@
 /**
  * Admin API Client
- * Isolated HTTP client for the Admin Portal.
- * Uses a separate localStorage key to avoid collisions with the customer app.
+ * HTTP client for the Admin Portal.
+ * Uses the shared auth token with the customer app.
  */
 
 import { API_CONFIG } from '../../connect/config.js';
 
-const TOKEN_KEY = 'admin_auth_token';
+const TOKEN_KEY = 'auth_token';
 
 interface RequestOptions extends RequestInit {
     requiresAuth?: boolean;
@@ -66,12 +66,37 @@ class AdminApiClient {
             }
 
             if (!response.ok) {
-                throw new Error(`API Error: ${response.statusText}`);
+                const detail = await this.readErrorDetail(response);
+                const message = detail
+                    ? `API Error: ${detail}`
+                    : `API Error: ${response.status} ${response.statusText}`;
+                throw new Error(message);
             }
 
             return response.json() as Promise<T>;
         } finally {
             clearTimeout(timeoutId);
+        }
+    }
+
+    private async readErrorDetail(response: Response): Promise<string> {
+        try {
+            const contentType = response.headers.get('Content-Type') || '';
+            if (contentType.includes('application/json')) {
+                const payload = await response.json();
+                if (typeof payload === 'string') return payload;
+                if (payload && typeof payload === 'object') {
+                    if ('message' in payload && typeof payload.message === 'string') return payload.message;
+                    if ('error' in payload && typeof payload.error === 'string') return payload.error;
+                    if ('detail' in payload && typeof payload.detail === 'string') return payload.detail;
+                }
+                return '';
+            }
+
+            const text = await response.text();
+            return text.trim();
+        } catch {
+            return '';
         }
     }
 }

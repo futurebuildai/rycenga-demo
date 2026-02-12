@@ -140,7 +140,7 @@ class BrandingServiceImpl {
     }
 
     private getTenantSlugFromToken(): string {
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('admin_auth_token');
+        const token = localStorage.getItem('auth_token');
         if (!token) return '';
         const parts = token.split('.');
         if (parts.length < 2) return '';

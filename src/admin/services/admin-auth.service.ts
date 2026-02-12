@@ -26,7 +26,7 @@ interface AdminSession {
     user: User;
 }
 
-const SESSION_KEY = 'admin_session';
+const SESSION_KEY = 'velocity_session';
 const IMPERSONATION_KEY = 'impersonation_session';
 const ADMIN_ROLES: ReadonlySet<UserRole> = new Set(['tenant_owner', 'tenant_staff']);
 
@@ -45,8 +45,7 @@ class AdminAuthServiceImpl {
         try {
             // Ensure platform-admin login cannot inherit any prior user-area session.
             localStorage.removeItem('auth_token');
-            localStorage.removeItem('lumberboss_session');
-            localStorage.removeItem('velocity_session');
+            localStorage.removeItem(SESSION_KEY);
             localStorage.removeItem(IMPERSONATION_KEY);
 
             const response = await adminClient.request<LoginResponse>('/auth/login?portal=admin', {
@@ -105,6 +104,10 @@ class AdminAuthServiceImpl {
             }
 
             adminClient.setToken(response.token);
+            if (!ADMIN_ROLES.has(response.user.role)) {
+                this.logout();
+                return { success: false, reason: 'Access denied. Admin credentials required.' };
+            }
             const session: AdminSession = {
                 email: response.user.email,
                 loginTime: new Date().toISOString(),
@@ -126,8 +129,8 @@ class AdminAuthServiceImpl {
                 method: 'POST',
                 body: JSON.stringify({ targetUserId }),
             });
-            localStorage.setItem('auth_token', response.token);
-            localStorage.setItem('lumberboss_session', JSON.stringify({
+            adminClient.setToken(response.token);
+            localStorage.setItem(SESSION_KEY, JSON.stringify({
                 email: response.user.email,
                 loginTime: new Date().toISOString(),
                 user: response.user,
@@ -150,6 +153,9 @@ class AdminAuthServiceImpl {
         localStorage.removeItem(IMPERSONATION_KEY);
         this.currentUser = null;
         this.notifyListeners(false);
+        if (window.location.pathname.startsWith('/admin')) {
+            window.history.replaceState({}, '', '/admin');
+        }
     }
 
     isAuthenticated(): boolean {
@@ -157,7 +163,12 @@ class AdminAuthServiceImpl {
     }
 
     getSession(): AdminSession | null {
-        const data = localStorage.getItem(SESSION_KEY);
+        if (!localStorage.getItem('auth_token')) {
+            localStorage.removeItem(SESSION_KEY);
+            return null;
+        }
+
+        let data = localStorage.getItem(SESSION_KEY);
         if (!data) return null;
 
         try {

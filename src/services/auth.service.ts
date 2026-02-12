@@ -12,7 +12,6 @@ export interface Session {
 }
 
 const STORAGE_KEY = 'velocity_session';
-const LEGACY_STORAGE_KEY = 'lumberboss_session';
 const IMPERSONATION_KEY = 'impersonation_session';
 
 class AuthServiceImpl {
@@ -35,11 +34,26 @@ class AuthServiceImpl {
 
     /**
      * Attempt login with provided credentials
-     * @returns true if login successful
+     * @returns success + optional reason on failure
      */
-    async login(email: string, password: string): Promise<boolean> {
+    async login(email: string, password: string): Promise<{ success: boolean; reason?: string; redirectTo?: string }> {
         try {
             const response = await ConnectorAuth.login(email, password);
+            if (response.portal === 'admin' || response.requiresOtp) {
+                const params = new URLSearchParams({ email });
+                if (response.otpRequestId) {
+                    params.set('otpRequestId', String(response.otpRequestId));
+                }
+                if (response.expiresAt) {
+                    params.set('expiresAt', response.expiresAt);
+                }
+                return { success: false, redirectTo: `/admin?${params.toString()}` };
+            }
+
+            if (!response.user) {
+                return { success: false, reason: 'Invalid login response.' };
+            }
+
 
             // Reset error suppression on successful login
             import('../components/atoms/pv-toast').then(({ PvToast }) => {
@@ -55,13 +69,14 @@ class AuthServiceImpl {
 
             this.currentUser = response.user;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-            localStorage.removeItem(LEGACY_STORAGE_KEY);
             localStorage.removeItem(IMPERSONATION_KEY);
             this.notifyListeners(true);
-            return true;
+            return { success: true };
         } catch (error) {
             console.error("Login failed:", error);
-            return false;
+            const message = error instanceof Error ? error.message : '';
+            const cleaned = message.replace(/^API Error:\\s*/i, '').trim();
+            return { success: false, reason: cleaned || 'Invalid email or password.' };
         }
     }
 
@@ -71,7 +86,6 @@ class AuthServiceImpl {
     logout(): void {
         ConnectorAuth.logout();
         localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(LEGACY_STORAGE_KEY);
         localStorage.removeItem(IMPERSONATION_KEY);
         this.currentUser = null;
         this.notifyListeners(false);
@@ -90,18 +104,9 @@ class AuthServiceImpl {
     getSession(): Session | null {
         if (!localStorage.getItem('auth_token')) {
             localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(LEGACY_STORAGE_KEY);
             return null;
         }
         let data = localStorage.getItem(STORAGE_KEY);
-        if (!data) {
-            const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-            if (legacy) {
-                localStorage.setItem(STORAGE_KEY, legacy);
-                localStorage.removeItem(LEGACY_STORAGE_KEY);
-                data = legacy;
-            }
-        }
         if (!data) return null;
 
         try {
@@ -118,6 +123,36 @@ class AuthServiceImpl {
         if (this.currentUser) return this.currentUser;
         const session = this.getSession();
         return session?.user || null;
+    }
+
+
+    isPlatformAdminSession(): boolean {
+        const claims = this.getTokenClaims();
+        return !!claims?.is_platform_admin && !claims?.impersonator_user_id;
+    }
+
+    private getTokenClaims(): { is_platform_admin?: boolean; impersonator_user_id?: number } | null {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return null;
+        const parts = token.split('.');
+        if (parts.length < 2) return null;
+        const payload = this.decodeBase64Url(parts[1]);
+        if (!payload) return null;
+        try {
+            return JSON.parse(payload) as { is_platform_admin?: boolean; impersonator_user_id?: number };
+        } catch {
+            return null;
+        }
+    }
+
+    private decodeBase64Url(input: string): string | null {
+        const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=');
+        try {
+            return atob(padded);
+        } catch {
+            return null;
+        }
     }
 
     /**
