@@ -147,6 +147,68 @@ export class PvPageSettings extends PvBase {
         color: var(--color-text-muted);
       }
 
+      .sms-consent {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 2px;
+      }
+
+      .sms-consent-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid var(--color-border);
+        background: white;
+        color: var(--color-text-muted);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: help;
+      }
+
+      .sms-consent-label {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .sms-consent-tooltip {
+        position: absolute;
+        z-index: 10;
+        top: calc(100% + 8px);
+        left: 0;
+        width: min(460px, 85vw);
+        padding: 10px 12px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border);
+        background: white;
+        color: var(--color-text);
+        font-size: var(--text-xs);
+        line-height: 1.45;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-4px);
+        transition:
+          opacity var(--transition-fast),
+          transform var(--transition-fast),
+          visibility var(--transition-fast);
+      }
+
+      .sms-consent:hover .sms-consent-tooltip,
+      .sms-consent:focus-within .sms-consent-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .sms-consent-tooltip a {
+        color: var(--color-accent);
+      }
+
       .toggle-switch {
         position: relative;
         width: 48px;
@@ -397,6 +459,16 @@ export class PvPageSettings extends PvBase {
           <div class="toggle-info">
             <span class="toggle-label">SMS Notifications</span>
             <span class="toggle-desc">Get text alerts for delivery updates</span>
+            <span class="sms-consent">
+              <button class="sms-consent-trigger" type="button" aria-label="View SMS consent disclosure">i</button>
+              <span class="sms-consent-label">SMS consent disclosure</span>
+              <span class="sms-consent-tooltip" role="tooltip">
+                I agree to receive transactional SMS messages including account notifications, verification codes (2FA), and customer care responses. Message frequency varies. Msg &amp; data rates may apply. Reply STOP to unsubscribe or HELP for assistance. View our Privacy Policy at
+                <a href="https://www.builderwire.com/privacy-policy" target="_blank" rel="noopener noreferrer">builderwire.com/privacy-policy</a>
+                and Terms of Service at
+                <a href="https://www.builderwire.com/terms-and-conditions" target="_blank" rel="noopener noreferrer">builderwire.com/terms-and-conditions</a>.
+              </span>
+            </span>
           </div>
           <div 
             class="toggle-switch ${this.smsNotifications ? 'active' : ''} ${this.savingNotifications ? 'disabled' : ''}"
