@@ -59,10 +59,14 @@ class AdminApiClient {
             });
 
             if (response.status === 401) {
-                if (this.onUnauthorized) {
+                if (options.requiresAuth !== false && this.onUnauthorized) {
                     this.onUnauthorized();
                 }
-                throw new Error('Unauthorized');
+                const detail = await this.readErrorDetail(response);
+                const message = detail
+                    ? `API Error: ${detail}`
+                    : `API Error: ${response.status} ${response.statusText}`;
+                throw new Error(message);
             }
 
             if (!response.ok) {
@@ -94,7 +98,22 @@ class AdminApiClient {
             }
 
             const text = await response.text();
-            return text.trim();
+            const trimmed = text.trim();
+            if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                try {
+                    const payload = JSON.parse(trimmed);
+                    if (typeof payload === 'string') return payload;
+                    if (payload && typeof payload === 'object') {
+                        if ('message' in payload && typeof payload.message === 'string') return payload.message;
+                        if ('error' in payload && typeof payload.error === 'string') return payload.error;
+                        if ('detail' in payload && typeof payload.detail === 'string') return payload.detail;
+                        if ('title' in payload && typeof payload.title === 'string') return payload.title;
+                    }
+                } catch {
+                    // fall through to raw text
+                }
+            }
+            return trimmed;
         } catch {
             return '';
         }

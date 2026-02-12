@@ -86,8 +86,14 @@ class AdminAuthServiceImpl {
             localStorage.removeItem(IMPERSONATION_KEY);
             this.notifyListeners(true);
             return { success: true };
-        } catch {
-            return { success: false, reason: 'Invalid email or password.' };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : '';
+            const cleaned = message.replace(/^API Error:\s*/i, '').trim();
+            const fallback = cleaned || 'Invalid email or password.';
+            if (/account locked/i.test(fallback)) {
+                return { success: false, reason: 'Account locked due to too many failed attempts. Try again in 15 minutes.' };
+            }
+            return { success: false, reason: fallback };
         }
     }
 
