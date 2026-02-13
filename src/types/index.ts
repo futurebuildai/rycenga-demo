@@ -319,7 +319,7 @@ export interface ToastEvent {
 declare global {
     interface WindowEventMap {
         'show-toast': CustomEvent<ToastEvent>;
-        'route-changed': CustomEvent<{ route: RouteId }>;
+        'route-changed': CustomEvent<{ route: RouteId; params: URLSearchParams }>;
     }
 }
 

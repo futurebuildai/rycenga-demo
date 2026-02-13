@@ -317,9 +317,9 @@ export class PvPageProjects extends PvBase {
                 </div>
               </div>
               <div class="project-card-actions">
-                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('orders')}>Orders</button>
-                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('estimates')}>Estimates</button>
-                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('billing')}>Invoices</button>
+                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('orders', { jobId: project.id, jobName: project.name })}>Orders</button>
+                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('estimates', { jobId: project.id, jobName: project.name })}>Estimates</button>
+                <button class="btn btn-outline btn-sm" @click=${() => RouterService.navigate('billing', { jobId: project.id, jobName: project.name })}>Invoices</button>
               </div>
             </div>
           `)}

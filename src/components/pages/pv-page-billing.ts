@@ -7,6 +7,7 @@ import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
+import { RouterService } from '../../services/router.service.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { SalesService } from '../../connect/services/sales.js';
 import { DocumentsService } from '../../connect/services/documents.js';
@@ -304,6 +305,52 @@ export class PvPageBilling extends PvBase {
         opacity: 0.5;
         cursor: not-allowed;
       }
+
+      .active-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-lg);
+        padding: var(--space-sm) var(--space-md);
+        background: var(--color-bg-alt);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+      }
+
+      .active-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-xs);
+        padding: var(--space-xs) var(--space-sm);
+        background: var(--color-primary);
+        color: white;
+        border-radius: var(--radius-md);
+        font-size: var(--text-xs);
+        font-weight: 600;
+        transition: all var(--transition-fast);
+      }
+
+      .active-filter-chip button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 2px 4px;
+        margin-left: var(--space-xs);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-base);
+        line-height: 1;
+        transition: all var(--transition-fast);
+      }
+
+      .active-filter-chip button:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
     `,
   ];
 
@@ -318,6 +365,8 @@ export class PvPageBilling extends PvBase {
   @state() private invoicesLoading = false;
   @state() private outstandingInvoicesCount = 0;
   @state() private outstandingBalance = 0;
+  @state() private filterJobId: number | null = null;
+  @state() private filterJobName: string | null = null;
 
   // Pagination State
   @state() private invoicesPage = 1;
@@ -329,13 +378,50 @@ export class PvPageBilling extends PvBase {
   @state() private paymentAmount = 0;
   @state() private paymentInvoiceId: number | undefined;
 
+  private unsubscribeRouter?: () => void;
+
   async connectedCallback() {
     super.connectedCallback();
+    this.readFilterParams();
+    this.unsubscribeRouter = RouterService.subscribe(() => {
+      const params = RouterService.getParams();
+      const jobIdStr = params.get('jobId');
+      const newJobId = jobIdStr ? parseInt(jobIdStr, 10) : null;
+      const newJobName = params.get('jobName');
+      if ((isNaN(newJobId as number) ? null : newJobId) !== this.filterJobId) {
+        this.filterJobId = (newJobId && !isNaN(newJobId)) ? newJobId : null;
+        this.filterJobName = newJobName;
+        this.invoicesPage = 1;
+        this.loadInvoices();
+        this.loadInvoiceSummary();
+      }
+    });
     await Promise.all([
       this.loadInvoices(true),
       this.loadStatements(),
       this.loadInvoiceSummary(),
     ]);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.unsubscribeRouter?.();
+  }
+
+  private readFilterParams() {
+    const params = RouterService.getParams();
+    const jobIdStr = params.get('jobId');
+    if (jobIdStr) {
+      const parsed = parseInt(jobIdStr, 10);
+      if (!isNaN(parsed)) {
+        this.filterJobId = parsed;
+        this.filterJobName = params.get('jobName');
+      }
+    }
+  }
+
+  private clearFilter() {
+    RouterService.navigate('billing');
   }
 
   private async loadInvoices(initialLoad = false) {
@@ -345,8 +431,10 @@ export class PvPageBilling extends PvBase {
       } else {
         this.invoicesLoading = true;
       }
-      const offset = (this.invoicesPage - 1) * this.invoicesPageSize;
-      const response = await SalesService.getInvoices(this.invoicesPageSize, offset);
+
+      const fetchSize = this.invoicesPageSize;
+      const fetchOffset = (this.invoicesPage - 1) * this.invoicesPageSize;
+      const response = await SalesService.getInvoices(fetchSize, fetchOffset, this.filterJobId ?? undefined);
 
       // Map to legacy format
       const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
@@ -368,9 +456,10 @@ export class PvPageBilling extends PvBase {
 
   private async loadInvoiceSummary() {
     try {
-      const response = await SalesService.getInvoices(1000, 0);
+      const response = await SalesService.getInvoices(1000, 0, this.filterJobId ?? undefined);
       const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
       const allInvoices = response.items.map(mapInvoiceToLegacy);
+
       const outstanding = allInvoices.filter((i: Invoice) => i.status === 'open' || i.status === 'overdue');
       this.outstandingInvoicesCount = outstanding.length;
       this.outstandingBalance = outstanding.reduce((sum: number, inv: Invoice) => sum + inv.amountDue, 0);
@@ -704,9 +793,19 @@ export class PvPageBilling extends PvBase {
       <div class="section-header">
         <div>
           <h1 class="section-title">Billing</h1>
-          <p class="section-subtitle">Manage invoices and payments</p>
+          <p class="section-subtitle">${this.filterJobName ? `Filtered by project: ${this.filterJobName}` : 'Manage invoices and payments'}</p>
         </div>
       </div>
+
+      ${this.filterJobId ? html`
+        <div class="active-filter-bar">
+          <span>Filtered by project:</span>
+          <span class="active-filter-chip">
+            ${this.filterJobName || `Job #${this.filterJobId}`}
+            <button @click=${this.clearFilter} title="Clear filter">&times;</button>
+          </span>
+        </div>
+      ` : ''}
 
       ${this.currentView === 'list' ? this.renderListView() : this.renderDetailView()}
 

@@ -21,6 +21,7 @@ const DEFAULT_ROUTE: RouteId = 'overview';
 
 class RouterServiceImpl {
     private currentRoute: RouteId = DEFAULT_ROUTE;
+    private currentParams: URLSearchParams = new URLSearchParams();
     private listeners: Set<(route: RouteId) => void> = new Set();
     private initialized = false;
 
@@ -43,11 +44,23 @@ class RouterServiceImpl {
     }
 
     /**
-     * Navigate to a new route
+     * Get current URL search params from the hash
      */
-    navigate(route: RouteId): void {
-        if (window.location.hash !== `#${route}`) {
-            window.location.hash = route;
+    getParams(): URLSearchParams {
+        return this.currentParams;
+    }
+
+    /**
+     * Navigate to a new route, optionally with query parameters
+     */
+    navigate(route: RouteId, params?: Record<string, string>): void {
+        let hash = route as string;
+        if (params && Object.keys(params).length > 0) {
+            const searchParams = new URLSearchParams(params);
+            hash = `${route}?${searchParams.toString()}`;
+        }
+        if (window.location.hash !== `#${hash}`) {
+            window.location.hash = hash;
         }
     }
 
@@ -65,13 +78,25 @@ class RouterServiceImpl {
      * Parse hash and update current route
      */
     private handleHashChange(): void {
-        const hash = window.location.hash.substring(1) || DEFAULT_ROUTE;
-        const route = this.parseRoute(hash);
+        const rawHash = window.location.hash.substring(1) || DEFAULT_ROUTE;
 
-        if (route !== this.currentRoute) {
-            this.currentRoute = route;
+        // Split hash on '?' to separate route from query params
+        const questionIndex = rawHash.indexOf('?');
+        const routePart = questionIndex >= 0 ? rawHash.substring(0, questionIndex) : rawHash;
+        const paramsPart = questionIndex >= 0 ? rawHash.substring(questionIndex + 1) : '';
+
+        const route = this.parseRoute(routePart);
+        const params = new URLSearchParams(paramsPart);
+
+        const routeChanged = route !== this.currentRoute;
+        const paramsChanged = params.toString() !== this.currentParams.toString();
+
+        this.currentRoute = route;
+        this.currentParams = params;
+
+        if (routeChanged || paramsChanged) {
             this.notifyListeners();
-            this.dispatchEvent(route);
+            this.dispatchEvent(route, params);
         }
     }
 
@@ -93,10 +118,10 @@ class RouterServiceImpl {
     /**
      * Dispatch custom event for route changes
      */
-    private dispatchEvent(route: RouteId): void {
+    private dispatchEvent(route: RouteId, params: URLSearchParams): void {
         window.dispatchEvent(
             new CustomEvent('route-changed', {
-                detail: { route },
+                detail: { route, params },
                 bubbles: true,
                 composed: true,
             })

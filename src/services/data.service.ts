@@ -143,8 +143,8 @@ class DataServiceImpl {
     /**
      * Get order summaries with job information via API
      */
-    async getOrderSummaries(limit = 25, offset = 0): Promise<{ items: Order[]; total: number }> {
-        const { items: backendOrders, total } = await SalesService.getOrderSummaries({ limit, offset });
+    async getOrderSummaries(limit = 25, offset = 0, jobId?: number): Promise<{ items: Order[]; total: number }> {
+        const { items: backendOrders, total } = await SalesService.getOrderSummaries({ limit, offset, JobId: jobId });
         const items = backendOrders.map(mapOrderToLegacy);
         this.ordersData = items;
         return { items, total };
@@ -161,8 +161,8 @@ class DataServiceImpl {
     /**
      * Get invoices via API
      */
-    async getInvoices(): Promise<Invoice[]> {
-        const { items: backendInvoices } = await SalesService.getInvoices();
+    async getInvoices(limit = 1000, offset = 0, jobId?: number): Promise<Invoice[]> {
+        const { items: backendInvoices } = await SalesService.getInvoices(limit, offset, jobId);
         this.invoicesData = backendInvoices.map(mapInvoiceToLegacy);
         return this.invoicesData;
     }
@@ -170,8 +170,8 @@ class DataServiceImpl {
     /**
      * Get a single invoice by ID
      */
-    async getInvoiceById(invoiceId: string | number): Promise<Invoice | undefined> {
-        const invoices = await this.getInvoices();
+    async getInvoiceById(invoiceId: string | number, jobId?: number): Promise<Invoice | undefined> {
+        const invoices = await this.getInvoices(1000, 0, jobId);
         const id = typeof invoiceId === 'number' ? invoiceId : parseInt(invoiceId, 10);
         return invoices.find(i => i.id === id || i.invoiceNumber === String(invoiceId));
     }
@@ -179,8 +179,8 @@ class DataServiceImpl {
     /**
      * Get estimates (Quotes) via API
      */
-    async getEstimates(limit = 25, offset = 0): Promise<{ items: Estimate[]; total: number }> {
-        const { items: quotes, total } = await SalesService.getQuotes({ limit, offset });
+    async getEstimates(limit = 25, offset = 0, jobId?: number): Promise<{ items: Estimate[]; total: number }> {
+        const { items: quotes, total } = await SalesService.getQuotes({ limit, offset, JobId: jobId });
         const items = quotes.map(mapQuoteToEstimate);
         this.estimatesData = items;
         return { items, total };
