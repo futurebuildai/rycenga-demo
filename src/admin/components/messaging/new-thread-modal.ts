@@ -322,18 +322,6 @@ export class NewThreadModal extends LitElement {
             color: var(--color-text-muted, #94a3b8);
             pointer-events: none;
         }
-
-        .truncation-warning {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 10px;
-            background: #fef3c7;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #92400e;
-            margin-bottom: 8px;
-        }
     `;
 
     @property({ type: Boolean }) open = false;
@@ -346,7 +334,6 @@ export class NewThreadModal extends LitElement {
     @state() private loadingAccounts = false;
     @state() private loadingUsers = false;
     @state() private accountSearchQuery = '';
-    @state() private hasMoreAccounts = false;
     private allAccounts: AccountOption[] = [];
 
     // For new contact
@@ -418,13 +405,12 @@ export class NewThreadModal extends LitElement {
 
         this.loadingAccounts = true;
         try {
-            const response = await AdminDataService.getAccounts(100, 0);
+            const response = await AdminDataService.getAccounts(50, 0);
             this.allAccounts = response.items.map((a: AdminAccount) => ({
                 id: a.id,
                 name: a.name,
                 phone: a.phone,
             }));
-            this.hasMoreAccounts = response.total > 100;
             this.filterAccounts();
         } catch (e) {
             console.error('Failed to load accounts:', e);
@@ -716,16 +702,6 @@ export class NewThreadModal extends LitElement {
                 ${this.loadingAccounts
                     ? html`<span class="loading-text">Loading accounts...</span>`
                     : html`
-                        ${this.hasMoreAccounts ? html`
-                            <div class="truncation-warning">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                </svg>
-                                Showing first 100 accounts. Use search to find others.
-                            </div>
-                        ` : null}
                         ${this.allAccounts.length > 10 ? html`
                             <div class="account-search-container">
                                 <svg class="account-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
