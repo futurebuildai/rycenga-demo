@@ -59,6 +59,13 @@ class AdminMessagingServiceImpl {
     private lastFetchTime = 0;
     private readonly CACHE_TTL_MS = 30000; // 30 seconds
 
+    private async fetchMessagesByChannel(channel: 'sms' | 'whatsapp'): Promise<BackendCommunicationMessage[]> {
+        const response = await adminClient.request<BackendMessagesResponse>(
+            `/communications/messages?channel=${channel}&limit=500&offset=0`
+        );
+        return response.items || [];
+    }
+
     /**
      * Fetch all messages from backend and cache them.
      * Used to build virtual threads client-side.
@@ -70,11 +77,20 @@ class AdminMessagingServiceImpl {
         }
 
         try {
-            // Fetch recent messages (both inbound and outbound)
-            const response = await adminClient.request<BackendMessagesResponse>(
-                '/communications/messages?limit=500&offset=0'
+            // Fetch recent non-email messages from API (email excluded server-side).
+            const [smsMessages, whatsappMessages] = await Promise.all([
+                this.fetchMessagesByChannel('sms'),
+                this.fetchMessagesByChannel('whatsapp'),
+            ]);
+
+            const dedupedMessages = new Map<number, BackendCommunicationMessage>();
+            for (const msg of [...smsMessages, ...whatsappMessages]) {
+                dedupedMessages.set(msg.id, msg);
+            }
+
+            this.messageCache = Array.from(dedupedMessages.values()).sort(
+                (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
-            this.messageCache = response.items || [];
             this.lastFetchTime = now;
             return this.messageCache;
         } catch (e) {
