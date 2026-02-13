@@ -7,6 +7,7 @@ import { html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
+import { RouterService } from '../../services/router.service.js';
 import { DocumentsService } from '../../connect/services/documents.js';
 import { PvToast } from '../atoms/pv-toast.js';
 import type { Estimate } from '../../types/index.js';
@@ -214,6 +215,48 @@ export class PvPageEstimates extends PvBase {
       .detail-project-info {
         color: var(--color-text-muted);
       }
+
+      .active-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-md);
+        padding: var(--space-sm) var(--space-md);
+        background: var(--color-primary-light, #eff6ff);
+        border-radius: var(--radius-md);
+        font-size: var(--text-sm);
+      }
+
+      .active-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-xs);
+        padding: var(--space-xs) var(--space-md);
+        background: var(--color-primary);
+        color: white;
+        border-radius: var(--radius-full);
+        font-size: var(--text-sm);
+        font-weight: 500;
+      }
+
+      .active-filter-chip button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0;
+        margin-left: var(--space-xs);
+        font-size: var(--text-base);
+        line-height: 1;
+        opacity: 0.8;
+      }
+
+      .active-filter-chip button:hover {
+        opacity: 1;
+      }
     `,
   ];
 
@@ -229,12 +272,49 @@ export class PvPageEstimates extends PvBase {
   @state() private page = 1;
   @state() private pageSize = 10;
   @state() private totalCount = 0;
+  @state() private filterJobId: number | null = null;
+  @state() private filterJobName: string | null = null;
 
   private filters = ['All', 'Pending', 'Accepted', 'Expired'];
+  private unsubscribeRouter?: () => void;
 
   async connectedCallback() {
     super.connectedCallback();
+    this.readFilterParams();
+    this.unsubscribeRouter = RouterService.subscribe(() => {
+      const params = RouterService.getParams();
+      const jobIdStr = params.get('jobId');
+      const newJobId = jobIdStr ? parseInt(jobIdStr, 10) : null;
+      const newJobName = params.get('jobName');
+      if ((isNaN(newJobId as number) ? null : newJobId) !== this.filterJobId) {
+        this.filterJobId = (newJobId && !isNaN(newJobId)) ? newJobId : null;
+        this.filterJobName = newJobName;
+        this.page = 1;
+        this.loadEstimates();
+      }
+    });
     await this.loadEstimates(true);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.unsubscribeRouter?.();
+  }
+
+  private readFilterParams() {
+    const params = RouterService.getParams();
+    const jobIdStr = params.get('jobId');
+    if (jobIdStr) {
+      const parsed = parseInt(jobIdStr, 10);
+      if (!isNaN(parsed)) {
+        this.filterJobId = parsed;
+        this.filterJobName = params.get('jobName');
+      }
+    }
+  }
+
+  private clearFilter() {
+    RouterService.navigate('estimates');
   }
 
   private async loadEstimates(initialLoad = false) {
@@ -245,12 +325,32 @@ export class PvPageEstimates extends PvBase {
       this.estimatesLoading = true;
     }
     try {
+      // Fetch a larger page when filtering client-side to compensate for unfiltered backend totals
+      const fetchSize = this.filterJobId ? Math.max(this.pageSize * 5, 100) : this.pageSize;
+      const fetchOffset = this.filterJobId ? 0 : (this.page - 1) * this.pageSize;
+
       const { items, total } = await DataService.getEstimates(
-        this.pageSize,
-        (this.page - 1) * this.pageSize,
+        fetchSize,
+        fetchOffset,
+        this.filterJobId ?? undefined,
       );
-      this.estimates = items;
-      this.totalCount = total;
+
+      // Client-side fallback: filter if backend hasn't applied jobId filter yet
+      let filtered = items;
+      if (this.filterJobId) {
+        const jobIdStr = String(this.filterJobId);
+        filtered = items.filter(estimate => String(estimate.projectId) === jobIdStr);
+      }
+
+      if (this.filterJobId) {
+        // Apply client-side pagination on filtered results
+        const start = (this.page - 1) * this.pageSize;
+        this.totalCount = filtered.length;
+        this.estimates = filtered.slice(start, start + this.pageSize);
+      } else {
+        this.estimates = filtered;
+        this.totalCount = total;
+      }
     } catch (e) {
       console.error('Failed to load estimates', e);
       if (initialLoad) {
@@ -556,9 +656,19 @@ export class PvPageEstimates extends PvBase {
       <div class="section-header">
         <div>
           <h1 class="section-title">Estimates</h1>
-          <p class="section-subtitle">View your project estimates</p>
+          <p class="section-subtitle">${this.filterJobName ? `Filtered by project: ${this.filterJobName}` : 'View your project estimates'}</p>
         </div>
       </div>
+
+      ${this.filterJobId ? html`
+        <div class="active-filter-bar">
+          <span>Filtered by project:</span>
+          <span class="active-filter-chip">
+            ${this.filterJobName || `Job #${this.filterJobId}`}
+            <button @click=${this.clearFilter} title="Clear filter">&times;</button>
+          </span>
+        </div>
+      ` : ''}
 
       ${this.currentView === 'list' ? this.renderListView() : this.renderDetailView()}
     `;

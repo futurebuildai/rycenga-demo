@@ -143,8 +143,8 @@ class DataServiceImpl {
     /**
      * Get order summaries with job information via API
      */
-    async getOrderSummaries(limit = 25, offset = 0): Promise<{ items: Order[]; total: number }> {
-        const { items: backendOrders, total } = await SalesService.getOrderSummaries({ limit, offset });
+    async getOrderSummaries(limit = 25, offset = 0, jobId?: number): Promise<{ items: Order[]; total: number }> {
+        const { items: backendOrders, total } = await SalesService.getOrderSummaries({ limit, offset, jobId });
         const items = backendOrders.map(mapOrderToLegacy);
         this.ordersData = items;
         return { items, total };
@@ -179,8 +179,8 @@ class DataServiceImpl {
     /**
      * Get estimates (Quotes) via API
      */
-    async getEstimates(limit = 25, offset = 0): Promise<{ items: Estimate[]; total: number }> {
-        const { items: quotes, total } = await SalesService.getQuotes({ limit, offset });
+    async getEstimates(limit = 25, offset = 0, jobId?: number): Promise<{ items: Estimate[]; total: number }> {
+        const { items: quotes, total } = await SalesService.getQuotes({ limit, offset, jobId });
         const items = quotes.map(mapQuoteToEstimate);
         this.estimatesData = items;
         return { items, total };
