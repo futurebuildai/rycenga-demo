@@ -59,6 +59,7 @@ export const mapOrderToLegacy = (order: BackendOrder | BackendOrderSummary): Ord
     createdAt: order.orderDate,
     poNumber: (order as any).poNumber ?? null,
     lines: [], // Lines fetched separately via /orders/{id}/lines
+    productCount: (order as BackendOrderSummary).productCount,
     // Include job information if available (from OrderSummary)
     jobNumber: (order as BackendOrderSummary).jobNumber,
     jobName: (order as BackendOrderSummary).jobName,

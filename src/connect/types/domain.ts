@@ -140,6 +140,7 @@ export interface OrderSummary {
     lastSyncedAt?: string;
     jobId?: number;
     locationId?: number;
+    productCount?: number;
     jobNumber?: string;
     jobName?: string;
     jobPoNumber?: string;
