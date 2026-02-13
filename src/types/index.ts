@@ -162,6 +162,10 @@ export interface Order {
     createdAt?: string;
     updatedAt?: string;
     lines?: OrderLine[];
+    // Job information (from OrderSummary)
+    jobNumber?: string;
+    jobName?: string;
+    jobPoNumber?: string;
 }
 
 // ============================================

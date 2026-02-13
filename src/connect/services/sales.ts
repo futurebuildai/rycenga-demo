@@ -1,5 +1,5 @@
 import { client } from '../client';
-import type { Order, Invoice, Quote, OrderLine, QuoteLine } from '../types/domain';
+import type { Order, OrderSummary, Invoice, Quote, OrderLine, QuoteLine } from '../types/domain';
 
 interface PagingOptions {
     limit?: number;
@@ -32,6 +32,21 @@ export const SalesService = {
     // Maps to GET /orders/{id}
     getOrderDetails: (orderId: number) =>
         client.request<Order>(`/orders/${orderId}`),
+
+    // Maps to GET /order-summaries
+    getOrderSummaries: ({ limit = 25, offset = 0, accountId, jobId }: PagingOptions = {}) => {
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+        });
+        if (typeof accountId === 'number') {
+            params.set('account_id', String(accountId));
+        }
+        if (typeof jobId === 'number') {
+            params.set('jobId', String(jobId));
+        }
+        return client.request<PaginatedResponse<OrderSummary>>(`/order-summaries?${params.toString()}`);
+    },
 
     // Maps to GET /invoices
     getInvoices: (limit = 1000, offset = 0, jobId?: number) => {

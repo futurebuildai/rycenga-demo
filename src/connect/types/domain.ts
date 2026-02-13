@@ -123,6 +123,29 @@ export interface Order {
     poNumber?: string; // Mapped from ExternalID if needed or added to BE schema
 }
 
+export interface OrderSummary {
+    id: number;
+    accountId: number;
+    orderNumber: string;
+    externalId?: string;
+    orderDate: string; // ISO Date
+    currencyCode: string;
+    subtotal: number;
+    taxTotal: number;
+    shippingTotal: number;
+    total: number;
+    createdAt: string;
+    updatedAt: string;
+    status: OrderStatus;
+    lastSyncedAt?: string;
+    jobId?: number;
+    locationId?: number;
+    jobNumber?: string;
+    jobName?: string;
+    jobPoNumber?: string;
+    jobIsActive?: boolean;
+}
+
 export interface Invoice {
     id: number;
     invoiceNumber: string;
