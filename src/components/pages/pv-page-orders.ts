@@ -357,9 +357,17 @@ export class PvPageOrders extends PvBase {
   }
 
   private getOrderSummary(order: Order): string {
-    const count = order.lines?.length || 0;
-    const names = order.lines?.slice(0, 2).map(l => l.name).join(', ') || '';
+    const linesCount = order.lines?.length;
+    const count = (typeof linesCount === 'number' && linesCount > 0)
+      ? linesCount
+      : (order.productCount ?? 0);
+    const names = order.lines && order.lines.length > 0
+      ? order.lines.slice(0, 2).map(l => l.name).join(', ')
+      : '';
     const productsText = count === 1 ? 'product' : 'products';
+    if (!names) {
+      return `${count} ${productsText}`;
+    }
     return `${count} ${productsText}: ${names}${count > 2 ? '...' : ''}`;
   }
 

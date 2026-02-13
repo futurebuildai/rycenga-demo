@@ -162,6 +162,7 @@ export interface Order {
     createdAt?: string;
     updatedAt?: string;
     lines?: OrderLine[];
+    productCount?: number;
     // Job information (from OrderSummary)
     jobNumber?: string;
     jobName?: string;
