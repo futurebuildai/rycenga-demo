@@ -5,7 +5,7 @@ interface PagingOptions {
     limit?: number;
     offset?: number;
     accountId?: number;
-    jobId?: number;
+    JobId?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -15,7 +15,7 @@ export interface PaginatedResponse<T> {
 
 export const SalesService = {
     // Maps to GET /orders
-    getOrders: ({ limit = 25, offset = 0, accountId, jobId }: PagingOptions = {}) => {
+    getOrders: ({ limit = 25, offset = 0, accountId, JobId }: PagingOptions = {}) => {
         const params = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
@@ -23,8 +23,8 @@ export const SalesService = {
         if (typeof accountId === 'number') {
             params.set('account_id', String(accountId));
         }
-        if (typeof jobId === 'number') {
-            params.set('jobId', String(jobId));
+        if (typeof JobId === 'number') {
+            params.set('JobId', String(JobId));
         }
         return client.request<PaginatedResponse<Order>>(`/orders?${params.toString()}`);
     },
@@ -34,7 +34,7 @@ export const SalesService = {
         client.request<Order>(`/orders/${orderId}`),
 
     // Maps to GET /order-summaries
-    getOrderSummaries: ({ limit = 25, offset = 0, accountId, jobId }: PagingOptions = {}) => {
+    getOrderSummaries: ({ limit = 25, offset = 0, accountId, JobId }: PagingOptions = {}) => {
         const params = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
@@ -42,26 +42,26 @@ export const SalesService = {
         if (typeof accountId === 'number') {
             params.set('account_id', String(accountId));
         }
-        if (typeof jobId === 'number') {
-            params.set('jobId', String(jobId));
+        if (typeof JobId === 'number') {
+            params.set('JobId', String(JobId));
         }
         return client.request<PaginatedResponse<OrderSummary>>(`/order-summaries?${params.toString()}`);
     },
 
     // Maps to GET /invoices
-    getInvoices: (limit = 1000, offset = 0, jobId?: number) => {
+    getInvoices: (limit = 1000, offset = 0, JobId?: number) => {
         const params = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
         });
-        if (typeof jobId === 'number') {
-            params.set('jobId', String(jobId));
+        if (typeof JobId === 'number') {
+            params.set('JobId', String(JobId));
         }
         return client.request<{ items: Invoice[]; total: number }>(`/invoices?${params.toString()}`);
     },
 
     // Maps to GET /v1/quotes
-    getQuotes: ({ limit = 25, offset = 0, accountId, jobId }: PagingOptions = {}) => {
+    getQuotes: ({ limit = 25, offset = 0, accountId, JobId }: PagingOptions = {}) => {
         const params = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
@@ -69,8 +69,8 @@ export const SalesService = {
         if (typeof accountId === 'number') {
             params.set('account_id', String(accountId));
         }
-        if (typeof jobId === 'number') {
-            params.set('jobId', String(jobId));
+        if (typeof JobId === 'number') {
+            params.set('JobId', String(JobId));
         }
         return client.request<PaginatedResponse<Quote>>(`/quotes?${params.toString()}`);
     },

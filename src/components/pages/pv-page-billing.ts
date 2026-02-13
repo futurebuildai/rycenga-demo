@@ -310,42 +310,46 @@ export class PvPageBilling extends PvBase {
         display: flex;
         align-items: center;
         gap: var(--space-sm);
-        margin-bottom: var(--space-md);
+        margin-bottom: var(--space-lg);
         padding: var(--space-sm) var(--space-md);
-        background: var(--color-primary-light, #eff6ff);
-        border-radius: var(--radius-md);
+        background: var(--color-bg-alt);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
         font-size: var(--text-sm);
+        color: var(--color-text-muted);
       }
 
       .active-filter-chip {
         display: inline-flex;
         align-items: center;
         gap: var(--space-xs);
-        padding: var(--space-xs) var(--space-md);
+        padding: var(--space-xs) var(--space-sm);
         background: var(--color-primary);
         color: white;
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        font-weight: 500;
+        border-radius: var(--radius-md);
+        font-size: var(--text-xs);
+        font-weight: 600;
+        transition: all var(--transition-fast);
       }
 
       .active-filter-chip button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: none;
+        background: rgba(255, 255, 255, 0.2);
         border: none;
         color: white;
         cursor: pointer;
-        padding: 0;
+        padding: 2px 4px;
         margin-left: var(--space-xs);
+        border-radius: var(--radius-sm);
         font-size: var(--text-base);
         line-height: 1;
-        opacity: 0.8;
+        transition: all var(--transition-fast);
       }
 
       .active-filter-chip button:hover {
-        opacity: 1;
+        background: rgba(255, 255, 255, 0.3);
       }
     `,
   ];
@@ -427,30 +431,15 @@ export class PvPageBilling extends PvBase {
       } else {
         this.invoicesLoading = true;
       }
-      // Fetch a larger page when filtering client-side to compensate for unfiltered backend totals
-      const fetchSize = this.filterJobId ? Math.max(this.invoicesPageSize * 5, 100) : this.invoicesPageSize;
-      const fetchOffset = this.filterJobId ? 0 : (this.invoicesPage - 1) * this.invoicesPageSize;
+
+      const fetchSize = this.invoicesPageSize;
+      const fetchOffset = (this.invoicesPage - 1) * this.invoicesPageSize;
       const response = await SalesService.getInvoices(fetchSize, fetchOffset, this.filterJobId ?? undefined);
 
       // Map to legacy format
       const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
-      let mapped = response.items.map(mapInvoiceToLegacy);
-
-      // Client-side fallback: filter if backend hasn't applied jobId filter yet
-      if (this.filterJobId) {
-        const jobIdStr = String(this.filterJobId);
-        mapped = mapped.filter(invoice => String(invoice.projectId) === jobIdStr);
-      }
-
-      if (this.filterJobId) {
-        // Apply client-side pagination on filtered results
-        const start = (this.invoicesPage - 1) * this.invoicesPageSize;
-        this.invoicesTotal = mapped.length;
-        this.invoices = mapped.slice(start, start + this.invoicesPageSize);
-      } else {
-        this.invoices = mapped;
-        this.invoicesTotal = response.total;
-      }
+      this.invoices = response.items.map(mapInvoiceToLegacy);
+      this.invoicesTotal = response.total;
     } catch (e) {
       console.error('Failed to load invoices', e);
     } finally {
@@ -469,13 +458,7 @@ export class PvPageBilling extends PvBase {
     try {
       const response = await SalesService.getInvoices(1000, 0, this.filterJobId ?? undefined);
       const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
-      let allInvoices = response.items.map(mapInvoiceToLegacy);
-
-      // Client-side fallback: filter if backend hasn't applied jobId filter yet
-      if (this.filterJobId) {
-        const jobIdStr = String(this.filterJobId);
-        allInvoices = allInvoices.filter(invoice => String(invoice.projectId) === jobIdStr);
-      }
+      const allInvoices = response.items.map(mapInvoiceToLegacy);
 
       const outstanding = allInvoices.filter((i: Invoice) => i.status === 'open' || i.status === 'overdue');
       this.outstandingInvoicesCount = outstanding.length;

@@ -220,42 +220,46 @@ export class PvPageEstimates extends PvBase {
         display: flex;
         align-items: center;
         gap: var(--space-sm);
-        margin-bottom: var(--space-md);
+        margin-bottom: var(--space-lg);
         padding: var(--space-sm) var(--space-md);
-        background: var(--color-primary-light, #eff6ff);
-        border-radius: var(--radius-md);
+        background: var(--color-bg-alt);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
         font-size: var(--text-sm);
+        color: var(--color-text-muted);
       }
 
       .active-filter-chip {
         display: inline-flex;
         align-items: center;
         gap: var(--space-xs);
-        padding: var(--space-xs) var(--space-md);
+        padding: var(--space-xs) var(--space-sm);
         background: var(--color-primary);
         color: white;
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        font-weight: 500;
+        border-radius: var(--radius-md);
+        font-size: var(--text-xs);
+        font-weight: 600;
+        transition: all var(--transition-fast);
       }
 
       .active-filter-chip button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: none;
+        background: rgba(255, 255, 255, 0.2);
         border: none;
         color: white;
         cursor: pointer;
-        padding: 0;
+        padding: 2px 4px;
         margin-left: var(--space-xs);
+        border-radius: var(--radius-sm);
         font-size: var(--text-base);
         line-height: 1;
-        opacity: 0.8;
+        transition: all var(--transition-fast);
       }
 
       .active-filter-chip button:hover {
-        opacity: 1;
+        background: rgba(255, 255, 255, 0.3);
       }
     `,
   ];
@@ -325,9 +329,8 @@ export class PvPageEstimates extends PvBase {
       this.estimatesLoading = true;
     }
     try {
-      // Fetch a larger page when filtering client-side to compensate for unfiltered backend totals
-      const fetchSize = this.filterJobId ? Math.max(this.pageSize * 5, 100) : this.pageSize;
-      const fetchOffset = this.filterJobId ? 0 : (this.page - 1) * this.pageSize;
+      const fetchSize = this.pageSize;
+      const fetchOffset = (this.page - 1) * this.pageSize;
 
       const { items, total } = await DataService.getEstimates(
         fetchSize,
@@ -335,22 +338,8 @@ export class PvPageEstimates extends PvBase {
         this.filterJobId ?? undefined,
       );
 
-      // Client-side fallback: filter if backend hasn't applied jobId filter yet
-      let filtered = items;
-      if (this.filterJobId) {
-        const jobIdStr = String(this.filterJobId);
-        filtered = items.filter(estimate => String(estimate.projectId) === jobIdStr);
-      }
-
-      if (this.filterJobId) {
-        // Apply client-side pagination on filtered results
-        const start = (this.page - 1) * this.pageSize;
-        this.totalCount = filtered.length;
-        this.estimates = filtered.slice(start, start + this.pageSize);
-      } else {
-        this.estimates = filtered;
-        this.totalCount = total;
-      }
+      this.estimates = items;
+      this.totalCount = total;
     } catch (e) {
       console.error('Failed to load estimates', e);
       if (initialLoad) {
