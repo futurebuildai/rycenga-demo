@@ -245,7 +245,6 @@ export class AdminLayout extends LitElement {
                     <a href="/admin/messaging" class="${isActive('/admin/messaging') ? 'active' : ''}">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                         Messaging
-                        <span class="tag-soon">SOON</span>
                     </a>
                     <a href="/admin/ar-center" class="${isActive('/admin/ar-center') ? 'active' : ''}">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
