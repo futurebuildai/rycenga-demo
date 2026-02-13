@@ -141,6 +141,16 @@ class DataServiceImpl {
     }
 
     /**
+     * Get order summaries with job information via API
+     */
+    async getOrderSummaries(limit = 25, offset = 0): Promise<{ items: Order[]; total: number }> {
+        const { items: backendOrders, total } = await SalesService.getOrderSummaries({ limit, offset });
+        const items = backendOrders.map(mapOrderToLegacy);
+        this.ordersData = items;
+        return { items, total };
+    }
+
+    /**
      * Get a single order by ID
      */
     async getOrderById(orderId: number): Promise<Order | undefined> {

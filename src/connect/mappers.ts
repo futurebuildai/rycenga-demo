@@ -1,4 +1,4 @@
-import type { Job, Quote, Order as BackendOrder, Invoice as BackendInvoice, OrderLine as BackendOrderLine, QuoteLine as BackendQuoteLine } from './types/domain';
+import type { Job, Quote, Order as BackendOrder, OrderSummary as BackendOrderSummary, Invoice as BackendInvoice, OrderLine as BackendOrderLine, QuoteLine as BackendQuoteLine } from './types/domain';
 import type { Project, Estimate, Order, Invoice, OrderLine, InvoiceLine } from '../types/index';
 
 /**
@@ -49,7 +49,7 @@ export const mapQuoteToEstimate = (quote: Quote): Estimate => ({
 /**
  * Maps Backend Order to Legacy Frontend Order
  */
-export const mapOrderToLegacy = (order: BackendOrder): Order => ({
+export const mapOrderToLegacy = (order: BackendOrder | BackendOrderSummary): Order => ({
     id: order.id,
     orderNumber: order.orderNumber,
     userId: 'current',
@@ -57,8 +57,12 @@ export const mapOrderToLegacy = (order: BackendOrder): Order => ({
     status: order.status,
     total: order.total,
     createdAt: order.orderDate,
-    poNumber: order.poNumber ?? null,
+    poNumber: (order as any).poNumber ?? null,
     lines: [], // Lines fetched separately via /orders/{id}/lines
+    // Include job information if available (from OrderSummary)
+    jobNumber: (order as BackendOrderSummary).jobNumber,
+    jobName: (order as BackendOrderSummary).jobName,
+    jobPoNumber: (order as BackendOrderSummary).jobPoNumber,
 });
 
 /**

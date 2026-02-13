@@ -268,7 +268,7 @@ export class PvPageOrders extends PvBase {
       } else {
         this.ordersLoading = true;
       }
-      const { items, total } = await DataService.getOrders(
+      const { items, total } = await DataService.getOrderSummaries(
         this.pageSize,
         (this.page - 1) * this.pageSize,
       );
@@ -437,8 +437,12 @@ export class PvPageOrders extends PvBase {
                 <span class="order-date">${this.formatDate(order.createdAt || '')}</span>
               </div>
               <div class="order-row-project">
-                <span class="project-badge" style="background: ${this.getProjectColor(order)};"></span>
-                Project ${order.projectId?.slice(-1) || '1'}
+                ${order.jobName || order.jobNumber ? html`
+                  <span class="project-badge" style="background: ${this.getProjectColor(order)};"></span>
+                  <span title="Job #${order.jobNumber || order.projectId || ''}">${order.jobName || order.jobNumber || 'Job'}</span>
+                ` : html`
+                  <span style="color: var(--color-text-muted); font-size: var(--text-sm);">No Job</span>
+                `}
               </div>
               <div class="order-row-summary">
                 <span>${this.getOrderSummary(order)}</span>
@@ -494,7 +498,16 @@ export class PvPageOrders extends PvBase {
         <div class="detail-title-row">
           <div>
             <h2 class="detail-id">${order.orderNumber}</h2>
-            <p class="detail-project-info">Project ${order.projectId?.slice(-1) || '1'} • ${this.formatDate(order.createdAt || '')}</p>
+            <p class="detail-project-info">
+              ${order.jobName ? html`
+                <span>${order.jobName} ${order.jobNumber ? `(#${order.jobNumber})` : ''}</span>
+              ` : order.jobNumber ? html`
+                <span>Job #${order.jobNumber}</span>
+              ` : html`
+                <span>No Job Assigned</span>
+              `}
+              • ${this.formatDate(order.createdAt || '')}
+            </p>
           </div>
           <span class="status-badge ${this.getStatusClass(order.status)}">${this.getDisplayStatus(order.status)}</span>
         </div>
