@@ -34,11 +34,12 @@ class AuthServiceImpl {
 
     /**
      * Attempt login with provided credentials
+     * @param rememberMe - If true, extends session validity to 30 days
      * @returns success + optional reason on failure
      */
-    async login(email: string, password: string): Promise<{ success: boolean; reason?: string; redirectTo?: string }> {
+    async login(email: string, password: string, rememberMe = false): Promise<{ success: boolean; reason?: string; redirectTo?: string }> {
         try {
-            const response = await ConnectorAuth.login(email, password);
+            const response = await ConnectorAuth.login(email, password, rememberMe);
             if (response.portal === 'admin' || response.requiresOtp) {
                 const params = new URLSearchParams({ email });
                 if (response.otpRequestId) {

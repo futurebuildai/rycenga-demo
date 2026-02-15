@@ -11,10 +11,10 @@ interface LoginResponse {
 }
 
 export const AuthService = {
-    login: async (email: string, password: string): Promise<LoginResponse> => {
+    login: async (email: string, password: string, rememberMe = false): Promise<LoginResponse> => {
         const response = await client.request<LoginResponse>('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email, password, rememberMe }),
             requiresAuth: false,
         });
 
