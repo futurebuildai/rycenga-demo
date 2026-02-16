@@ -26,9 +26,9 @@ export class PvPaymentMethodList extends PvBase {
       }
 
       .payment-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
+        background: var(--app-surface-bg, var(--color-bg-alt));
+        border-radius: var(--app-surface-radius, var(--radius-lg));
+        padding: var(--app-surface-padding, var(--space-xl));
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -79,7 +79,7 @@ export class PvPaymentMethodList extends PvBase {
       .default-badge {
         background: var(--color-accent);
         color: white;
-        padding: 4px 12px;
+        padding: var(--app-badge-padding, 4px 12px);
         border-radius: var(--radius-full);
         font-size: var(--text-xs);
         font-weight: 600;
@@ -110,7 +110,7 @@ export class PvPaymentMethodList extends PvBase {
       }
 
       .error-state {
-        color: #dc2626;
+        color: var(--app-danger-color, var(--color-error));
         padding: var(--space-xl);
         text-align: center;
       }

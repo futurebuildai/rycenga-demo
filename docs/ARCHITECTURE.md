@@ -104,6 +104,23 @@ A lightweight wrapper around `fetch` that handles:
     - **Optimistic UI**: Immediate UI updates for high-latency actions (e.g., toggling notifications).
     - **Error Handling**: Standardized toast notifications via `PvToast`.
 
+### 4. Styling System (`src/styles/`)
+
+The customer portal uses centralized style templates instead of per-page CSS blocks.
+
+| File | Responsibility |
+|------|----------------|
+| `src/styles/theme.css` | Global design tokens and template-specific variable overrides |
+| `src/styles/shared.ts` | Reusable primitives/utilities (layout, badges, forms, pagination, detail/list states) |
+| `src/styles/pages.ts` | Page-level style templates consumed by `src/components/pages/*` |
+
+Rules:
+- `src/components/pages/*` should compose `PvBase.styles` + shared/page style exports.
+- Page components should not define local `css\`` blocks.
+- Inline `style=` attributes should be avoided in pages; prefer class-based styling backed by shared tokens.
+- Active customer template (`data-template`) is configured in `/admin/settings` via branding metadata (`templateId` / `template_id`) and controls layout.
+- Active customer palette (`data-palette`) is configured in `/admin/settings` via branding metadata (`paletteId` / `palette_id`) and controls color tokens.
+
 ---
 
 ## API Endpoints (Required)
@@ -134,7 +151,7 @@ For a full list of required endpoints and JSON schemas, see [BACKEND_HANDOFF.md]
 | UI Framework | [Lit](https://lit.dev/) (Web Components) |
 | Language | TypeScript 5.x |
 | Build Tool | Vite |
-| Styling | Vanilla CSS (CSS-in-JS via Lit `css`) |
+| Styling | CSS Variables + centralized Lit style templates (`theme.css`, `shared.ts`, `pages.ts`) |
 | Iconography | Lucide (as SVG) |
 
 ---
@@ -144,4 +161,3 @@ For a full list of required endpoints and JSON schemas, see [BACKEND_HANDOFF.md]
 1. **ERP Mapping**: Map Spruce/BisTrack fields to the `domain.ts` interfaces.
 2. **Endpoint Implementation**: Build the API layer documented in [BACKEND_HANDOFF.md](./BACKEND_HANDOFF.md).
 3. **Tenant Setup**: Configure environment variables for specific dealer tenants.
-

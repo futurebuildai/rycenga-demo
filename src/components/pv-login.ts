@@ -20,20 +20,20 @@ export class PvLogin extends PvBase {
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        background: var(--app-login-bg, linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%));
       }
 
       .login-container {
         width: 100%;
-        max-width: 420px;
+        max-width: var(--app-login-container-max-width, 420px);
         padding: var(--space-xl);
       }
 
       .login-card {
-        background: white;
-        border-radius: var(--radius-xl);
-        padding: var(--space-2xl);
-        box-shadow: var(--shadow-xl);
+        background: var(--app-login-card-bg, #ffffff);
+        border-radius: var(--app-login-card-radius, var(--radius-xl));
+        padding: var(--app-login-card-padding, var(--space-2xl));
+        box-shadow: var(--app-login-card-shadow, var(--shadow-xl));
       }
 
       .login-header {
@@ -45,12 +45,12 @@ export class PvLogin extends PvBase {
       }
 
       .login-logo-icon {
-        font-size: 2.5rem;
+        font-size: var(--app-login-logo-font-size, 2.5rem);
         color: var(--color-primary);
-        width: 64px;
-        height: 64px;
-        border-radius: 16px;
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        width: var(--app-login-logo-size, 64px);
+        height: var(--app-login-logo-size, 64px);
+        border-radius: var(--app-login-logo-radius, 16px);
+        background: var(--app-login-logo-bg, color-mix(in srgb, var(--color-primary) 12%, transparent));
         display: grid;
         place-items: center;
         margin-bottom: var(--space-md);
@@ -81,8 +81,8 @@ export class PvLogin extends PvBase {
       }
 
       .login-error {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
+        background: var(--app-danger-bg, rgba(239, 68, 68, 0.1));
+        color: var(--app-danger-color, var(--color-error));
         padding: var(--space-md);
         border-radius: var(--radius-md);
         font-size: var(--text-sm);

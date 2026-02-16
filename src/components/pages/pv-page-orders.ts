@@ -3,13 +3,15 @@
  * Displays order list with drill-down to detail view
  */
 
-import { html, css } from 'lit';
+import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
 import { DocumentsService } from '../../connect/services/documents.js';
 import { PvToast } from '../atoms/pv-toast.js';
+import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles, paginationStyles } from '../../styles/shared.js';
+import { ordersPageStyles } from '../../styles/pages.js';
 import type { Order } from '../../types/index.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
@@ -17,276 +19,12 @@ import { buildPaginationTokens, getPaginationBounds } from '../../utils/paginati
 export class PvPageOrders extends PvBase {
   static styles = [
     ...PvBase.styles,
-    css`
-      :host {
-        display: block;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .section-title {
-        font-family: var(--font-heading);
-        font-size: var(--text-3xl);
-        font-weight: 700;
-        color: var(--color-text);
-        margin-bottom: var(--space-xs);
-      }
-
-      .section-subtitle {
-        color: var(--color-text-muted);
-      }
-
-      .filters-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-lg);
-        margin-bottom: var(--space-xl);
-        flex-wrap: wrap;
-      }
-
-      .filter-chips {
-        display: flex;
-        gap: var(--space-sm);
-        flex-wrap: wrap;
-      }
-
-      .filter-chip {
-        padding: var(--space-sm) var(--space-lg);
-        background: var(--color-bg-alt);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-      }
-
-      .filter-chip:hover {
-        border-color: var(--color-accent);
-      }
-
-      .filter-chip.active {
-        background: var(--color-primary);
-        color: white;
-        border-color: var(--color-primary);
-      }
-
-      .orders-table {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-md);
-      }
-
-      .order-row {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-lg);
-        transition: box-shadow var(--transition-fast);
-      }
-
-      .order-row:hover {
-        box-shadow: var(--shadow-md);
-      }
-
-      .order-row-main {
-        display: grid;
-        grid-template-columns: 140px 160px 1fr 100px 140px 120px;
-        align-items: center;
-        gap: var(--space-md);
-      }
-
-      @media (max-width: 1024px) {
-        .order-row-main {
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-sm);
-        }
-      }
-
-      .order-row-info {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-xs);
-      }
-
-      .order-number {
-        font-weight: 600;
-        color: var(--color-text);
-      }
-
-      .order-date {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-      }
-
-      .order-row-project {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        font-size: var(--text-sm);
-      }
-
-      .project-badge {
-        width: 10px;
-        height: 10px;
-        border-radius: var(--radius-full);
-        flex-shrink: 0;
-      }
-
-      .order-row-summary {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        font-size: var(--text-sm);
-        color: var(--color-text-light);
-      }
-
-      .order-row-total {
-        font-weight: 600;
-      }
-
-      .active-filter-bar {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        margin-bottom: var(--space-lg);
-        padding: var(--space-sm) var(--space-md);
-        background: var(--color-bg-alt);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .active-filter-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-xs);
-        padding: var(--space-xs) var(--space-sm);
-        background: var(--color-primary);
-        color: white;
-        border-radius: var(--radius-md);
-        font-size: var(--text-xs);
-        font-weight: 600;
-        transition: all var(--transition-fast);
-      }
-
-      .active-filter-chip button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        cursor: pointer;
-        padding: 2px 4px;
-        margin-left: var(--space-xs);
-        border-radius: var(--radius-sm);
-        font-size: var(--text-base);
-        line-height: 1;
-        transition: all var(--transition-fast);
-      }
-
-      .active-filter-chip button:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-
-      /* Detail View */
-      .detail-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .btn-back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-sm);
-        padding: var(--space-sm) var(--space-md);
-        background: transparent;
-        color: var(--color-primary);
-        border: 2px solid var(--color-primary);
-        border-radius: var(--radius-md);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-      }
-
-      .btn-back:hover {
-        background: var(--color-primary);
-        color: white;
-      }
-
-      .detail-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
-      }
-
-      .detail-title-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .detail-id {
-        font-family: var(--font-heading);
-        font-size: var(--text-2xl);
-        font-weight: 700;
-        margin-bottom: var(--space-xs);
-      }
-
-      .detail-project-info {
-        color: var(--color-text-muted);
-      }
-
-      .line-items-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: var(--space-lg);
-      }
-
-      .line-items-table th,
-      .line-items-table td {
-        padding: var(--space-md);
-        text-align: left;
-        border-bottom: 1px solid var(--color-border);
-      }
-
-      .line-items-table th {
-        font-size: var(--text-sm);
-        font-weight: 600;
-        color: var(--color-text-muted);
-      }
-
-      .line-item-name {
-        font-weight: 500;
-      }
-
-      .line-item-sku {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-      }
-
-      .grand-total-row td {
-        font-weight: 700;
-        border-bottom: none;
-        padding-top: var(--space-md);
-      }
-
-      .detail-actions-footer {
-        padding-top: var(--space-lg);
-        border-top: 1px solid var(--color-border);
-        color: var(--color-text-muted);
-        font-size: var(--text-sm);
-      }
-    `,
+    pageShellStyles,
+    detailViewStyles,
+    activeFilterStyles,
+    paginationStyles,
+    listStateStyles,
+    ordersPageStyles,
   ];
 
   @state() private orders: Order[] = [];
@@ -431,12 +169,6 @@ export class PvPageOrders extends PvBase {
     return displayMap[status] || status;
   }
 
-  private getProjectColor(order: Order): string {
-    const colors = ['#3b82f6', '#22c55e', '#f97316', '#a855f7'];
-    const index = this.orders.indexOf(order) % colors.length;
-    return colors[index];
-  }
-
   private formatCurrency(value: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
@@ -493,13 +225,12 @@ export class PvPageOrders extends PvBase {
 
     return buildPaginationTokens(this.page, totalPages).map(token =>
       token === 'ellipsis'
-        ? html`<span style="align-self: center; color: var(--color-text-muted);">...</span>`
+        ? html`<span class="pagination-ellipsis">...</span>`
         : html`
             <button
-              class="btn btn-outline btn-sm ${this.page === token ? 'active' : ''}"
+              class="btn btn-outline btn-sm page-number-btn ${this.page === token ? 'active' : ''}"
               ?disabled=${this.ordersLoading}
               @click=${() => this.handlePageChange(token)}
-              style="${this.page === token ? 'background: var(--color-primary); color: white; border-color: var(--color-primary);' : ''}"
             >
               ${token}
             </button>
@@ -511,7 +242,7 @@ export class PvPageOrders extends PvBase {
     const { start, end } = getPaginationBounds(this.page, this.pageSize, this.totalCount);
     return html`
       ${this.ordersLoading ? html`
-        <div style="margin-bottom: var(--space-md); color: var(--color-text-muted); font-size: var(--text-sm);">
+        <div class="list-refresh-note">
           Updating orders...
         </div>
       ` : ''}
@@ -527,7 +258,7 @@ export class PvPageOrders extends PvBase {
       </div>
 
       <div class="orders-table">
-        ${this.orders.map(order => html`
+        ${this.orders.map((order, index) => html`
           <div class="order-row">
             <div class="order-row-main">
               <div class="order-row-info">
@@ -536,10 +267,10 @@ export class PvPageOrders extends PvBase {
               </div>
               <div class="order-row-project">
                 ${order.jobName || order.jobNumber ? html`
-                  <span class="project-badge" style="background: ${this.getProjectColor(order)};"></span>
+                  <span class="project-badge project-color-${(index % 4) + 1}"></span>
                   <span title="Job #${order.jobNumber || order.projectId || ''}">${order.jobName || order.jobNumber || 'Job'}</span>
                 ` : html`
-                  <span style="color: var(--color-text-muted); font-size: var(--text-sm);">No Job</span>
+                  <span class="no-job-label">No Job</span>
                 `}
               </div>
               <div class="order-row-summary">
@@ -557,11 +288,11 @@ export class PvPageOrders extends PvBase {
         `)}
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-lg);">
-        <div style="color: var(--color-text-muted); font-size: var(--text-sm);">
+      <div class="pagination-row">
+        <div class="pagination-summary">
           Showing ${start}-${end} of ${this.totalCount}
         </div>
-        <div style="display: flex; gap: var(--space-sm);">
+        <div class="pagination-nav">
           <button class="btn btn-outline btn-sm" ?disabled=${this.page === 1 || this.ordersLoading} @click=${() => this.handlePageChange(this.page - 1)}>Previous</button>
           ${this.renderPageNumbers()}
           <button class="btn btn-outline btn-sm" ?disabled=${this.page >= Math.ceil(this.totalCount / this.pageSize) || this.ordersLoading} @click=${() => this.handlePageChange(this.page + 1)}>Next</button>
@@ -622,16 +353,16 @@ export class PvPageOrders extends PvBase {
           <tbody>
             ${this.loadingLines ? html`
               <tr>
-                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                <td colspan="4" class="text-center line-items-message">
                   <div class="loading-spinner"></div>
                   <p>Loading items...</p>
                 </td>
               </tr>
             ` : this.lineError ? html`
               <tr>
-                <td colspan="4" class="text-center" style="padding: var(--space-xl); color: var(--color-error);">
+                <td colspan="4" class="text-center line-items-message error">
                   <p>${this.lineError}</p>
-                  <button class="btn btn-outline btn-sm" style="margin-top: var(--space-md);" @click=${() => this.viewOrderDetail(order)}>Retry</button>
+                  <button class="btn btn-outline btn-sm line-items-retry" @click=${() => this.viewOrderDetail(order)}>Retry</button>
                 </td>
               </tr>
             ` : order.lines && order.lines.length > 0 ? order.lines.map(line => html`
@@ -646,7 +377,7 @@ export class PvPageOrders extends PvBase {
               </tr>
             `) : html`
               <tr>
-                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                <td colspan="4" class="text-center line-items-message">
                   <p>No line items found for this order.</p>
                 </td>
               </tr>

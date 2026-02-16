@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
 import { AdminDataService } from '../services/admin-data.service.js';
 import { AdminBrandingService, type DealerBranding, DEFAULT_BRANDING } from '../services/admin-branding.service.js';
+import { BRANDING_REFRESH_SIGNAL_KEY } from '../../services/branding.service.js';
 import '../components/logo-upload.js';
 
 @customElement('admin-page-settings')
@@ -64,7 +65,8 @@ export class PageSettings extends LitElement {
             color: var(--color-text-light, #64748b);
         }
 
-        input {
+        input,
+        select {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid var(--color-border, #e2e8f0);
@@ -74,15 +76,18 @@ export class PageSettings extends LitElement {
             color: var(--color-text);
             box-sizing: border-box;
             transition: all 0.15s ease;
+            background: white;
         }
 
-        input:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--admin-accent, #6366f1);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
-        input:disabled {
+        input:disabled,
+        select:disabled {
             background: #f8fafc;
             color: #94a3b8;
         }
@@ -177,6 +182,8 @@ export class PageSettings extends LitElement {
     @state() private brandingCompanyName = '';
     @state() private brandingContactEmail = '';
     @state() private brandingContactPhone = '';
+    @state() private brandingTemplateId = 1;
+    @state() private brandingPaletteId = 1;
     @state() private brandingSaving = false;
     @state() private logoUploading = false;
     @state() private pendingLogoFile: File | null = null;
@@ -212,6 +219,8 @@ export class PageSettings extends LitElement {
             this.brandingCompanyName = this.branding.companyName;
             this.brandingContactEmail = this.branding.contactEmail;
             this.brandingContactPhone = this.branding.contactPhone;
+            this.brandingTemplateId = this.branding.templateId || 1;
+            this.brandingPaletteId = this.branding.paletteId || 1;
         } catch {
             // Use defaults on error
         }
@@ -264,15 +273,26 @@ export class PageSettings extends LitElement {
                 companyName: this.brandingCompanyName,
                 contactEmail: this.brandingContactEmail,
                 contactPhone: this.brandingContactPhone,
+                templateId: this.brandingTemplateId,
+                paletteId: this.brandingPaletteId,
             });
 
             this.branding = updated;
+            this.signalCustomerBrandingRefresh();
             this.showToast('Branding saved successfully', 'success');
         } catch (e) {
             const msg = e instanceof Error ? e.message : 'Failed to save branding.';
             this.showToast(msg, 'error');
         } finally {
             this.brandingSaving = false;
+        }
+    }
+
+    private signalCustomerBrandingRefresh() {
+        try {
+            localStorage.setItem(BRANDING_REFRESH_SIGNAL_KEY, String(Date.now()));
+        } catch {
+            // Ignore storage errors.
         }
     }
 
@@ -369,10 +389,35 @@ export class PageSettings extends LitElement {
                                 @input=${(e: Event) => this.brandingContactPhone = (e.target as HTMLInputElement).value}
                             />
                         </div>
+
+                        <div class="form-group">
+                            <label>Portal Template</label>
+                            <select
+                                class="form-select"
+                                .value=${String(this.brandingTemplateId)}
+                                @change=${(e: Event) => this.brandingTemplateId = Number((e.target as HTMLSelectElement).value)}
+                            >
+                                <option value="1">Template 1 (Default)</option>
+                                <option value="2">Template 2 (Split Layout)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Color Palette</label>
+                            <select
+                                class="form-select"
+                                .value=${String(this.brandingPaletteId)}
+                                @change=${(e: Event) => this.brandingPaletteId = Number((e.target as HTMLSelectElement).value)}
+                            >
+                                <option value="1">Palette 1 (Slate + Ember)</option>
+                                <option value="2">Palette 2 (Evergreen)</option>
+                                <option value="3">Palette 3 (Midnight)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="branding-preview">
-                        <strong>Preview:</strong> Your branding will appear on customer login pages, portal headers, and the "Need Help?" section in the customer sidebar.
+                        <strong>Preview:</strong> Template controls layout. Palette controls colors. Both are applied to customer login pages, headers, and account shell after users refresh.
                     </div>
 
                     <div style="margin-top: 20px;">

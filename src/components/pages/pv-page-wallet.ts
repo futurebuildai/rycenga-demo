@@ -3,11 +3,13 @@
  * Displays saved payment methods and allows management
  */
 
-import { html, css } from 'lit';
+import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { PvToast } from '../atoms/pv-toast.js';
+import { pageShellStyles } from '../../styles/shared.js';
+import { walletPageStyles } from '../../styles/pages.js';
 import type { PaymentMethod } from '../../connect/types/domain.js';
 import '../../features/billing/components/pv-add-payment-modal.js';
 
@@ -15,137 +17,8 @@ import '../../features/billing/components/pv-add-payment-modal.js';
 export class PvPageWallet extends PvBase {
   static styles = [
     ...PvBase.styles,
-    css`
-      :host {
-        display: block;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .section-title {
-        font-family: var(--font-heading);
-        font-size: var(--text-3xl);
-        font-weight: 700;
-        color: var(--color-text);
-        margin-bottom: var(--space-xs);
-      }
-
-      .section-subtitle {
-        color: var(--color-text-muted);
-      }
-
-      .wallet-actions {
-        display: flex;
-        gap: var(--space-md);
-        margin-bottom: var(--space-xl);
-      }
-
-      .payment-methods {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-md);
-      }
-
-      .payment-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-lg);
-      }
-
-      .payment-card.default {
-        border: 2px solid var(--color-accent);
-      }
-
-      .payment-info {
-        display: flex;
-        align-items: center;
-        gap: var(--space-lg);
-      }
-
-      .payment-icon {
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--color-primary);
-        color: white;
-        border-radius: var(--radius-md);
-      }
-
-      .payment-details {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-xs);
-      }
-
-      .payment-label {
-        font-weight: 600;
-      }
-
-      .payment-meta {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .payment-actions {
-        display: flex;
-        gap: var(--space-sm);
-      }
-
-      .default-badge {
-        background: var(--color-accent);
-        color: white;
-        padding: 4px 12px;
-        border-radius: var(--radius-full);
-        font-size: var(--text-xs);
-        font-weight: 600;
-        margin-left: var(--space-md);
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: var(--space-3xl);
-        color: var(--color-text-muted);
-      }
-
-      .empty-state svg {
-        margin-bottom: var(--space-lg);
-        color: var(--color-border);
-      }
-
-      .empty-state h3 {
-        font-family: var(--font-heading);
-        color: var(--color-text);
-        margin-bottom: var(--space-sm);
-      }
-
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-
-      .loading-text {
-        color: var(--color-text-muted);
-        padding: var(--space-xl);
-        text-align: center;
-      }
-
-      .error-text {
-        color: #dc2626;
-        padding: var(--space-xl);
-        text-align: center;
-      }
-    `,
+    pageShellStyles,
+    walletPageStyles,
   ];
 
   @state() private paymentMethods: PaymentMethod[] = [];
@@ -355,4 +228,3 @@ declare global {
     'pv-page-wallet': PvPageWallet;
   }
 }
-

@@ -3,7 +3,7 @@
  * Displays invoices with tabs and drill-down detail view
  */
 
-import { html, css } from 'lit';
+import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
@@ -14,6 +14,8 @@ import { DocumentsService } from '../../connect/services/documents.js';
 import { PvToast } from '../atoms/pv-toast.js';
 import type { Invoice, InvoiceLine } from '../../types/index.js';
 import type { Statement } from '../../connect/types/domain.js';
+import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles, paginationStyles } from '../../styles/shared.js';
+import { billingPageStyles } from '../../styles/pages.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import '../../features/billing/components/pv-payment-history-table.js';
 import '../../features/billing/components/pv-payment-modal.js';
@@ -22,460 +24,12 @@ import '../../features/billing/components/pv-payment-modal.js';
 export class PvPageBilling extends PvBase {
   static styles = [
     ...PvBase.styles,
-    css`
-      :host {
-        display: block;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .section-title {
-        font-family: var(--font-heading);
-        font-size: var(--text-3xl);
-        font-weight: 700;
-        color: var(--color-text);
-        margin-bottom: var(--space-xs);
-      }
-
-      .section-subtitle {
-        color: var(--color-text-muted);
-      }
-
-      .billing-summary {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: var(--space-lg);
-        margin-bottom: var(--space-xl);
-      }
-
-      .summary-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-lg);
-      }
-
-      .summary-card.balance {
-        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-        color: white;
-      }
-
-      .summary-label {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-        margin-bottom: var(--space-xs);
-      }
-
-      .summary-card.balance .summary-label {
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .summary-value {
-        font-family: var(--font-heading);
-        font-size: var(--text-2xl);
-        font-weight: 700;
-      }
-
-      .billing-tabs {
-        display: flex;
-        gap: var(--space-sm);
-        border-bottom: 2px solid var(--color-border);
-        margin-bottom: var(--space-xl);
-      }
-
-      .billing-tab {
-        padding: var(--space-md) var(--space-lg);
-        background: none;
-        border: none;
-        font-weight: 500;
-        color: var(--color-text-light);
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
-        transition: all var(--transition-fast);
-      }
-
-      .billing-tab:hover {
-        color: var(--color-text);
-      }
-
-      .billing-tab.active {
-        color: var(--color-primary);
-        border-bottom-color: var(--color-primary);
-      }
-
-      .invoice-row {
-        display: grid;
-        grid-template-columns: 40px 1fr 150px 100px 120px 120px;
-        align-items: center;
-        gap: var(--space-md);
-        padding: var(--space-lg);
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        margin-bottom: var(--space-md);
-        transition: background var(--transition-fast), box-shadow var(--transition-fast);
-      }
-
-      .invoice-row.selected {
-        background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.06);
-        box-shadow: inset 0 0 0 1px var(--color-primary);
-      }
-
-      .invoice-row-header {
-        display: grid;
-        grid-template-columns: 40px 1fr 150px 100px 120px 120px;
-        align-items: center;
-        gap: var(--space-md);
-        padding: var(--space-sm) var(--space-lg);
-        margin-bottom: var(--space-xs);
-      }
-
-      .invoice-row-header span {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-weight: 600;
-      }
-
-      @media (max-width: 768px) {
-        .invoice-row,
-        .invoice-row-header {
-          grid-template-columns: 32px 1fr 1fr;
-        }
-        .invoice-row-header {
-          display: none;
-        }
-      }
-
-      .invoice-checkbox {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--color-primary);
-        cursor: pointer;
-      }
-
-      /* Floating Pay Selected Bar */
-      .bulk-pay-bar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--color-bg);
-        border-top: 2px solid var(--color-primary);
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-md) var(--space-xl);
-        z-index: 100;
-        animation: slideUp 0.25s ease-out;
-      }
-
-      @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
-      }
-
-      .bulk-pay-info {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
-      }
-
-      .bulk-pay-count {
-        font-weight: 600;
-        color: var(--color-text);
-      }
-
-      .bulk-pay-total {
-        font-family: monospace;
-        font-weight: 700;
-        font-size: var(--text-lg);
-        color: var(--color-primary);
-      }
-
-      .bulk-pay-actions {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
-      }
-
-      .btn-clear-selection {
-        background: transparent;
-        border: 1px solid var(--color-border);
-        padding: var(--space-sm) var(--space-md);
-        border-radius: var(--radius-md);
-        color: var(--color-text-muted);
-        cursor: pointer;
-        font-weight: 500;
-        transition: all var(--transition-fast);
-      }
-
-      .btn-clear-selection:hover {
-        border-color: var(--color-text-muted);
-        color: var(--color-text);
-      }
-
-      /* Payment request banner */
-      .payment-request-banner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-md) var(--space-lg);
-        background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04));
-        border: 1px solid rgba(59,130,246,0.2);
-        border-radius: var(--radius-lg);
-        margin-bottom: var(--space-lg);
-      }
-
-      .payment-request-banner .banner-text {
-        font-size: var(--text-sm);
-        color: var(--color-text);
-        font-weight: 500;
-      }
-
-      .payment-request-banner .banner-dismiss {
-        background: transparent;
-        border: none;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        font-size: var(--text-lg);
-        line-height: 1;
-        padding: var(--space-xs);
-      }
-
-      .invoice-info {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-xs);
-      }
-
-      .invoice-number {
-        font-weight: 600;
-      }
-
-      .invoice-project {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .invoice-amount {
-        font-weight: 600;
-      }
-
-      /* Detail View */
-      .detail-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .btn-back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-sm);
-        padding: var(--space-sm) var(--space-md);
-        background: transparent;
-        color: var(--color-primary);
-        border: 2px solid var(--color-primary);
-        border-radius: var(--radius-md);
-        font-weight: 600;
-        cursor: pointer;
-      }
-
-      .btn-back:hover {
-        background: var(--color-primary);
-        color: white;
-      }
-
-      .detail-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
-      }
-
-      .detail-title-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .detail-id {
-        font-family: var(--font-heading);
-        font-size: var(--text-2xl);
-        font-weight: 700;
-        margin-bottom: var(--space-xs);
-      }
-
-      .detail-project-info {
-        color: var(--color-text-muted);
-      }
-
-      .detail-totals {
-        margin-top: var(--space-xl);
-        padding-top: var(--space-lg);
-        border-top: 1px solid var(--color-border);
-      }
-
-      .total-row {
-        display: flex;
-        justify-content: space-between;
-        padding: var(--space-sm) 0;
-      }
-
-      .total-row.grand {
-        font-weight: 700;
-        font-size: var(--text-lg);
-        padding-top: var(--space-md);
-        border-top: 2px solid var(--color-border);
-      }
-
-      .detail-actions {
-        margin-top: var(--space-xl);
-        display: flex;
-        gap: var(--space-md);
-      }
-
-      .line-items-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: var(--space-xl);
-      }
-
-      .line-items-table th {
-        text-align: left;
-        padding: var(--space-md);
-        border-bottom: 2px solid var(--color-border);
-        color: var(--color-text-muted);
-        font-size: var(--text-sm);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .line-items-table td {
-        padding: var(--space-md);
-        border-bottom: 1px solid var(--color-border);
-      }
-
-      .line-sku {
-        font-family: monospace;
-        color: var(--color-text-muted);
-        font-size: var(--text-sm);
-      }
-
-      .line-qty {
-        text-align: center;
-      }
-
-      .line-price, .line-total {
-        text-align: right;
-      }
-
-      .loading-lines {
-        padding: var(--space-xl);
-        text-align: center;
-        color: var(--color-text-muted);
-      }
-
-      /* Pagination */
-      .pagination {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: var(--space-lg);
-        padding: var(--space-md) 0;
-      }
-
-      .pagination-info {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .pagination-actions {
-        display: flex;
-        gap: var(--space-sm);
-      }
-
-      .pagination-btn {
-        padding: var(--space-sm) var(--space-md);
-        background: var(--color-bg-alt);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        font-weight: 500;
-        transition: all var(--transition-fast);
-      }
-
-      .pagination-btn:hover:not(:disabled) {
-        background: white;
-        border-color: var(--color-primary);
-        color: var(--color-primary);
-      }
-
-      .pagination-btn.active {
-        background: var(--color-primary);
-        color: white;
-        border-color: var(--color-primary);
-      }
-
-      .pagination-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .active-filter-bar {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        margin-bottom: var(--space-lg);
-        padding: var(--space-sm) var(--space-md);
-        background: var(--color-bg-alt);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .active-filter-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-xs);
-        padding: var(--space-xs) var(--space-sm);
-        background: var(--color-primary);
-        color: white;
-        border-radius: var(--radius-md);
-        font-size: var(--text-xs);
-        font-weight: 600;
-        transition: all var(--transition-fast);
-      }
-
-      .active-filter-chip button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        cursor: pointer;
-        padding: 2px 4px;
-        margin-left: var(--space-xs);
-        border-radius: var(--radius-sm);
-        font-size: var(--text-base);
-        line-height: 1;
-        transition: all var(--transition-fast);
-      }
-
-      .active-filter-chip button:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-    `,
+    pageShellStyles,
+    detailViewStyles,
+    activeFilterStyles,
+    paginationStyles,
+    listStateStyles,
+    billingPageStyles,
   ];
 
   @state() private invoices: Invoice[] = [];
@@ -775,7 +329,7 @@ export class PvPageBilling extends PvBase {
     const totalPages = Math.ceil(this.invoicesTotal / this.invoicesPageSize);
     return buildPaginationTokens(this.invoicesPage, totalPages).map(token =>
       token === 'ellipsis'
-        ? html`<span style="align-self: center;">...</span>`
+        ? html`<span class="pagination-ellipsis">...</span>`
         : html`
             <button
               class="pagination-btn ${token === this.invoicesPage ? 'active' : ''}"
@@ -959,7 +513,7 @@ export class PvPageBilling extends PvBase {
           </div>
         ` : ''}
         ${this.invoicesLoading ? html`
-          <div style="margin-bottom: var(--space-md); color: var(--color-text-muted); font-size: var(--text-sm);">
+          <div class="list-refresh-note">
             Updating invoices...
           </div>
         ` : ''}
@@ -1081,34 +635,34 @@ export class PvPageBilling extends PvBase {
         </div>
 
         ${this.loadingLines ? html`
-          <div class="loading-lines">Loading line items...</div>
+          <div class="line-items-message text-center">Loading line items...</div>
         ` : html`
           <table class="line-items-table">
             <thead>
               <tr>
                 <th>Item</th>
                 <th>SKU</th>
-                <th class="line-qty">Qty</th>
-                <th class="line-price">Price</th>
-                <th class="line-total">Total</th>
+                <th class="text-center">Qty</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">Total</th>
               </tr>
             </thead>
             <tbody>
               ${this.selectedInvoiceLines.length === 0 ? html`
                 <tr>
-                  <td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: var(--space-xl);">
+                  <td colspan="5" class="text-center line-items-message">
                     No line items found.
                   </td>
                 </tr>
               ` : this.selectedInvoiceLines.map(line => html`
                 <tr>
                   <td>
-                    <div style="font-weight: 500;">${line.name}</div>
+                    <div class="line-item-name">${line.name}</div>
                   </td>
                   <td><span class="line-sku">${line.sku || '—'}</span></td>
-                  <td class="line-qty">${line.quantity}</td>
-                  <td class="line-price">${this.formatCurrency(line.unitPrice)}</td>
-                  <td class="line-total" style="font-weight: 600;">${this.formatCurrency(line.lineTotal)}</td>
+                  <td class="text-center">${line.quantity}</td>
+                  <td class="text-right">${this.formatCurrency(line.unitPrice)}</td>
+                  <td class="text-right line-total-strong">${this.formatCurrency(line.lineTotal)}</td>
                 </tr>
               `)}
             </tbody>

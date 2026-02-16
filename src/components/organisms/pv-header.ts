@@ -16,7 +16,7 @@ export class PvHeader extends PvBase {
       :host {
         display: block;
         height: var(--header-height, 80px);
-        background: white;
+        background: var(--app-header-bg, #ffffff);
         border-bottom: 1px solid var(--color-border);
         position: sticky;
         top: var(--impersonation-banner-height, 0px);
@@ -47,7 +47,7 @@ export class PvHeader extends PvBase {
       }
 
       .home-link:hover {
-        color: var(--color-accent);
+        color: var(--app-header-link-hover, var(--color-accent));
       }
 
       .logo {
@@ -56,20 +56,20 @@ export class PvHeader extends PvBase {
         align-items: center;
         justify-content: center;
         text-align: center;
-        gap: 4px;
+        gap: var(--app-header-logo-gap, 4px);
         flex: 1;
         text-decoration: none;
       }
 
       .logo-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        width: var(--app-header-logo-size, 40px);
+        height: var(--app-header-logo-size, 40px);
+        border-radius: var(--app-header-logo-radius, 10px);
+        background: var(--app-header-logo-bg, color-mix(in srgb, var(--color-primary) 12%, transparent));
         color: var(--color-primary);
         display: grid;
         place-items: center;
-        font-size: 1.25rem;
+        font-size: var(--app-header-logo-font-size, 1.25rem);
         line-height: 1;
       }
 
@@ -82,7 +82,7 @@ export class PvHeader extends PvBase {
 
       .logo-name {
         font-family: var(--font-heading);
-        font-size: 1.125rem;
+        font-size: var(--app-header-logo-name-size, 1.125rem);
         font-weight: 800;
         color: var(--color-primary);
         letter-spacing: 0.05em;

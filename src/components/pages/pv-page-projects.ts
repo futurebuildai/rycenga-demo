@@ -4,18 +4,20 @@
  * Fetches real project data from DataService
  */
 
-import { html, css } from 'lit';
+import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { RouterService } from '../../services/router.service.js';
 import { DataService } from '../../services/data.service.js';
+import { pageShellStyles } from '../../styles/shared.js';
+import { projectsPageStyles } from '../../styles/pages.js';
 import type { Project, Address } from '../../types/index.js';
 
 interface ProjectCard {
   id: string;
   name: string;
   address: string;
-  color: string;
+  colorClass: string;
   status: string;
   orderCount: number;
   totalSpent: string;
@@ -23,7 +25,7 @@ interface ProjectCard {
 }
 
 // Color palette for project badges
-const PROJECT_COLORS = ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6'];
+const PROJECT_COLORS = [1, 2, 3, 4, 5, 6];
 
 /**
  * Formats an Address object into a single-line string.
@@ -47,7 +49,7 @@ function mapProjectToCard(
     id: project.id,
     name: project.name,
     address: formatAddress(project.address),
-    color: project.color ?? PROJECT_COLORS[index % PROJECT_COLORS.length],
+    colorClass: `project-color-${PROJECT_COLORS[index % PROJECT_COLORS.length]}`,
     status: project.status === 'active' ? 'Active' : project.status === 'completed' ? 'Completed' : 'Archived',
     orderCount: summary.orderCount,
     totalSpent: formatCurrency(summary.totalOrdered),
@@ -59,150 +61,8 @@ function mapProjectToCard(
 export class PvPageProjects extends PvBase {
   static styles = [
     ...PvBase.styles,
-    css`
-      :host {
-        display: block;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .section-title {
-        font-family: var(--font-heading);
-        font-size: var(--text-3xl);
-        font-weight: 700;
-        color: var(--color-text);
-        margin-bottom: var(--space-xs);
-      }
-
-      .section-subtitle {
-        color: var(--color-text-muted);
-      }
-
-      .filters-bar {
-        display: flex;
-        gap: var(--space-md);
-        margin-bottom: var(--space-xl);
-      }
-
-      .filter-search {
-        flex: 1;
-        max-width: 400px;
-        padding: var(--space-md);
-        border: 2px solid var(--color-border);
-        border-radius: var(--radius-md);
-        font-size: var(--text-base);
-      }
-
-      .filter-search:focus {
-        outline: none;
-        border-color: var(--color-accent);
-      }
-
-      .filter-select {
-        padding: var(--space-md);
-        border: 2px solid var(--color-border);
-        border-radius: var(--radius-md);
-        font-size: var(--text-base);
-        background: white;
-      }
-
-      .projects-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: var(--space-lg);
-      }
-
-      .project-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
-      }
-
-      .project-card-header {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--space-md);
-        margin-bottom: var(--space-lg);
-      }
-
-      .project-badge {
-        width: 16px;
-        height: 16px;
-        border-radius: var(--radius-full);
-        flex-shrink: 0;
-        margin-top: 4px;
-      }
-
-      .project-card-info {
-        flex: 1;
-      }
-
-      .project-card-info h3 {
-        font-family: var(--font-heading);
-        font-size: var(--text-lg);
-        font-weight: 600;
-        margin-bottom: var(--space-xs);
-      }
-
-      .project-card-info p {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .project-card-stats {
-        display: flex;
-        gap: var(--space-xl);
-        padding: var(--space-lg) 0;
-        border-top: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
-        margin-bottom: var(--space-lg);
-      }
-
-      .project-stat {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-xs);
-      }
-
-      .stat-number {
-        font-family: var(--font-heading);
-        font-size: var(--text-xl);
-        font-weight: 700;
-      }
-
-      .stat-label {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-      }
-
-      .project-card-actions {
-        display: flex;
-        gap: var(--space-sm);
-        flex-wrap: wrap;
-      }
-
-      .project-card-actions .btn {
-        flex: 1;
-        min-width: 80px;
-      }
-
-      .loading-state,
-      .error-state,
-      .empty-state {
-        text-align: center;
-        padding: var(--space-3xl);
-        color: var(--color-text-muted);
-      }
-
-      .error-state {
-        color: var(--color-danger, #dc2626);
-      }
-    `,
+    pageShellStyles,
+    projectsPageStyles,
   ];
 
   @state() private searchQuery = '';
@@ -295,7 +155,7 @@ export class PvPageProjects extends PvBase {
           ${this.filteredProjects.map(project => html`
             <div class="project-card">
               <div class="project-card-header">
-                <span class="project-badge" style="background: ${project.color};"></span>
+                <span class="project-badge ${project.colorClass}"></span>
                 <div class="project-card-info">
                   <h3>${project.name}</h3>
                   <p>${project.address}</p>

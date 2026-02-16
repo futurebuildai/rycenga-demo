@@ -20,8 +20,9 @@ export class PvSidebar extends PvBase {
       :host {
         display: block;
         width: var(--sidebar-width, 280px);
-        background: var(--color-bg-alt);
-        border-right: 1px solid var(--color-border);
+        background: var(--app-sidebar-bg, var(--color-bg-alt));
+        border-right: var(--app-sidebar-border-right, 1px solid var(--color-border));
+        border-left: var(--app-sidebar-border-left, 0);
         height: calc(100vh - var(--header-height, 80px));
         position: sticky;
         top: var(--header-height, 80px);
@@ -90,12 +91,12 @@ export class PvSidebar extends PvBase {
       }
 
       .account-nav-item:hover {
-        background: white;
+        background: var(--app-sidebar-nav-hover-bg, #ffffff);
         color: var(--color-text);
       }
 
       .account-nav-item.active {
-        background: var(--color-primary);
+        background: var(--app-sidebar-nav-active-bg, var(--color-primary));
         color: white;
       }
 
@@ -114,7 +115,7 @@ export class PvSidebar extends PvBase {
       }
 
       .nav-badge.alert {
-        background: #dc2626;
+        background: var(--app-danger-color, var(--color-error));
         margin-left: var(--space-xs);
       }
 

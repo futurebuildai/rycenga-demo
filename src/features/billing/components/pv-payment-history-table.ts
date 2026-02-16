@@ -61,7 +61,7 @@ export class PvPaymentHistoryTable extends PvBase {
         display: inline-flex;
         align-items: center;
         gap: var(--space-xs);
-        padding: 4px 12px;
+        padding: var(--app-badge-padding, 4px 12px);
         font-size: var(--text-xs);
         font-weight: 600;
         border-radius: var(--radius-full);
@@ -70,25 +70,25 @@ export class PvPaymentHistoryTable extends PvBase {
 
       .status-settled {
         background: rgba(34, 197, 94, 0.1);
-        color: #22c55e;
+        color: var(--app-success-color, #22c55e);
       }
 
       .status-pending,
       .status-submitted {
         background: rgba(234, 179, 8, 0.1);
-        color: #eab308;
+        color: var(--app-warning-color, #eab308);
       }
 
       .status-failed {
         background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
+        color: var(--app-danger-color, var(--color-error));
         cursor: help;
       }
 
       .status-cancelled,
       .status-refunded {
         background: rgba(71, 85, 105, 0.1);
-        color: #475569;
+        color: var(--app-muted-strong-color, #475569);
       }
 
       .amount {
@@ -111,7 +111,7 @@ export class PvPaymentHistoryTable extends PvBase {
       }
 
       .error-state {
-        color: #dc2626;
+        color: var(--app-danger-color, var(--color-error));
       }
 
       .empty-state svg {
