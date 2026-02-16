@@ -504,6 +504,7 @@ export class PvPageBilling extends PvBase {
 
   // Multi-invoice selection state
   @state() private selectedInvoiceIds: Set<number> = new Set();
+  @state() private selectedInvoiceDetails: Map<number, { id: number; invoiceNumber: string; amount: number; isPayable: boolean }> = new Map();
   @state() private paymentRequestId: string | null = null;
   @state() private showPaymentRequestBanner = false;
 
@@ -576,44 +577,152 @@ export class PvPageBilling extends PvBase {
 
   // --- Invoice Selection ---
 
-  private toggleInvoice(invoiceId: number) {
+  private isInvoicePayable(status: string): boolean {
+    return status !== 'paid' && status !== 'void' && status !== 'cancelled';
+  }
+
+  private updateSelectedInvoiceDetailsFromInvoice(invoice: Invoice) {
+    if (!this.selectedInvoiceIds.has(invoice.id)) return;
+    const next = new Map(this.selectedInvoiceDetails);
+    next.set(invoice.id, {
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      amount: invoice.amountDue,
+      isPayable: this.isInvoicePayable(invoice.status),
+    });
+    this.selectedInvoiceDetails = next;
+  }
+
+  private syncSelectedInvoiceDetailsFromCurrentPage() {
+    const next = new Map(this.selectedInvoiceDetails);
+    for (const invoice of this.invoices) {
+      if (this.selectedInvoiceIds.has(invoice.id)) {
+        next.set(invoice.id, {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amountDue,
+          isPayable: this.isInvoicePayable(invoice.status),
+        });
+      }
+    }
+    this.selectedInvoiceDetails = next;
+  }
+
+  private async hydrateSelectedInvoiceDetailsFromServer() {
+    if (this.selectedInvoiceIds.size === 0) return;
+    try {
+      const response = await SalesService.getInvoices(1000, 0, this.filterJobId ?? undefined);
+      const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
+      const allInvoices: Invoice[] = response.items.map(mapInvoiceToLegacy);
+      const next = new Map(this.selectedInvoiceDetails);
+      for (const invoice of allInvoices) {
+        if (this.selectedInvoiceIds.has(invoice.id)) {
+          next.set(invoice.id, {
+            id: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            amount: invoice.amountDue,
+            isPayable: this.isInvoicePayable(invoice.status),
+          });
+        }
+      }
+      this.selectedInvoiceDetails = next;
+    } catch (e) {
+      console.error('Failed to hydrate selected invoices', e);
+    }
+  }
+
+  private toggleInvoice(invoice: Invoice) {
     const next = new Set(this.selectedInvoiceIds);
-    if (next.has(invoiceId)) {
-      next.delete(invoiceId);
+    const nextDetails = new Map(this.selectedInvoiceDetails);
+    if (next.has(invoice.id)) {
+      next.delete(invoice.id);
+      nextDetails.delete(invoice.id);
     } else {
-      next.add(invoiceId);
+      next.add(invoice.id);
+      nextDetails.set(invoice.id, {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        amount: invoice.amountDue,
+        isPayable: this.isInvoicePayable(invoice.status),
+      });
     }
     this.selectedInvoiceIds = next;
+    this.selectedInvoiceDetails = nextDetails;
   }
 
   private toggleAllInvoices() {
-    const payableInvoices = this.invoices.filter(
-      inv => inv.status !== 'paid' && inv.status !== 'void' && inv.status !== 'cancelled',
-    );
-    if (this.selectedInvoiceIds.size === payableInvoices.length && payableInvoices.length > 0) {
-      this.selectedInvoiceIds = new Set();
+    const payableInvoices = this.invoices.filter(inv => this.isInvoicePayable(inv.status));
+    const payableIdsOnPage = payableInvoices.map(inv => inv.id);
+    const allPageSelected = payableIdsOnPage.length > 0 && payableIdsOnPage.every(id => this.selectedInvoiceIds.has(id));
+
+    const nextIds = new Set(this.selectedInvoiceIds);
+    const nextDetails = new Map(this.selectedInvoiceDetails);
+
+    if (allPageSelected) {
+      for (const id of payableIdsOnPage) {
+        nextIds.delete(id);
+        nextDetails.delete(id);
+      }
     } else {
-      this.selectedInvoiceIds = new Set(payableInvoices.map(inv => inv.id));
+      for (const invoice of payableInvoices) {
+        nextIds.add(invoice.id);
+        nextDetails.set(invoice.id, {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amountDue,
+          isPayable: true,
+        });
+      }
     }
+    this.selectedInvoiceIds = nextIds;
+    this.selectedInvoiceDetails = nextDetails;
   }
 
   private clearSelection() {
     this.selectedInvoiceIds = new Set();
+    this.selectedInvoiceDetails = new Map();
   }
 
   private get selectedInvoicesTotal(): number {
-    return this.invoices
-      .filter(inv => this.selectedInvoiceIds.has(inv.id))
-      .reduce((sum, inv) => sum + inv.amountDue, 0);
+    return this.selectedInvoicesList.reduce((sum, inv) => sum + inv.amount, 0);
   }
 
   private get selectedInvoicesList(): { id: number; invoiceNumber: string; amount: number }[] {
-    return this.invoices
-      .filter(inv => this.selectedInvoiceIds.has(inv.id))
-      .map(inv => ({ id: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amountDue }));
+    const selected: { id: number; invoiceNumber: string; amount: number }[] = [];
+    for (const id of this.selectedInvoiceIds) {
+      const detail = this.selectedInvoiceDetails.get(id);
+      if (detail && detail.isPayable) {
+        selected.push({ id: detail.id, invoiceNumber: detail.invoiceNumber, amount: detail.amount });
+      }
+    }
+    return selected;
   }
 
-  private openBulkPayModal() {
+  private get allPayableOnPageSelected(): boolean {
+    const payableIdsOnPage = this.invoices.filter(i => this.isInvoicePayable(i.status)).map(i => i.id);
+    return payableIdsOnPage.length > 0 && payableIdsOnPage.every(id => this.selectedInvoiceIds.has(id));
+  }
+
+  private async openBulkPayModal() {
+    if (this.selectedInvoiceIds.size === 0) return;
+
+    await this.hydrateSelectedInvoiceDetailsFromServer();
+
+    const missingIds = [...this.selectedInvoiceIds].filter(id => !this.selectedInvoiceDetails.has(id));
+    if (missingIds.length > 0) {
+      PvToast.show('Some selected invoices could not be loaded. Refresh and try again.', 'error');
+      return;
+    }
+
+    const nonPayableCount = [...this.selectedInvoiceIds]
+      .map(id => this.selectedInvoiceDetails.get(id))
+      .filter(detail => detail && !detail.isPayable)
+      .length;
+    if (nonPayableCount > 0) {
+      PvToast.show('Selection contains paid/void/cancelled invoices. Adjust selection and retry.', 'warning');
+      return;
+    }
+
     this.paymentModalOpen = true;
   }
 
@@ -633,6 +742,7 @@ export class PvPageBilling extends PvBase {
       const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
       this.invoices = response.items.map(mapInvoiceToLegacy);
       this.invoicesTotal = response.total;
+      this.syncSelectedInvoiceDetailsFromCurrentPage();
     } catch (e) {
       console.error('Failed to load invoices', e);
     } finally {
@@ -731,9 +841,22 @@ export class PvPageBilling extends PvBase {
   private openPaymentModal(invoice: Invoice) {
     // When paying a single invoice from its row, clear multi-selection and use the legacy props
     this.selectedInvoiceIds = new Set([invoice.id]);
+    this.selectedInvoiceDetails = new Map();
+    this.updateSelectedInvoiceDetailsFromInvoice(invoice);
     this.paymentInvoiceId = invoice.id;
     this.paymentAmount = invoice.amountDue;
     this.paymentModalOpen = true;
+  }
+
+  private clearDeepLinkParamsFromHash() {
+    const params = new URLSearchParams(RouterService.getParams().toString());
+    params.delete('pr');
+    params.delete('invoices');
+    const nextParams: Record<string, string> = {};
+    params.forEach((value, key) => {
+      nextParams[key] = value;
+    });
+    RouterService.navigate('billing', Object.keys(nextParams).length > 0 ? nextParams : undefined);
   }
 
   private handlePaymentSuccess() {
@@ -746,13 +869,11 @@ export class PvPageBilling extends PvBase {
     this.paymentInvoiceId = undefined;
     this.paymentAmount = 0;
     this.selectedInvoiceIds = new Set();
+    this.selectedInvoiceDetails = new Map();
     this.showPaymentRequestBanner = false;
     // Clear URL params after successful payment
     if (this.paymentRequestId) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('pr');
-      url.searchParams.delete('invoices');
-      window.history.replaceState({}, '', url.toString());
+      this.clearDeepLinkParamsFromHash();
       this.paymentRequestId = null;
     }
   }
@@ -846,7 +967,7 @@ export class PvPageBilling extends PvBase {
           <span><input
             type="checkbox"
             class="invoice-checkbox"
-            .checked=${this.selectedInvoiceIds.size > 0 && this.selectedInvoiceIds.size === this.invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && i.status !== 'cancelled').length}
+            .checked=${this.allPayableOnPageSelected}
             @change=${this.toggleAllInvoices}
           /></span>
           <span>Invoice</span>
@@ -866,7 +987,7 @@ export class PvPageBilling extends PvBase {
                     type="checkbox"
                     class="invoice-checkbox"
                     .checked=${isSelected}
-                    @change=${() => this.toggleInvoice(invoice.id)}
+                    @change=${() => this.toggleInvoice(invoice)}
                   />
                 ` : html`<span></span>`}
               </div>

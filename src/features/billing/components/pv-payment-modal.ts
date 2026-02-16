@@ -406,6 +406,12 @@ export class PvPaymentModal extends PvBase {
         }
       }
 
+      if (this.type === 'invoice' && (!allocations || allocations.length === 0)) {
+        PvToast.show('No payable invoices were selected.', 'warning');
+        this.processing = false;
+        return;
+      }
+
       const payload: PaymentPayload = {
         amount: totalAmount,
         paymentMethodId: this.selectedMethodId,
