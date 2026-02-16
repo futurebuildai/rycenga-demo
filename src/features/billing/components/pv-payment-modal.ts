@@ -8,7 +8,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { PvBase } from '../../../components/pv-base.js';
 import { BillingService } from '../../../connect/services/billing.js';
 import { PvToast } from '../../../components/atoms/pv-toast.js';
-import type { PaymentMethod } from '../../../connect/types/domain.js';
+import type { PaymentMethod, PaymentPayload, PaymentAllocation } from '../../../connect/types/domain.js';
 
 @customElement('pv-payment-modal')
 export class PvPaymentModal extends PvBase {
@@ -98,6 +98,61 @@ export class PvPaymentModal extends PvBase {
         font-size: var(--text-4xl);
         font-weight: 700;
         color: var(--color-text);
+      }
+
+      .invoice-breakdown {
+        margin-bottom: var(--space-xl);
+      }
+
+      .invoice-breakdown-header {
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-sm);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .invoice-breakdown-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xs);
+      }
+
+      .invoice-breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-sm) var(--space-md);
+        background: var(--color-bg-alt);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-sm);
+      }
+
+      .invoice-breakdown-item .inv-number {
+        font-weight: 500;
+        color: var(--color-text);
+      }
+
+      .invoice-breakdown-item .inv-amount {
+        font-family: monospace;
+        font-weight: 600;
+        color: var(--color-text);
+      }
+
+      .invoice-breakdown-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-md);
+        margin-top: var(--space-sm);
+        border-top: 2px solid var(--color-border);
+        font-weight: 700;
+      }
+
+      .invoice-breakdown-total .total-amount {
+        font-family: monospace;
+        font-size: var(--text-lg);
       }
 
       .section-label {
@@ -256,6 +311,15 @@ export class PvPaymentModal extends PvBase {
   @property({ type: Number }) invoiceId?: number;
   @property({ type: String }) type: 'balance' | 'invoice' = 'invoice';
 
+  /**
+   * Multi-invoice support: pass an array of invoices to pay.
+   * When this is provided, `invoiceId` and `amount` are ignored.
+   */
+  @property({ type: Array }) invoices: { id: number; invoiceNumber: string; amount: number }[] = [];
+
+  /** Optional payment request ID for AR Center tracking */
+  @property({ type: String }) paymentRequestId?: string;
+
   @state() private paymentMethods: PaymentMethod[] = [];
   @state() private selectedMethodId: number | null = null;
   @state() private loading = false;
@@ -302,6 +366,19 @@ export class PvPaymentModal extends PvBase {
     this.selectedMethodId = id;
   }
 
+  /** Resolve the effective total — multi-invoice sum takes precedence */
+  private get effectiveAmount(): number {
+    if (this.invoices.length > 0) {
+      return this.invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    }
+    return this.amount;
+  }
+
+  /** True when operating in multi-invoice mode */
+  private get isMultiInvoice(): boolean {
+    return this.invoices.length > 1;
+  }
+
   private async handlePay() {
     if (!this.selectedMethodId) {
       PvToast.show('Please select a payment method', 'warning');
@@ -311,28 +388,50 @@ export class PvPaymentModal extends PvBase {
     this.processing = true;
 
     try {
-      const payload: any = {
-        amount: this.amount,
+      const totalAmount = this.effectiveAmount;
+
+      // Build allocations — multi-invoice or single
+      let allocations: PaymentAllocation[] | undefined;
+      if (this.type === 'invoice') {
+        if (this.invoices.length > 0) {
+          allocations = this.invoices.map(inv => ({
+            invoiceId: inv.id,
+            amount: inv.amount,
+          }));
+        } else if (this.invoiceId) {
+          allocations = [{
+            invoiceId: this.invoiceId,
+            amount: this.amount,
+          }];
+        }
+      }
+
+      if (this.type === 'invoice' && (!allocations || allocations.length === 0)) {
+        PvToast.show('No payable invoices were selected.', 'warning');
+        this.processing = false;
+        return;
+      }
+
+      const payload: PaymentPayload = {
+        amount: totalAmount,
         paymentMethodId: this.selectedMethodId,
         currency: 'USD',
         type: this.type,
+        allocations,
       };
-
-      if (this.type === 'invoice' && this.invoiceId) {
-        payload.allocations = [{
-          invoiceId: this.invoiceId,
-          amount: this.amount
-        }];
-      } else if (this.type === 'balance') {
-        // Balance payment usually doesn't need allocations, backend applies auto-cache logic 
-        // or we might need to fetch open invoices to allocate. 
-        // For now, following backend API "PaymentType = balance"
-      }
 
       await BillingService.createPayment(payload);
 
-      PvToast.show('Payment successful!', 'success');
-      this.dispatchEvent(new CustomEvent('payment-success'));
+      const count = this.invoices.length || 1;
+      PvToast.show(
+        count > 1
+          ? `Payment successful for ${count} invoices!`
+          : 'Payment successful!',
+        'success',
+      );
+      this.dispatchEvent(new CustomEvent('payment-success', {
+        detail: { paymentRequestId: this.paymentRequestId },
+      }));
       this.handleClose();
 
     } catch (e) {
@@ -399,13 +498,35 @@ export class PvPaymentModal extends PvBase {
           </div>
 
           <div class="modal-body">
-            <div class="payment-summary">
-              <div class="amount-label">Total Amount</div>
-              <div class="amount-value">${this.formatCurrency(this.amount)}</div>
-              <div class="amount-label" style="margin-top: var(--space-sm)">
-                ${this.type === 'invoice' ? `Paying Invoice #${this.invoiceId}` : 'Paying Balance Due'}
+            ${this.isMultiInvoice ? html`
+              <div class="invoice-breakdown">
+                <div class="invoice-breakdown-header">Invoices (${this.invoices.length})</div>
+                <div class="invoice-breakdown-list">
+                  ${this.invoices.map(inv => html`
+                    <div class="invoice-breakdown-item">
+                      <span class="inv-number">${inv.invoiceNumber}</span>
+                      <span class="inv-amount">${this.formatCurrency(inv.amount)}</span>
+                    </div>
+                  `)}
+                </div>
+                <div class="invoice-breakdown-total">
+                  <span>Total</span>
+                  <span class="total-amount">${this.formatCurrency(this.effectiveAmount)}</span>
+                </div>
               </div>
-            </div>
+            ` : html`
+              <div class="payment-summary">
+                <div class="amount-label">Total Amount</div>
+                <div class="amount-value">${this.formatCurrency(this.effectiveAmount)}</div>
+                <div class="amount-label" style="margin-top: var(--space-sm)">
+                  ${this.type === 'invoice'
+          ? this.invoices.length === 1
+            ? `Paying Invoice ${this.invoices[0].invoiceNumber}`
+            : `Paying Invoice #${this.invoiceId}`
+          : 'Paying Balance Due'}
+                </div>
+              </div>
+            `}
 
             <span class="section-label">Select Payment Method</span>
             
@@ -433,7 +554,7 @@ export class PvPaymentModal extends PvBase {
                 @click=${this.handlePay} 
                 ?disabled=${this.processing || !this.selectedMethodId}
             >
-                ${this.processing ? html`<div class="spinner"></div> Processing...` : `Pay ${this.formatCurrency(this.amount)}`}
+                ${this.processing ? html`<div class="spinner"></div> Processing...` : `Pay ${this.formatCurrency(this.effectiveAmount)}`}
             </button>
           </div>
         </div>
