@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { Router } from '@vaadin/router';
 import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccountDetails, AdminInvoice } from '../services/admin-data.service.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
@@ -508,8 +509,20 @@ export class PageAccountDetails extends LitElement {
     }
 
     private handleSendMessage() {
-        this.showToast('Messaging is coming soon.', 'info');
+        if (!this.account || !this.selectedPhone) {
+            this.showToast('Please select a phone number.', 'error');
+            return;
+        }
+
+        const params = new URLSearchParams({
+            phone: this.selectedPhone,
+            contactName: this.account.primaryContact || this.account.name,
+            accountId: String(this.account.id),
+            accountName: this.account.name,
+        });
+
         this.closeMessageModal();
+        Router.go(`/admin/messaging?${params.toString()}`);
     }
 
     render() {
