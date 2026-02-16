@@ -721,19 +721,142 @@ export const billingPageStyles = css`
 
   .invoice-row {
     display: grid;
-    grid-template-columns: 1fr 150px 100px 120px 120px;
+    grid-template-columns: 40px 1fr 150px 100px 120px 120px;
     align-items: center;
     gap: var(--space-md);
     padding: var(--space-lg);
     background: var(--app-surface-bg, var(--color-bg-alt));
     border-radius: var(--app-surface-radius, var(--radius-lg));
     margin-bottom: var(--space-md);
+    transition: background var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .invoice-row.selected {
+    background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.06);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+  }
+
+  .invoice-row-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 150px 100px 120px 120px;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-lg);
+    margin-bottom: var(--space-xs);
+  }
+
+  .invoice-row-header span {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
   }
 
   @media (max-width: 768px) {
-    .invoice-row {
-      grid-template-columns: 1fr 1fr;
+    .invoice-row,
+    .invoice-row-header {
+      grid-template-columns: 32px 1fr 1fr;
     }
+
+    .invoice-row-header {
+      display: none;
+    }
+  }
+
+  .invoice-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  .bulk-pay-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-bg);
+    border-top: 2px solid var(--color-primary);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-xl);
+    z-index: 100;
+    animation: slideUp 0.25s ease-out;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .bulk-pay-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .bulk-pay-count {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .bulk-pay-total {
+    font-family: monospace;
+    font-weight: 700;
+    font-size: var(--text-lg);
+    color: var(--color-primary);
+  }
+
+  .bulk-pay-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .btn-clear-selection {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+  }
+
+  .btn-clear-selection:hover {
+    border-color: var(--color-text-muted);
+    color: var(--color-text);
+  }
+
+  .payment-request-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04));
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+  }
+
+  .payment-request-banner .banner-text {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .payment-request-banner .banner-dismiss {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: var(--text-lg);
+    line-height: 1;
+    padding: var(--space-xs);
   }
 
   .invoice-info {
@@ -823,6 +946,15 @@ export const billingPageStyles = css`
     font-family: monospace;
     color: var(--color-text-muted);
     font-size: var(--text-sm);
+  }
+
+  .line-qty {
+    text-align: center;
+  }
+
+  .line-price,
+  .line-total {
+    text-align: right;
   }
 
   .pagination {
