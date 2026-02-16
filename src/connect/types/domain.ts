@@ -22,6 +22,8 @@ export interface TenantInfo {
     slug: string;
     template_id?: number | null;
     templateId?: number | null;
+    palette_id?: number | null;
+    paletteId?: number | null;
     logoBase64?: string | null;
     logoType?: string | null;
     contactEmail?: string | null;

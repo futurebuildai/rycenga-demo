@@ -14,7 +14,7 @@ A dedicated, **Frontend-Only** Pro customer portal for LBM (Lumber & Building Ma
   - Payment methods (Wallet)
   - Team management
   - Settings
-- **Admin Configuration** — `/admin/settings` supports branding metadata and customer portal template selection (Template 1 / Template 2).
+- **Admin Configuration** — `/admin/settings` supports branding metadata, template selection (layout), and palette selection (color theme).
 
 ## Tech Stack
 

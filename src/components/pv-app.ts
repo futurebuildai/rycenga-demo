@@ -10,7 +10,7 @@ import { AuthService } from '../services/auth.service.js';
 import { RouterService } from '../services/router.service.js';
 import { PvToast } from './atoms/pv-toast.js';
 import type { RouteId, ToastEvent } from '../types/index.js';
-import { BrandingService } from '../services/branding.service.js';
+import { BrandingService, BRANDING_REFRESH_SIGNAL_KEY } from '../services/branding.service.js';
 
 // Import components
 import './pv-login.js';
@@ -27,6 +27,8 @@ import './pages/pv-page-settings.js';
 
 @customElement('pv-app')
 export class PvApp extends PvBase {
+  private static readonly BRANDING_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
   static styles = [
     ...PvBase.styles,
     css`
@@ -118,22 +120,31 @@ export class PvApp extends PvBase {
   @state() private isImpersonating = false;
   @state() private impersonationEmail = '';
   @state() private templateId = BrandingService.getBrandingSync().templateId;
+  @state() private paletteId = BrandingService.getBrandingSync().paletteId;
 
   private authUnsubscribe?: () => void;
   private routeUnsubscribe?: () => void;
   private brandingUnsubscribe?: () => void;
+  private brandingRefreshTimer?: number;
 
   connectedCallback() {
     super.connectedCallback();
 
     // Initialize router
     RouterService.init();
-    this.applyTemplate(this.templateId);
-    void BrandingService.getBranding();
+    this.applyBrandingTokens(this.templateId, this.paletteId);
+    void BrandingService.refreshBranding();
     this.brandingUnsubscribe = BrandingService.subscribe((branding) => {
       this.templateId = branding.templateId || 1;
-      this.applyTemplate(this.templateId);
+      this.paletteId = branding.paletteId || 1;
+      this.applyBrandingTokens(this.templateId, this.paletteId);
     });
+    this.brandingRefreshTimer = window.setInterval(() => {
+      if (this.isAuthenticated) {
+        void BrandingService.refreshBranding();
+      }
+    }, PvApp.BRANDING_REFRESH_INTERVAL_MS);
+    window.addEventListener('storage', this.handleBrandingRefreshSignal);
 
     // Check initial auth state
     this.isAuthenticated = AuthService.isAuthenticated();
@@ -174,6 +185,11 @@ export class PvApp extends PvBase {
     this.authUnsubscribe?.();
     this.routeUnsubscribe?.();
     this.brandingUnsubscribe?.();
+    if (this.brandingRefreshTimer !== undefined) {
+      window.clearInterval(this.brandingRefreshTimer);
+      this.brandingRefreshTimer = undefined;
+    }
+    window.removeEventListener('storage', this.handleBrandingRefreshSignal);
     window.removeEventListener('show-toast', this.handleToastEvent as EventListener);
   }
 
@@ -182,8 +198,15 @@ export class PvApp extends PvBase {
     PvToast.show(message, type, duration);
   };
 
-  private applyTemplate(templateId: number) {
+  private handleBrandingRefreshSignal = (event: StorageEvent) => {
+    if (event.key === BRANDING_REFRESH_SIGNAL_KEY && this.isAuthenticated) {
+      void BrandingService.refreshBranding();
+    }
+  };
+
+  private applyBrandingTokens(templateId: number, paletteId: number) {
     document.documentElement.setAttribute('data-template', String(templateId > 0 ? templateId : 1));
+    document.documentElement.setAttribute('data-palette', String(paletteId > 0 ? paletteId : 1));
   }
 
   private async updateTitle() {

@@ -12,6 +12,7 @@ export interface DealerBranding {
     contactEmail: string;
     contactPhone: string;
     templateId: number;
+    paletteId: number;
 }
 
 export interface BrandingUpdatePayload {
@@ -20,6 +21,8 @@ export interface BrandingUpdatePayload {
     contactPhone?: string;
     templateId?: number;
     template_id?: number;
+    paletteId?: number;
+    palette_id?: number;
 }
 
 // BuilderWire fallback branding
@@ -29,20 +32,26 @@ const DEFAULT_BRANDING: DealerBranding = {
     contactEmail: 'support@builderwire.com',
     contactPhone: '(555) 000-0000',
     templateId: 1,
+    paletteId: 1,
 };
 
 class AdminBrandingServiceImpl {
     private cachedBranding: DealerBranding | null = null;
 
-    private normalizeBranding(input: Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null }): DealerBranding {
+    private normalizeBranding(
+        input: Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null; palette_id?: number | null; paletteId?: number | null },
+    ): DealerBranding {
         const parsedTemplateId = Number(input.templateId ?? input.template_id);
         const templateId = Number.isFinite(parsedTemplateId) && parsedTemplateId > 0 ? parsedTemplateId : DEFAULT_BRANDING.templateId;
+        const parsedPaletteId = Number(input.paletteId ?? input.palette_id);
+        const paletteId = Number.isFinite(parsedPaletteId) && parsedPaletteId > 0 ? parsedPaletteId : DEFAULT_BRANDING.paletteId;
         return {
             companyName: input.companyName?.trim() || DEFAULT_BRANDING.companyName,
             logoUrl: input.logoUrl ?? DEFAULT_BRANDING.logoUrl,
             contactEmail: input.contactEmail?.trim() || DEFAULT_BRANDING.contactEmail,
             contactPhone: input.contactPhone?.trim() || DEFAULT_BRANDING.contactPhone,
             templateId,
+            paletteId,
         };
     }
 
@@ -51,7 +60,9 @@ class AdminBrandingServiceImpl {
      */
     async getBranding(): Promise<DealerBranding> {
         try {
-            const data = await adminClient.request<Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null }>('/admin/branding');
+            const data = await adminClient.request<
+                Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null; palette_id?: number | null; paletteId?: number | null }
+            >('/admin/branding');
             const normalized = this.normalizeBranding(data);
             this.cachedBranding = normalized;
             return normalized;
@@ -76,8 +87,13 @@ class AdminBrandingServiceImpl {
         if (payload.templateId !== undefined && payload.template_id === undefined) {
             bodyPayload.template_id = payload.templateId;
         }
+        if (payload.paletteId !== undefined && payload.palette_id === undefined) {
+            bodyPayload.palette_id = payload.paletteId;
+        }
 
-        const data = await adminClient.request<Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null }>('/admin/branding', {
+        const data = await adminClient.request<
+            Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null; palette_id?: number | null; paletteId?: number | null }
+        >('/admin/branding', {
             method: 'PUT',
             body: JSON.stringify(bodyPayload),
         });
