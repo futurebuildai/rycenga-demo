@@ -23,6 +23,24 @@
     --color-success: #22c55e;
     --color-warning: #eab308;
     --color-error: #ef4444;
+    --color-info: #3b82f6;
+    --color-neutral: #475569;
+
+    /* Semantic Status - Backgrounds (10% Opacity) */
+    --status-success-bg: rgba(34, 197, 94, 0.1);
+    --status-success-text: #22c55e;
+    --status-info-bg: rgba(59, 130, 246, 0.1);
+    --status-info-text: #3b82f6;
+    --status-warning-bg: rgba(234, 179, 8, 0.1);
+    --status-warning-text: #eab308;
+    --status-error-bg: rgba(239, 68, 68, 0.1);
+    --status-error-text: #ef4444;
+    --status-neutral-bg: rgba(71, 85, 105, 0.1);
+    --status-neutral-text: #475569;
+    --status-accent-bg: rgba(249, 115, 22, 0.1);
+    --status-accent-text: #f97316;
+    --status-purple-bg: rgba(168, 85, 247, 0.1);
+    --status-purple-text: #a855f7;
 
     /* Glass Effect */
     --glass-bg: rgba(255, 255, 255, 0.92);
@@ -77,14 +95,122 @@
     --sidebar-width: 280px;
     --container-max: 1440px;
     --container-padding: 2rem;
+    --app-layout-direction: row;
+    --app-layout-background: transparent;
+    --app-main-padding: var(--space-2xl);
+    --app-main-bg: #ffffff;
+    --app-main-margin: 0;
+    --app-main-radius: 0;
+    --app-main-shadow: none;
+    --app-main-padding-mobile: var(--app-main-padding);
+    --app-main-margin-mobile: var(--app-main-margin);
+    --app-main-radius-mobile: var(--app-main-radius);
+    --app-main-shadow-mobile: var(--app-main-shadow);
+    --app-sidebar-border-right: 1px solid var(--color-border);
+    --app-sidebar-border-left: 0;
+    --app-sidebar-bg: var(--color-bg-alt);
+    --app-sidebar-nav-hover-bg: #ffffff;
+    --app-sidebar-nav-active-bg: var(--color-primary);
+    --app-surface-bg: var(--color-bg-alt);
+    --app-surface-contrast-bg: #ffffff;
+    --app-surface-radius: var(--radius-lg);
+    --app-surface-padding: var(--space-xl);
+    --app-control-bg: #ffffff;
+    --app-danger-color: var(--color-error);
+    --app-danger-bg: rgba(239, 68, 68, 0.1);
+    --app-danger-strong-bg: #fee2e2;
+    --app-danger-strong-text: #991b1b;
+    --app-info-color: #3b82f6;
+    --app-success-color: #22c55e;
+    --app-warning-color: #eab308;
+    --app-muted-strong-color: #475569;
+    --app-badge-padding: 4px 12px;
+    --app-chip-close-bg: rgba(255, 255, 255, 0.2);
+    --app-chip-close-bg-hover: rgba(255, 255, 255, 0.3);
+    --app-project-color-1: #3b82f6;
+    --app-project-color-2: #22c55e;
+    --app-project-color-3: #f97316;
+    --app-project-color-4: #8b5cf6;
+    --app-project-color-5: #ec4899;
+    --app-project-color-6: #14b8a6;
+
+    /* Header */
+    --app-header-bg: #ffffff;
+    --app-header-logo-gap: 4px;
+    --app-header-logo-size: 40px;
+    --app-header-logo-radius: 10px;
+    --app-header-logo-font-size: 1.25rem;
+    --app-header-logo-name-size: 1.125rem;
+    --app-header-logo-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    --app-header-link-hover: var(--color-accent);
+    --app-impersonation-bg: linear-gradient(90deg, #7f1d1d, #991b1b);
+    --app-impersonation-button-border: 1px solid rgba(255, 255, 255, 0.45);
+    --app-impersonation-button-bg: rgba(255, 255, 255, 0.15);
+    --app-impersonation-button-radius: 6px;
+    --app-inverse-text: #ffffff;
+
+    /* Login */
+    --app-login-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    --app-login-container-max-width: 420px;
+    --app-login-card-bg: #ffffff;
+    --app-login-card-padding: var(--space-2xl);
+    --app-login-card-radius: var(--radius-xl);
+    --app-login-card-shadow: var(--shadow-xl);
+    --app-login-logo-size: 64px;
+    --app-login-logo-radius: 16px;
+    --app-login-logo-font-size: 2.5rem;
+    --app-login-logo-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
 
     /* Admin Specific Tokens */
     --admin-sidebar-bg: #0f172a;
     --admin-sidebar-hover: #1e293b;
     --admin-sidebar-text: #94a3b8;
     --admin-sidebar-text-active: #ffffff;
-    --admin-accent: #6366f1; /* Indigo 500 */
-    --admin-accent-hover: #4f46e5; /* Indigo 600 */
+    --admin-accent: #6366f1;
+    /* Indigo 500 */
+    --admin-accent-hover: #4f46e5;
+    /* Indigo 600 */
     --admin-card-bg: #ffffff;
-    --admin-bg: #f1f5f9; /* Slate 100 */
+    --admin-bg: #f1f5f9;
+    /* Slate 100 */
+}
+
+:root[data-template='2'] {
+    --app-layout-direction: row-reverse;
+    --app-layout-background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    --app-main-padding: calc(var(--space-2xl) - var(--space-sm));
+    --app-main-bg: #ffffff;
+    --app-main-margin: var(--space-lg);
+    --app-main-radius: var(--radius-xl);
+    --app-main-shadow: var(--shadow-md);
+    --app-main-padding-mobile: var(--space-xl);
+    --app-main-margin-mobile: 0;
+    --app-main-radius-mobile: 0;
+    --app-main-shadow-mobile: none;
+    --app-sidebar-border-right: 0;
+    --app-sidebar-border-left: 1px solid var(--color-border);
+    --app-sidebar-bg: #f1f5f9;
+    --app-sidebar-nav-hover-bg: #ffffff;
+    --app-sidebar-nav-active-bg: #334155;
+    --app-surface-bg: #f8fafc;
+    --app-surface-radius: 14px;
+    --app-surface-padding: calc(var(--space-xl) - var(--space-xs));
+    --app-control-bg: #ffffff;
+    --app-badge-padding: 5px 14px;
+    --app-project-color-1: #2563eb;
+    --app-project-color-2: #16a34a;
+    --app-project-color-3: #ea580c;
+    --app-project-color-4: #7c3aed;
+    --app-project-color-5: #db2777;
+    --app-project-color-6: #0d9488;
+    --app-header-bg: #ffffff;
+    --app-header-logo-size: 48px;
+    --app-header-logo-radius: 14px;
+    --app-header-logo-name-size: 1rem;
+    --app-login-bg: linear-gradient(145deg, #0b132b 0%, #1c2541 45%, #3a506b 100%);
+    --app-login-container-max-width: 460px;
+    --app-login-card-padding: calc(var(--space-2xl) + var(--space-sm));
+    --app-login-card-radius: 16px;
+    --app-login-logo-size: 72px;
+    --app-login-logo-radius: 20px;
 }

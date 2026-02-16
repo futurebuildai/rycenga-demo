@@ -93,6 +93,10 @@ export class PvPaymentModal extends PvBase {
         margin-bottom: var(--space-xs);
       }
 
+      .amount-context {
+        margin-top: var(--space-sm);
+      }
+
       .amount-value {
         font-family: var(--font-heading);
         font-size: var(--text-4xl);
@@ -188,6 +192,16 @@ export class PvPaymentModal extends PvBase {
         color: var(--color-text-muted);
         background: var(--color-bg-alt);
         border-radius: var(--radius-md);
+      }
+
+      .empty-state-add {
+        margin-top: 10px;
+        color: var(--color-primary);
+      }
+
+      .methods-loading {
+        text-align: center;
+        padding: 20px;
       }
 
       .modal-footer {
@@ -402,7 +416,7 @@ export class PvPaymentModal extends PvBase {
             <div class="payment-summary">
               <div class="amount-label">Total Amount</div>
               <div class="amount-value">${this.formatCurrency(this.amount)}</div>
-              <div class="amount-label" style="margin-top: var(--space-sm)">
+              <div class="amount-label amount-context">
                 ${this.type === 'invoice' ? `Paying Invoice #${this.invoiceId}` : 'Paying Balance Due'}
               </div>
             </div>
@@ -410,11 +424,11 @@ export class PvPaymentModal extends PvBase {
             <span class="section-label">Select Payment Method</span>
             
             ${this.loading ? html`
-                <div style="text-align:center; padding: 20px;">Loading payment methods...</div>
+                <div class="methods-loading">Loading payment methods...</div>
             ` : this.paymentMethods.length === 0 ? html`
                 <div class="empty-state">
                     <p>No payment methods found.</p>
-                    <button class="btn-cancel" style="margin-top: 10px; color: var(--color-primary);">+ Add Payment Method</button>
+                    <button class="btn-cancel empty-state-add">+ Add Payment Method</button>
                 </div>
             ` : html`
                 <div class="payment-methods-list">

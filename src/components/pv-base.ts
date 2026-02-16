@@ -4,8 +4,8 @@
  */
 
 import { LitElement } from 'lit';
-import { sharedStyles } from '../styles/shared.js';
+import { coreStyles } from '../styles/shared.js';
 
 export class PvBase extends LitElement {
-    static styles = sharedStyles;
+    static styles = coreStyles;
 }

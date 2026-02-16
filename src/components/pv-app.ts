@@ -40,13 +40,18 @@ export class PvApp extends PvBase {
       .app-layout {
         display: flex;
         min-height: calc(100vh - var(--header-height, 80px));
+        flex-direction: var(--app-layout-direction, row);
+        background: var(--app-layout-background, transparent);
       }
 
       .app-main {
         flex: 1;
-        padding: var(--space-2xl);
-        background: white;
+        padding: var(--app-main-padding, var(--space-2xl));
+        background: var(--app-main-bg, #ffffff);
         overflow-x: auto;
+        margin: var(--app-main-margin, 0);
+        border-radius: var(--app-main-radius, 0);
+        box-shadow: var(--app-main-shadow, none);
       }
 
       .impersonation-banner {
@@ -55,8 +60,8 @@ export class PvApp extends PvBase {
         left: 0;
         right: 0;
         height: 44px;
-        background: linear-gradient(90deg, #7f1d1d, #991b1b);
-        color: #fff;
+        background: var(--app-impersonation-bg, linear-gradient(90deg, #7f1d1d, #991b1b));
+        color: var(--app-inverse-text, #ffffff);
         z-index: 1200;
         display: flex;
         align-items: center;
@@ -66,10 +71,10 @@ export class PvApp extends PvBase {
       }
 
       .impersonation-banner button {
-        border: 1px solid rgba(255, 255, 255, 0.45);
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
-        border-radius: 6px;
+        border: var(--app-impersonation-button-border, 1px solid rgba(255, 255, 255, 0.45));
+        background: var(--app-impersonation-button-bg, rgba(255, 255, 255, 0.15));
+        color: var(--app-inverse-text, #ffffff);
+        border-radius: var(--app-impersonation-button-radius, 6px);
         padding: 4px 10px;
         font-size: var(--text-xs);
         cursor: pointer;
@@ -95,6 +100,15 @@ export class PvApp extends PvBase {
       .placeholder-page p {
         color: var(--color-text-muted);
       }
+
+      @media (max-width: 1023px) {
+        .app-main {
+          padding: var(--app-main-padding-mobile, var(--app-main-padding, var(--space-2xl)));
+          margin: var(--app-main-margin-mobile, var(--app-main-margin, 0));
+          border-radius: var(--app-main-radius-mobile, var(--app-main-radius, 0));
+          box-shadow: var(--app-main-shadow-mobile, var(--app-main-shadow, none));
+        }
+      }
     `,
   ];
 
@@ -103,15 +117,23 @@ export class PvApp extends PvBase {
   @state() private sidebarOpen = false;
   @state() private isImpersonating = false;
   @state() private impersonationEmail = '';
+  @state() private templateId = BrandingService.getBrandingSync().templateId;
 
   private authUnsubscribe?: () => void;
   private routeUnsubscribe?: () => void;
+  private brandingUnsubscribe?: () => void;
 
   connectedCallback() {
     super.connectedCallback();
 
     // Initialize router
     RouterService.init();
+    this.applyTemplate(this.templateId);
+    void BrandingService.getBranding();
+    this.brandingUnsubscribe = BrandingService.subscribe((branding) => {
+      this.templateId = branding.templateId || 1;
+      this.applyTemplate(this.templateId);
+    });
 
     // Check initial auth state
     this.isAuthenticated = AuthService.isAuthenticated();
@@ -151,6 +173,7 @@ export class PvApp extends PvBase {
     super.disconnectedCallback();
     this.authUnsubscribe?.();
     this.routeUnsubscribe?.();
+    this.brandingUnsubscribe?.();
     window.removeEventListener('show-toast', this.handleToastEvent as EventListener);
   }
 
@@ -158,6 +181,10 @@ export class PvApp extends PvBase {
     const { message, type, duration } = e.detail;
     PvToast.show(message, type, duration);
   };
+
+  private applyTemplate(templateId: number) {
+    document.documentElement.setAttribute('data-template', String(templateId > 0 ? templateId : 1));
+  }
 
   private async updateTitle() {
     await BrandingService.getBranding();
@@ -228,6 +255,25 @@ export class PvApp extends PvBase {
     `;
   }
 
+  private renderShell() {
+    return html`
+      <pv-header 
+        @menu-toggle=${this.handleMenuToggle}
+      ></pv-header>
+
+      <div class="app-layout">
+        <pv-sidebar 
+          class="${this.sidebarOpen ? 'open' : ''}"
+          .activeRoute=${this.currentRoute}
+        ></pv-sidebar>
+        
+        <main class="app-main">
+          ${this.renderPage()}
+        </main>
+      </div>
+    `;
+  }
+
   render() {
     // Show login if not authenticated
     if (!this.isAuthenticated) {
@@ -243,20 +289,7 @@ export class PvApp extends PvBase {
         </div>
       ` : ''}
       <div class="${this.isImpersonating ? 'has-impersonation' : ''}">
-      <pv-header 
-        @menu-toggle=${this.handleMenuToggle}
-      ></pv-header>
-      
-      <div class="app-layout">
-        <pv-sidebar 
-          class="${this.sidebarOpen ? 'open' : ''}"
-          .activeRoute=${this.currentRoute}
-        ></pv-sidebar>
-        
-        <main class="app-main">
-          ${this.renderPage()}
-        </main>
-      </div>
+      ${this.renderShell()}
       </div>
     `;
   }

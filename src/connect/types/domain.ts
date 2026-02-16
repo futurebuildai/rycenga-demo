@@ -20,6 +20,8 @@ export interface TenantInfo {
     id: string;
     name: string;
     slug: string;
+    template_id?: number | null;
+    templateId?: number | null;
     logoBase64?: string | null;
     logoType?: string | null;
     contactEmail?: string | null;

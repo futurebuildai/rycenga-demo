@@ -4,6 +4,7 @@ export interface BrandingInfo {
     tenantId?: string;
     tenantName: string;
     tenantSlug: string;
+    templateId: number;
     logoBase64: string | null;
     logoType: string | null;
     contactEmail: string;
@@ -12,6 +13,7 @@ export interface BrandingInfo {
 
 const DEFAULT_BRANDING = {
     companyName: 'BuilderWire',
+    templateId: 1,
     logoBase64: null,
     logoType: null,
     contactEmail: 'support@builderwire.com',
@@ -22,7 +24,7 @@ class BrandingServiceImpl {
     private branding: BrandingInfo | null = null;
     private pending?: Promise<BrandingInfo>;
     private listeners = new Set<(branding: BrandingInfo) => void>();
-    private cacheKey = 'branding_cache_v1';
+    private cacheKey = 'branding_cache_v2';
 
     async getBranding(): Promise<BrandingInfo> {
         if (this.branding) return this.branding;
@@ -41,6 +43,7 @@ class BrandingServiceImpl {
             tenantId: undefined,
             tenantName: DEFAULT_BRANDING.companyName,
             tenantSlug: '',
+            templateId: DEFAULT_BRANDING.templateId,
             logoBase64: DEFAULT_BRANDING.logoBase64,
             logoType: DEFAULT_BRANDING.logoType,
             contactEmail: DEFAULT_BRANDING.contactEmail,
@@ -74,6 +77,7 @@ class BrandingServiceImpl {
         let tenantName = '';
         let tenantSlug = '';
         let tenantId: string | undefined;
+        let templateId = DEFAULT_BRANDING.templateId;
         let logoBase64: string | null = null;
         let logoType: string | null = null;
         let contactEmail: string | null = null;
@@ -84,6 +88,10 @@ class BrandingServiceImpl {
             tenantName = tenant.name ?? '';
             tenantSlug = tenant.slug ?? '';
             tenantId = tenant.id;
+            const parsedTemplateId = Number(tenant.template_id ?? tenant.templateId);
+            if (Number.isFinite(parsedTemplateId) && parsedTemplateId > 0) {
+                templateId = parsedTemplateId;
+            }
             logoBase64 = tenant.logoBase64 ?? null;
             logoType = tenant.logoType ?? null;
             contactEmail = tenant.contactEmail ?? null;
@@ -102,6 +110,7 @@ class BrandingServiceImpl {
             tenantId,
             tenantName: tenantName.trim() || DEFAULT_BRANDING.companyName,
             tenantSlug: tenantSlug.trim(),
+            templateId,
             logoBase64: logoBase64 ?? DEFAULT_BRANDING.logoBase64,
             logoType: logoType ?? DEFAULT_BRANDING.logoType,
             contactEmail: contactEmail ?? DEFAULT_BRANDING.contactEmail,

@@ -150,56 +150,64 @@ export const badgeStyles = css`
   .status-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 12px;
+    padding: var(--app-badge-padding, 4px 12px);
     font-size: var(--text-xs);
     font-weight: 600;
     border-radius: var(--radius-full);
     white-space: nowrap;
+    line-height: 1;
   }
 
+  /* Semantic Status Mappings */
+  .status-success,
   .status-delivered,
   .status-paid,
-  .status-success,
   .status-accepted {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
+    background: var(--status-success-bg);
+    color: var(--status-success-text);
   }
 
+  .status-info,
   .status-confirmed,
   .status-active,
   .status-ready-for-pickup {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: var(--status-info-bg);
+    color: var(--status-info-text);
   }
 
+  .status-warning,
   .status-pending,
   .status-sent {
-    background: rgba(234, 179, 8, 0.1);
-    color: #eab308;
+    background: var(--status-warning-bg);
+    color: var(--status-warning-text);
   }
 
+  .status-accent,
   .status-open {
-    background: rgba(249, 115, 22, 0.1);
-    color: #f97316;
+    background: var(--status-accent-bg);
+    color: var(--status-accent-text);
   }
 
+  .status-purple,
   .status-shipped,
   .status-out-for-delivery {
-    background: rgba(168, 85, 247, 0.1);
-    color: #a855f7;
+    background: var(--status-purple-bg);
+    color: var(--status-purple-text);
   }
 
+  .status-neutral,
   .status-fulfilled,
   .status-draft {
-    background: rgba(71, 85, 105, 0.1);
-    color: #475569;
+    background: var(--status-neutral-bg);
+    color: var(--status-neutral-text);
   }
 
+  .status-error,
   .status-expired,
   .status-cancelled,
   .status-overdue {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    background: var(--status-error-bg);
+    color: var(--status-error-text);
   }
 `;
 
@@ -211,8 +219,10 @@ export const layoutStyles = css`
   .flex-col { flex-direction: column; }
   .items-center { align-items: center; }
   .items-start { align-items: flex-start; }
+  .items-end { align-items: flex-end; }
   .justify-center { justify-content: center; }
   .justify-between { justify-content: space-between; }
+  .justify-end { justify-content: flex-end; }
   .gap-xs { gap: var(--space-xs); }
   .gap-sm { gap: var(--space-sm); }
   .gap-md { gap: var(--space-md); }
@@ -225,6 +235,10 @@ export const layoutStyles = css`
   
   .w-full { width: 100%; }
   .h-full { height: 100%; }
+
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .text-left { text-align: left; }
 `;
 
 /**
@@ -301,9 +315,175 @@ export const cardStyles = css`
 `;
 
 /**
- * Combined shared styles for PvBase
+ * Page Primitive: Common section shell.
  */
-export const sharedStyles = [
+export const pageShellStyles = css`
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--space-xl);
+    gap: var(--space-lg);
+  }
+
+  .section-title {
+    font-family: var(--font-heading);
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: var(--space-xs);
+  }
+
+  .section-subtitle {
+    color: var(--color-text-muted);
+  }
+`;
+
+/**
+ * Page Primitive: Detail header/card affordances.
+ */
+export const detailViewStyles = css`
+  .detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xl);
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .btn-back:hover {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .detail-card {
+    background: var(--app-surface-bg, var(--color-bg-alt));
+    border-radius: var(--app-surface-radius, var(--radius-lg));
+    padding: var(--app-surface-padding, var(--space-xl));
+  }
+`;
+
+/**
+ * Page Primitive: Active filter pill bar.
+ */
+export const activeFilterStyles = css`
+  .active-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--app-surface-bg, var(--color-bg-alt));
+    border: 1px solid var(--color-border);
+    border-radius: var(--app-surface-radius, var(--radius-lg));
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    transition: all var(--transition-fast);
+  }
+
+  .active-filter-chip button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--app-chip-close-bg, rgba(255, 255, 255, 0.2));
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 2px 4px;
+    margin-left: var(--space-xs);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    line-height: 1;
+    transition: all var(--transition-fast);
+  }
+
+  .active-filter-chip button:hover {
+    background: var(--app-chip-close-bg-hover, rgba(255, 255, 255, 0.3));
+  }
+`;
+
+/**
+ * Page Primitive: Pagination row and active page token states.
+ */
+export const paginationStyles = css`
+  .pagination-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-lg);
+  }
+
+  .pagination-summary {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .pagination-nav {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .list-refresh-note {
+    margin-bottom: var(--space-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .pagination-ellipsis {
+    align-self: center;
+    color: var(--color-text-muted);
+  }
+
+  .page-number-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+`;
+
+/**
+ * Page Primitive: Shared loading/error row states.
+ */
+export const listStateStyles = css`
+  .line-items-message {
+    padding: var(--space-xl);
+  }
+
+  .line-items-message.error {
+    color: var(--color-error);
+  }
+
+  .line-items-retry {
+    margin-top: var(--space-md);
+  }
+`;
+
+export const coreStyles = [
   resetStyles,
   typographyStyles,
   buttonStyles,
@@ -312,3 +492,8 @@ export const sharedStyles = [
   formStyles,
   cardStyles,
 ];
+
+/**
+ * Combined shared styles for PvBase
+ */
+export const sharedStyles = coreStyles;

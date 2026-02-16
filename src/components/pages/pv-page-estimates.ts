@@ -3,13 +3,15 @@
  * Displays estimate list with drill-down to detail view
  */
 
-import { html, css } from 'lit';
+import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
 import { DocumentsService } from '../../connect/services/documents.js';
 import { PvToast } from '../atoms/pv-toast.js';
+import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles, paginationStyles } from '../../styles/shared.js';
+import { estimatesPageStyles } from '../../styles/pages.js';
 import type { Estimate } from '../../types/index.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 
@@ -17,251 +19,12 @@ import { buildPaginationTokens, getPaginationBounds } from '../../utils/paginati
 export class PvPageEstimates extends PvBase {
   static styles = [
     ...PvBase.styles,
-    css`
-      :host {
-        display: block;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .section-title {
-        font-family: var(--font-heading);
-        font-size: var(--text-3xl);
-        font-weight: 700;
-        color: var(--color-text);
-        margin-bottom: var(--space-xs);
-      }
-
-      .section-subtitle {
-        color: var(--color-text-muted);
-      }
-
-      .filters-bar {
-        display: flex;
-        gap: var(--space-sm);
-        margin-bottom: var(--space-xl);
-        flex-wrap: wrap;
-      }
-
-      .filter-chip {
-        padding: var(--space-sm) var(--space-lg);
-        background: var(--color-bg-alt);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-      }
-
-      .filter-chip:hover {
-        border-color: var(--color-accent);
-      }
-
-      .filter-chip.active {
-        background: var(--color-primary);
-        color: white;
-        border-color: var(--color-primary);
-      }
-
-      .estimates-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-lg);
-      }
-
-      .estimate-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
-      }
-
-      .estimate-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-lg);
-      }
-
-      .estimate-info {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
-      }
-
-      .estimate-number {
-        font-weight: 600;
-        font-size: var(--text-lg);
-      }
-
-      .estimate-expiry, .estimate-date {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .estimate-body {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-lg) 0;
-        border-top: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
-        margin-bottom: var(--space-lg);
-      }
-
-      .estimate-products {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
-      }
-
-      .estimate-thumb-placeholder {
-        width: 48px;
-        height: 48px;
-        background: var(--color-border);
-        border-radius: var(--radius-md);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-text-muted);
-      }
-
-      .estimate-details-text {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-xs);
-      }
-
-      .estimate-project-name {
-        font-weight: 500;
-      }
-
-      .estimate-summary {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .estimate-total {
-        text-align: right;
-      }
-
-      .total-label {
-        display: block;
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .total-value {
-        font-family: var(--font-heading);
-        font-size: var(--text-2xl);
-        font-weight: 700;
-      }
-
-      .estimate-actions {
-        display: flex;
-        gap: var(--space-sm);
-      }
-
-      /* Detail View */
-      .detail-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .btn-back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-sm);
-        padding: var(--space-sm) var(--space-md);
-        background: transparent;
-        color: var(--color-primary);
-        border: 2px solid var(--color-primary);
-        border-radius: var(--radius-md);
-        font-weight: 600;
-        cursor: pointer;
-      }
-
-      .btn-back:hover {
-        background: var(--color-primary);
-        color: white;
-      }
-
-      .detail-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
-      }
-
-      .detail-title-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .detail-id {
-        font-family: var(--font-heading);
-        font-size: var(--text-2xl);
-        font-weight: 700;
-        margin-bottom: var(--space-xs);
-      }
-
-      .detail-project-info {
-        color: var(--color-text-muted);
-      }
-
-      .active-filter-bar {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        margin-bottom: var(--space-lg);
-        padding: var(--space-sm) var(--space-md);
-        background: var(--color-bg-alt);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .active-filter-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-xs);
-        padding: var(--space-xs) var(--space-sm);
-        background: var(--color-primary);
-        color: white;
-        border-radius: var(--radius-md);
-        font-size: var(--text-xs);
-        font-weight: 600;
-        transition: all var(--transition-fast);
-      }
-
-      .active-filter-chip button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        cursor: pointer;
-        padding: 2px 4px;
-        margin-left: var(--space-xs);
-        border-radius: var(--radius-sm);
-        font-size: var(--text-base);
-        line-height: 1;
-        transition: all var(--transition-fast);
-      }
-
-      .active-filter-chip button:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-    `,
+    pageShellStyles,
+    detailViewStyles,
+    activeFilterStyles,
+    paginationStyles,
+    listStateStyles,
+    estimatesPageStyles,
   ];
 
   @state() private estimates: Estimate[] = [];
@@ -452,13 +215,12 @@ export class PvPageEstimates extends PvBase {
 
     return buildPaginationTokens(this.page, totalPages).map(token =>
       token === 'ellipsis'
-        ? html`<span style="align-self: center; color: var(--color-text-muted);">...</span>`
+        ? html`<span class="pagination-ellipsis">...</span>`
         : html`
             <button
-              class="btn btn-outline btn-sm ${this.page === token ? 'active' : ''}"
+              class="btn btn-outline btn-sm page-number-btn ${this.page === token ? 'active' : ''}"
               ?disabled=${this.estimatesLoading}
               @click=${() => this.handlePageChange(token)}
-              style="${this.page === token ? 'background: var(--color-primary); color: white; border-color: var(--color-primary);' : ''}"
             >
               ${token}
             </button>
@@ -470,7 +232,7 @@ export class PvPageEstimates extends PvBase {
     const { start, end } = getPaginationBounds(this.page, this.pageSize, this.totalCount);
     return html`
       ${this.estimatesLoading ? html`
-        <div style="margin-bottom: var(--space-md); color: var(--color-text-muted); font-size: var(--text-sm);">
+        <div class="list-refresh-note">
           Updating estimates...
         </div>
       ` : ''}
@@ -522,11 +284,11 @@ export class PvPageEstimates extends PvBase {
         `)}
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-lg);">
-        <div style="color: var(--color-text-muted); font-size: var(--text-sm);">
+      <div class="pagination-row">
+        <div class="pagination-summary">
           Showing ${start}-${end} of ${this.totalCount}
         </div>
-        <div style="display: flex; gap: var(--space-sm);">
+        <div class="pagination-nav">
           <button class="btn btn-outline btn-sm" ?disabled=${this.page === 1 || this.estimatesLoading} @click=${() => this.handlePageChange(this.page - 1)}>Previous</button>
           ${this.renderPageNumbers()}
           <button class="btn btn-outline btn-sm" ?disabled=${this.page >= Math.ceil(this.totalCount / this.pageSize) || this.estimatesLoading} @click=${() => this.handlePageChange(this.page + 1)}>Next</button>
@@ -566,7 +328,7 @@ export class PvPageEstimates extends PvBase {
 
         <p>Estimate total: <strong>${this.formatCurrency(estimate.total)}</strong></p>
         
-        <table class="line-items-table" style="margin-top: var(--space-xl);">
+        <table class="line-items-table">
           <thead>
             <tr>
               <th>Item</th>
@@ -578,16 +340,16 @@ export class PvPageEstimates extends PvBase {
           <tbody>
             ${this.loadingLines ? html`
               <tr>
-                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                <td colspan="4" class="text-center line-items-message">
                   <div class="loading-spinner"></div>
                   <p>Loading items...</p>
                 </td>
               </tr>
             ` : this.lineError ? html`
               <tr>
-                <td colspan="4" class="text-center" style="padding: var(--space-xl); color: var(--color-error);">
+                <td colspan="4" class="text-center line-items-message error">
                   <p>${this.lineError}</p>
-                  <button class="btn btn-outline btn-sm" style="margin-top: var(--space-md);" @click=${() => this.viewEstimateDetail(estimate)}>Retry</button>
+                  <button class="btn btn-outline btn-sm line-items-retry" @click=${() => this.viewEstimateDetail(estimate)}>Retry</button>
                 </td>
               </tr>
             ` : estimate.lines && estimate.lines.length > 0 ? estimate.lines.map(line => html`
@@ -602,7 +364,7 @@ export class PvPageEstimates extends PvBase {
               </tr>
             `) : html`
               <tr>
-                <td colspan="4" class="text-center" style="padding: var(--space-xl);">
+                <td colspan="4" class="text-center line-items-message">
                   <p>No line items found for this estimate.</p>
                 </td>
               </tr>
@@ -616,7 +378,7 @@ export class PvPageEstimates extends PvBase {
           </tfoot>
         </table>
 
-        <div class="detail-actions-footer" style="margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: var(--text-sm);">
+        <div class="detail-actions-footer">
           <p>This estimate is valid for 30 days. Contact your sales representative to convert this estimate to an order.</p>
         </div>
       </div>
@@ -626,7 +388,7 @@ export class PvPageEstimates extends PvBase {
   render() {
     if (this.loading) {
       return html`
-        <div style="display: flex; justify-content: center; padding: var(--space-2xl);">
+        <div class="page-loading">
           <div class="loading-spinner">Loading estimates...</div>
         </div>
       `;
@@ -634,9 +396,9 @@ export class PvPageEstimates extends PvBase {
 
     if (this.error) {
       return html`
-        <div style="text-align: center; padding: var(--space-2xl); background: #fee2e2; border-radius: var(--radius-lg); color: #991b1b;">
+        <div class="page-error">
           <p>${this.error}</p>
-          <button class="btn btn-outline" style="margin-top: var(--space-md);" @click=${() => this.loadEstimates(true)}>Retry</button>
+          <button class="btn btn-outline page-error-retry" @click=${() => this.loadEstimates(true)}>Retry</button>
         </div>
       `;
     }

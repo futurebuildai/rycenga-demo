@@ -3,12 +3,14 @@
  * Displays team members with roles
  */
 
-import { html, css } from 'lit';
+import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { MembersService } from '../../connect/services/members.js';
 import { PvToast } from '../atoms/pv-toast.js';
+import { pageShellStyles } from '../../styles/shared.js';
+import { teamPageStyles } from '../../styles/pages.js';
 import type { TeamMember as LegacyTeamMember } from '../../types/index.js';
 import type { TeamMember, TeamMemberRole, InviteMemberPayload } from '../../connect/types/domain.js';
 
@@ -16,139 +18,8 @@ import type { TeamMember, TeamMemberRole, InviteMemberPayload } from '../../conn
 export class PvPageTeam extends PvBase {
   static styles = [
     ...PvBase.styles,
-    css`
-      :host {
-        display: block;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--space-xl);
-      }
-
-      .section-title {
-        font-family: var(--font-heading);
-        font-size: var(--text-3xl);
-        font-weight: 700;
-        color: var(--color-text);
-        margin-bottom: var(--space-xs);
-      }
-
-      .section-subtitle {
-        color: var(--color-text-muted);
-      }
-
-      .team-actions {
-        margin-bottom: var(--space-xl);
-      }
-
-      .team-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-md);
-      }
-
-      .team-card {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-xl);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-lg);
-      }
-
-      .team-info {
-        display: flex;
-        align-items: center;
-        gap: var(--space-lg);
-      }
-
-      .team-avatar {
-        width: 56px;
-        height: 56px;
-        background: var(--color-primary);
-        color: white;
-        border-radius: var(--radius-full);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--font-heading);
-        font-weight: 600;
-        font-size: var(--text-xl);
-      }
-
-      .team-details {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-xs);
-      }
-
-      .team-name {
-        font-weight: 600;
-        font-size: var(--text-lg);
-      }
-
-      .team-email {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-      }
-
-      .team-role {
-        padding: 4px 12px;
-        background: var(--color-bg);
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        font-weight: 500;
-        color: var(--color-text-light);
-      }
-
-      .team-role.owner {
-        background: rgba(249, 115, 22, 0.1);
-        color: var(--color-accent);
-      }
-
-      .team-role.admin {
-        background: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-      }
-
-      .team-actions-cell {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
-      }
-
-      .permissions-note {
-        background: var(--color-bg-alt);
-        border-radius: var(--radius-lg);
-        padding: var(--space-lg);
-        margin-top: var(--space-xl);
-      }
-
-      .permissions-note h4 {
-        font-family: var(--font-heading);
-        margin-bottom: var(--space-sm);
-      }
-
-      .permissions-note ul {
-        padding-left: var(--space-lg);
-        color: var(--color-text-muted);
-        font-size: var(--text-sm);
-      }
-
-      .permissions-note li {
-        list-style: disc;
-        margin-bottom: var(--space-xs);
-      }
-
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-    `,
+    pageShellStyles,
+    teamPageStyles,
   ];
 
   @state() private teamMembers: LegacyTeamMember[] = [];

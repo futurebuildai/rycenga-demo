@@ -96,6 +96,12 @@ export class PvAddPaymentModal extends PvBase {
         color: var(--color-text-muted);
       }
 
+      .type-icon {
+        display: inline;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+
       .type-btn.active {
         background: var(--color-bg);
         color: var(--color-text);
@@ -120,11 +126,11 @@ export class PvAddPaymentModal extends PvBase {
       }
 
       .form-input.error {
-        border-color: #dc2626;
+        border-color: var(--app-danger-color, var(--color-error));
       }
 
       .field-error {
-        color: #dc2626;
+        color: var(--app-danger-color, var(--color-error));
         font-size: var(--text-xs);
         margin-top: var(--space-xs);
       }
@@ -644,7 +650,7 @@ export class PvAddPaymentModal extends PvBase {
                   aria-selected=${this.paymentType === 'card'}
                   aria-controls="card-form"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 6px;">
+                  <svg class="type-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                     <line x1="1" y1="10" x2="23" y2="10"></line>
                   </svg>
@@ -658,7 +664,7 @@ export class PvAddPaymentModal extends PvBase {
                   aria-selected=${this.paymentType === 'ach'}
                   aria-controls="ach-form"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 6px;">
+                  <svg class="type-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
                   </svg>

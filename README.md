@@ -22,6 +22,14 @@ A dedicated, **Frontend-Only** Pro customer portal for LBM (Lumber & Building Ma
 - **State Management:** Reactive Properties (Lit)
 - **Fonts:** Space Grotesk + Inter (Google Fonts)
 
+## Styling Architecture
+
+- Global design tokens live in `src/styles/theme.css`.
+- Cross-cutting primitives/utilities live in `src/styles/shared.ts`.
+- Page style templates live in `src/styles/pages.ts`.
+- Page components in `src/components/pages/*` must consume shared/page templates and must not define local `css\`` blocks.
+- Inline `style=` attributes are not allowed in page components. Use classes mapped to shared tokens/templates instead.
+
 ## Getting Started
 
 ```bash
@@ -43,6 +51,7 @@ src/
 ├── features/           # Feature-based modules (billing, etc.)
 ├── connect/            # API services and type definitions
 ├── services/           # Application services (auth, router)
+├── styles/             # Theme tokens + shared and page style templates
 └── main.ts             # Application entry point
 ```
 
