@@ -110,19 +110,143 @@ export class PvPageBilling extends PvBase {
 
       .invoice-row {
         display: grid;
-        grid-template-columns: 1fr 150px 100px 120px 120px;
+        grid-template-columns: 40px 1fr 150px 100px 120px 120px;
         align-items: center;
         gap: var(--space-md);
         padding: var(--space-lg);
         background: var(--color-bg-alt);
         border-radius: var(--radius-lg);
         margin-bottom: var(--space-md);
+        transition: background var(--transition-fast), box-shadow var(--transition-fast);
+      }
+
+      .invoice-row.selected {
+        background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.06);
+        box-shadow: inset 0 0 0 1px var(--color-primary);
+      }
+
+      .invoice-row-header {
+        display: grid;
+        grid-template-columns: 40px 1fr 150px 100px 120px 120px;
+        align-items: center;
+        gap: var(--space-md);
+        padding: var(--space-sm) var(--space-lg);
+        margin-bottom: var(--space-xs);
+      }
+
+      .invoice-row-header span {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
       }
 
       @media (max-width: 768px) {
-        .invoice-row {
-          grid-template-columns: 1fr 1fr;
+        .invoice-row,
+        .invoice-row-header {
+          grid-template-columns: 32px 1fr 1fr;
         }
+        .invoice-row-header {
+          display: none;
+        }
+      }
+
+      .invoice-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--color-primary);
+        cursor: pointer;
+      }
+
+      /* Floating Pay Selected Bar */
+      .bulk-pay-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--color-bg);
+        border-top: 2px solid var(--color-primary);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-md) var(--space-xl);
+        z-index: 100;
+        animation: slideUp 0.25s ease-out;
+      }
+
+      @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+
+      .bulk-pay-info {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+      }
+
+      .bulk-pay-count {
+        font-weight: 600;
+        color: var(--color-text);
+      }
+
+      .bulk-pay-total {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: var(--text-lg);
+        color: var(--color-primary);
+      }
+
+      .bulk-pay-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+      }
+
+      .btn-clear-selection {
+        background: transparent;
+        border: 1px solid var(--color-border);
+        padding: var(--space-sm) var(--space-md);
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-weight: 500;
+        transition: all var(--transition-fast);
+      }
+
+      .btn-clear-selection:hover {
+        border-color: var(--color-text-muted);
+        color: var(--color-text);
+      }
+
+      /* Payment request banner */
+      .payment-request-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-md) var(--space-lg);
+        background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04));
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-lg);
+      }
+
+      .payment-request-banner .banner-text {
+        font-size: var(--text-sm);
+        color: var(--color-text);
+        font-weight: 500;
+      }
+
+      .payment-request-banner .banner-dismiss {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-size: var(--text-lg);
+        line-height: 1;
+        padding: var(--space-xs);
       }
 
       .invoice-info {
@@ -378,11 +502,17 @@ export class PvPageBilling extends PvBase {
   @state() private paymentAmount = 0;
   @state() private paymentInvoiceId: number | undefined;
 
+  // Multi-invoice selection state
+  @state() private selectedInvoiceIds: Set<number> = new Set();
+  @state() private paymentRequestId: string | null = null;
+  @state() private showPaymentRequestBanner = false;
+
   private unsubscribeRouter?: () => void;
 
   async connectedCallback() {
     super.connectedCallback();
     this.readFilterParams();
+    this.readDeepLinkParams();
     this.unsubscribeRouter = RouterService.subscribe(() => {
       const params = RouterService.getParams();
       const jobIdStr = params.get('jobId');
@@ -422,6 +552,69 @@ export class PvPageBilling extends PvBase {
 
   private clearFilter() {
     RouterService.navigate('billing');
+  }
+
+  // --- Deep Link / Payment Request Params ---
+
+  private readDeepLinkParams() {
+    const params = RouterService.getParams();
+
+    // Payment request ID from AR Center
+    const prId = params.get('pr');
+    if (prId) {
+      this.paymentRequestId = prId;
+      this.showPaymentRequestBanner = true;
+    }
+
+    // Pre-select invoices from URL
+    const invoiceIdsStr = params.get('invoices');
+    if (invoiceIdsStr) {
+      const ids = invoiceIdsStr.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+      this.selectedInvoiceIds = new Set(ids);
+    }
+  }
+
+  // --- Invoice Selection ---
+
+  private toggleInvoice(invoiceId: number) {
+    const next = new Set(this.selectedInvoiceIds);
+    if (next.has(invoiceId)) {
+      next.delete(invoiceId);
+    } else {
+      next.add(invoiceId);
+    }
+    this.selectedInvoiceIds = next;
+  }
+
+  private toggleAllInvoices() {
+    const payableInvoices = this.invoices.filter(
+      inv => inv.status !== 'paid' && inv.status !== 'void' && inv.status !== 'cancelled',
+    );
+    if (this.selectedInvoiceIds.size === payableInvoices.length && payableInvoices.length > 0) {
+      this.selectedInvoiceIds = new Set();
+    } else {
+      this.selectedInvoiceIds = new Set(payableInvoices.map(inv => inv.id));
+    }
+  }
+
+  private clearSelection() {
+    this.selectedInvoiceIds = new Set();
+  }
+
+  private get selectedInvoicesTotal(): number {
+    return this.invoices
+      .filter(inv => this.selectedInvoiceIds.has(inv.id))
+      .reduce((sum, inv) => sum + inv.amountDue, 0);
+  }
+
+  private get selectedInvoicesList(): { id: number; invoiceNumber: string; amount: number }[] {
+    return this.invoices
+      .filter(inv => this.selectedInvoiceIds.has(inv.id))
+      .map(inv => ({ id: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amountDue }));
+  }
+
+  private openBulkPayModal() {
+    this.paymentModalOpen = true;
   }
 
   private async loadInvoices(initialLoad = false) {
@@ -536,6 +729,8 @@ export class PvPageBilling extends PvBase {
   }
 
   private openPaymentModal(invoice: Invoice) {
+    // When paying a single invoice from its row, clear multi-selection and use the legacy props
+    this.selectedInvoiceIds = new Set([invoice.id]);
     this.paymentInvoiceId = invoice.id;
     this.paymentAmount = invoice.amountDue;
     this.paymentModalOpen = true;
@@ -545,13 +740,25 @@ export class PvPageBilling extends PvBase {
     this.loadInvoices(); // Refresh invoices to show updated status
     this.loadInvoiceSummary();
     if (this.selectedInvoice && this.paymentInvoiceId === this.selectedInvoice.id) {
-      // Ideally we'd re-fetch the specific invoice, but for now we can infer payment
-      // or just depend on loadInvoices to update the list view.
-      // If we stay in detail view, we might want to manually update the selectedInvoice status or close detail view.
       this.backToList();
     }
+    // Clear all selection state
     this.paymentInvoiceId = undefined;
     this.paymentAmount = 0;
+    this.selectedInvoiceIds = new Set();
+    this.showPaymentRequestBanner = false;
+    // Clear URL params after successful payment
+    if (this.paymentRequestId) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('pr');
+      url.searchParams.delete('invoices');
+      window.history.replaceState({}, '', url.toString());
+      this.paymentRequestId = null;
+    }
+  }
+
+  private dismissPaymentRequestBanner() {
+    this.showPaymentRequestBanner = false;
   }
 
   private async downloadInvoicePdf(invoice: Invoice) {
@@ -624,27 +831,60 @@ export class PvPageBilling extends PvBase {
       </div>
 
       ${this.activeTab === 'invoices' ? html`
+        ${this.showPaymentRequestBanner ? html`
+          <div class="payment-request-banner">
+            <span class="banner-text">📩 Your dealer has requested payment for the selected invoices below.</span>
+            <button class="banner-dismiss" @click=${this.dismissPaymentRequestBanner} title="Dismiss">&times;</button>
+          </div>
+        ` : ''}
         ${this.invoicesLoading ? html`
           <div style="margin-bottom: var(--space-md); color: var(--color-text-muted); font-size: var(--text-sm);">
             Updating invoices...
           </div>
         ` : ''}
-        ${this.invoices.map(invoice => html`
-          <div class="invoice-row">
-            <div class="invoice-info">
-              <span class="invoice-number">${invoice.invoiceNumber}</span>
-              <span class="invoice-project">Due: ${this.formatDate(invoice.dueDate || '')}</span>
+        <div class="invoice-row-header">
+          <span><input
+            type="checkbox"
+            class="invoice-checkbox"
+            .checked=${this.selectedInvoiceIds.size > 0 && this.selectedInvoiceIds.size === this.invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && i.status !== 'cancelled').length}
+            @change=${this.toggleAllInvoices}
+          /></span>
+          <span>Invoice</span>
+          <span>Amount Due</span>
+          <span>Status</span>
+          <span></span>
+          <span></span>
+        </div>
+        ${this.invoices.map(invoice => {
+      const isPayable = invoice.status !== 'paid' && invoice.status !== 'void' && invoice.status !== 'cancelled';
+      const isSelected = this.selectedInvoiceIds.has(invoice.id);
+      return html`
+            <div class="invoice-row ${isSelected ? 'selected' : ''}">
+              <div>
+                ${isPayable ? html`
+                  <input
+                    type="checkbox"
+                    class="invoice-checkbox"
+                    .checked=${isSelected}
+                    @change=${() => this.toggleInvoice(invoice.id)}
+                  />
+                ` : html`<span></span>`}
+              </div>
+              <div class="invoice-info">
+                <span class="invoice-number">${invoice.invoiceNumber}</span>
+                <span class="invoice-project">Due: ${this.formatDate(invoice.dueDate || '')}</span>
+              </div>
+              <div class="invoice-amount">${this.formatCurrency(invoice.amountDue)}</div>
+              <span class="status-badge ${this.getStatusClass(invoice.status)}">${invoice.status}</span>
+              <button class="btn btn-outline btn-sm" @click=${() => this.viewInvoiceDetail(invoice)}>View</button>
+              <button
+                class="btn btn-cta btn-sm"
+                @click=${() => this.openPaymentModal(invoice)}
+                ?disabled=${!isPayable}
+              >Pay</button>
             </div>
-            <div class="invoice-amount">${this.formatCurrency(invoice.amountDue)}</div>
-            <span class="status-badge ${this.getStatusClass(invoice.status)}">${invoice.status}</span>
-            <button class="btn btn-outline btn-sm" @click=${() => this.viewInvoiceDetail(invoice)}>View</button>
-            <button
-              class="btn btn-cta btn-sm"
-              @click=${() => this.openPaymentModal(invoice)}
-              ?disabled=${invoice.status === 'paid' || invoice.status === 'void' || invoice.status === 'cancelled'}
-            >Pay</button>
-          </div>
-        `)}
+          `;
+    })}
 
         <!-- Pagination Controls -->
         <div class="pagination">
@@ -676,6 +916,7 @@ export class PvPageBilling extends PvBase {
           <p class="text-muted">No monthly account statements found.</p>
         ` : this.statements.map(statement => html`
           <div class="invoice-row">
+            <span></span>
             <div class="invoice-info">
               <span class="invoice-number">${statement.statementNumber || `Statement #${statement.id}`}</span>
               <span class="invoice-project">Date: ${this.formatDate(statement.statementDate)}</span>
@@ -813,10 +1054,25 @@ export class PvPageBilling extends PvBase {
         .open=${this.paymentModalOpen}
         .amount=${this.paymentAmount}
         .invoiceId=${this.paymentInvoiceId}
+        .invoices=${this.selectedInvoicesList}
+        .paymentRequestId=${this.paymentRequestId ?? undefined}
         type="invoice"
         @close=${() => this.paymentModalOpen = false}
         @payment-success=${this.handlePaymentSuccess}
       ></pv-payment-modal>
+
+      ${this.selectedInvoiceIds.size > 0 && this.currentView === 'list' ? html`
+        <div class="bulk-pay-bar">
+          <div class="bulk-pay-info">
+            <span class="bulk-pay-count">${this.selectedInvoiceIds.size} invoice${this.selectedInvoiceIds.size > 1 ? 's' : ''} selected</span>
+            <span class="bulk-pay-total">${this.formatCurrency(this.selectedInvoicesTotal)}</span>
+          </div>
+          <div class="bulk-pay-actions">
+            <button class="btn-clear-selection" @click=${this.clearSelection}>Clear</button>
+            <button class="btn btn-cta" @click=${this.openBulkPayModal}>Pay Selected</button>
+          </div>
+        </div>
+      ` : ''}
     `;
   }
 }
