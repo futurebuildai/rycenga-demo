@@ -180,6 +180,7 @@ export class PvLogin extends PvBase {
 
   @state() private email = '';
   @state() private password = '';
+  @state() private rememberMe = false;
   @state() private showError = false;
   @state() private errorMessage = 'Invalid email or password. Please try again.';
   @state() private isLoading = false;
@@ -211,7 +212,7 @@ export class PvLogin extends PvBase {
     this.isLoading = true;
 
     try {
-      const result = await AuthService.login(this.email, this.password);
+      const result = await AuthService.login(this.email, this.password, this.rememberMe);
 
       if (result.redirectTo) {
         window.location.assign(result.redirectTo);
@@ -302,7 +303,12 @@ export class PvLogin extends PvBase {
 
             <div class="form-footer">
               <label class="checkbox-label">
-                <input type="checkbox" id="login-remember">
+                <input 
+                  type="checkbox" 
+                  id="login-remember"
+                  .checked=${this.rememberMe}
+                  @change=${(e: Event) => this.rememberMe = (e.target as HTMLInputElement).checked}
+                >
                 <span>Remember me</span>
               </label>
               <a href="#" class="forgot-password">Forgot Password?</a>

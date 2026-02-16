@@ -69,6 +69,50 @@ export class PageMessaging extends LitElement {
     async connectedCallback() {
         super.connectedCallback();
         await this.loadThreads();
+        this.handleDeepLinkParams();
+    }
+
+    private handleDeepLinkParams() {
+        const params = new URLSearchParams(window.location.search);
+        const phone = params.get('phone');
+        if (!phone) return;
+
+        const contactName = params.get('contactName') || phone;
+        const accountId = params.get('accountId');
+        const accountName = params.get('accountName');
+
+        // Clean URL to prevent re-trigger on refresh
+        window.history.replaceState({}, '', window.location.pathname);
+
+        // Look for an existing thread matching this phone number
+        const existing = this.threads.find(t => t.contact.phone === phone);
+        if (existing) {
+            this.selectedThread = existing;
+            this.loadMessages(existing.id);
+            return;
+        }
+
+        // Create a local placeholder thread (same pattern as handleNewThreadCreate)
+        const newThread: Thread = {
+            id: phone,
+            contact: {
+                id: phone,
+                name: contactName,
+                phone: phone,
+                accountId: accountId ? Number(accountId) : undefined,
+                accountName: accountName || undefined,
+            },
+            lastMessage: null,
+            unreadCount: 0,
+            status: 'open',
+            assignedAgents: [],
+            channel: 'sms',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        this.threads = [newThread, ...this.threads];
+        this.selectedThread = newThread;
+        this.messages = [];
     }
 
     private async loadThreads() {
