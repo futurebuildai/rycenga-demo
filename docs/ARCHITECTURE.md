@@ -118,6 +118,7 @@ Rules:
 - `src/components/pages/*` should compose `PvBase.styles` + shared/page style exports.
 - Page components should not define local `css\`` blocks.
 - Inline `style=` attributes should be avoided in pages; prefer class-based styling backed by shared tokens.
+- Active customer template (`data-template`) is configured in `/admin/settings` via branding metadata (`templateId` / `template_id`).
 
 ---
 

@@ -11,12 +11,15 @@ export interface DealerBranding {
     logoUrl: string | null;
     contactEmail: string;
     contactPhone: string;
+    templateId: number;
 }
 
 export interface BrandingUpdatePayload {
     companyName?: string;
     contactEmail?: string;
     contactPhone?: string;
+    templateId?: number;
+    template_id?: number;
 }
 
 // BuilderWire fallback branding
@@ -25,19 +28,33 @@ const DEFAULT_BRANDING: DealerBranding = {
     logoUrl: null,
     contactEmail: 'support@builderwire.com',
     contactPhone: '(555) 000-0000',
+    templateId: 1,
 };
 
 class AdminBrandingServiceImpl {
     private cachedBranding: DealerBranding | null = null;
+
+    private normalizeBranding(input: Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null }): DealerBranding {
+        const parsedTemplateId = Number(input.templateId ?? input.template_id);
+        const templateId = Number.isFinite(parsedTemplateId) && parsedTemplateId > 0 ? parsedTemplateId : DEFAULT_BRANDING.templateId;
+        return {
+            companyName: input.companyName?.trim() || DEFAULT_BRANDING.companyName,
+            logoUrl: input.logoUrl ?? DEFAULT_BRANDING.logoUrl,
+            contactEmail: input.contactEmail?.trim() || DEFAULT_BRANDING.contactEmail,
+            contactPhone: input.contactPhone?.trim() || DEFAULT_BRANDING.contactPhone,
+            templateId,
+        };
+    }
 
     /**
      * Get current dealer branding configuration
      */
     async getBranding(): Promise<DealerBranding> {
         try {
-            const data = await adminClient.request<DealerBranding>('/admin/branding');
-            this.cachedBranding = data;
-            return data;
+            const data = await adminClient.request<Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null }>('/admin/branding');
+            const normalized = this.normalizeBranding(data);
+            this.cachedBranding = normalized;
+            return normalized;
         } catch (error) {
             console.warn('Failed to fetch branding, using defaults:', error);
             return DEFAULT_BRANDING;
@@ -55,12 +72,19 @@ class AdminBrandingServiceImpl {
      * Update branding metadata (name, email, phone)
      */
     async updateBranding(payload: BrandingUpdatePayload): Promise<DealerBranding> {
-        const data = await adminClient.request<DealerBranding>('/admin/branding', {
+        const bodyPayload: BrandingUpdatePayload = { ...payload };
+        if (payload.templateId !== undefined && payload.template_id === undefined) {
+            bodyPayload.template_id = payload.templateId;
+        }
+
+        const data = await adminClient.request<Partial<DealerBranding> & { template_id?: number | null; templateId?: number | null }>('/admin/branding', {
             method: 'PUT',
-            body: JSON.stringify(payload),
+            body: JSON.stringify(bodyPayload),
         });
-        this.cachedBranding = data;
-        return data;
+
+        const normalized = this.normalizeBranding(data);
+        this.cachedBranding = normalized;
+        return normalized;
     }
 
     /**

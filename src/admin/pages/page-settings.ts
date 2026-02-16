@@ -64,7 +64,8 @@ export class PageSettings extends LitElement {
             color: var(--color-text-light, #64748b);
         }
 
-        input {
+        input,
+        select {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid var(--color-border, #e2e8f0);
@@ -74,15 +75,18 @@ export class PageSettings extends LitElement {
             color: var(--color-text);
             box-sizing: border-box;
             transition: all 0.15s ease;
+            background: white;
         }
 
-        input:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--admin-accent, #6366f1);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
-        input:disabled {
+        input:disabled,
+        select:disabled {
             background: #f8fafc;
             color: #94a3b8;
         }
@@ -177,6 +181,7 @@ export class PageSettings extends LitElement {
     @state() private brandingCompanyName = '';
     @state() private brandingContactEmail = '';
     @state() private brandingContactPhone = '';
+    @state() private brandingTemplateId = 1;
     @state() private brandingSaving = false;
     @state() private logoUploading = false;
     @state() private pendingLogoFile: File | null = null;
@@ -212,6 +217,7 @@ export class PageSettings extends LitElement {
             this.brandingCompanyName = this.branding.companyName;
             this.brandingContactEmail = this.branding.contactEmail;
             this.brandingContactPhone = this.branding.contactPhone;
+            this.brandingTemplateId = this.branding.templateId || 1;
         } catch {
             // Use defaults on error
         }
@@ -264,6 +270,7 @@ export class PageSettings extends LitElement {
                 companyName: this.brandingCompanyName,
                 contactEmail: this.brandingContactEmail,
                 contactPhone: this.brandingContactPhone,
+                templateId: this.brandingTemplateId,
             });
 
             this.branding = updated;
@@ -369,10 +376,22 @@ export class PageSettings extends LitElement {
                                 @input=${(e: Event) => this.brandingContactPhone = (e.target as HTMLInputElement).value}
                             />
                         </div>
+
+                        <div class="form-group">
+                            <label>Portal Template</label>
+                            <select
+                                class="form-select"
+                                .value=${String(this.brandingTemplateId)}
+                                @change=${(e: Event) => this.brandingTemplateId = Number((e.target as HTMLSelectElement).value)}
+                            >
+                                <option value="1">Template 1 (Default)</option>
+                                <option value="2">Template 2 (Split Layout)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="branding-preview">
-                        <strong>Preview:</strong> Your branding will appear on customer login pages, portal headers, and the "Need Help?" section in the customer sidebar.
+                        <strong>Preview:</strong> Your branding and selected template will appear on customer login pages, portal headers, and the account shell after users refresh.
                     </div>
 
                     <div style="margin-top: 20px;">
