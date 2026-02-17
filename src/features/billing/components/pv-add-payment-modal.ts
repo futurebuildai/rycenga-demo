@@ -19,63 +19,10 @@ export class PvAddPaymentModal extends PvBase {
         display: block;
       }
 
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: var(--space-lg);
-      }
-
       .modal-content {
-        background: var(--color-bg);
-        border-radius: var(--radius-lg);
-        width: 100%;
         max-width: 480px;
         max-height: 90vh;
         overflow-y: auto;
-        box-shadow: var(--shadow-xl);
-      }
-
-      .modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-xl);
-        border-bottom: 1px solid var(--color-border);
-      }
-
-      .modal-title {
-        font-family: var(--font-heading);
-        font-size: var(--text-xl);
-        font-weight: 600;
-        margin: 0;
-      }
-
-      .close-btn {
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-md);
-        color: var(--color-text-muted);
-        transition: all var(--transition-fast);
-      }
-
-      .close-btn:hover {
-        background: var(--color-border);
-        color: var(--color-text);
-      }
-
-      .modal-body {
-        padding: var(--space-xl);
       }
 
       .type-toggle {
@@ -133,14 +80,6 @@ export class PvAddPaymentModal extends PvBase {
         color: var(--app-danger-color, var(--color-error));
         font-size: var(--text-xs);
         margin-top: var(--space-xs);
-      }
-
-      .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--space-md);
-        padding: var(--space-xl);
-        border-top: 1px solid var(--color-border);
       }
 
       .btn-cancel {
