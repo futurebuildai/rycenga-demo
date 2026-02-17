@@ -315,6 +315,75 @@ export const cardStyles = css`
 `;
 
 /**
+ * Modal Styles
+ */
+export const modalStyles = css`
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal-overlay, 2000);
+    padding: var(--space-lg);
+  }
+
+  .modal-content {
+    width: 100%;
+    background: var(--color-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xl);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .modal-title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-xl);
+    font-weight: 600;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    transition: all var(--transition-fast);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .close-btn:hover {
+    background: var(--color-border);
+    color: var(--color-text);
+  }
+
+  .modal-body {
+    padding: var(--space-xl);
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    border-top: 1px solid var(--color-border);
+  }
+`;
+
+/**
  * Page Primitive: Common section shell.
  */
 export const pageShellStyles = css`
@@ -491,6 +560,7 @@ export const coreStyles = [
   layoutStyles,
   formStyles,
   cardStyles,
+  modalStyles,
 ];
 
 /**

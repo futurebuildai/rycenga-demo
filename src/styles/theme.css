@@ -160,6 +160,7 @@
     --app-login-logo-radius: 16px;
     --app-login-logo-font-size: 2.5rem;
     --app-login-logo-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    --z-modal-overlay: 2000;
 
     /* Admin Specific Tokens */
     --admin-sidebar-bg: #0f172a;
