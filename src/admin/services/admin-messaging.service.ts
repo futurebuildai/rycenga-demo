@@ -58,12 +58,33 @@ class AdminMessagingServiceImpl {
     private messageCache: BackendCommunicationMessage[] = [];
     private lastFetchTime = 0;
     private readonly CACHE_TTL_MS = 30000; // 30 seconds
+    private readonly BACKEND_MAX_LIMIT = 200;
+    private readonly MESSAGE_FETCH_TARGET = 500;
 
     private async fetchMessagesByChannel(channel: 'sms' | 'whatsapp'): Promise<BackendCommunicationMessage[]> {
-        const response = await adminClient.request<BackendMessagesResponse>(
-            `/communications/messages?channel=${channel}&limit=500&offset=0`
-        );
-        return response.items || [];
+        const messages: BackendCommunicationMessage[] = [];
+        let offset = 0;
+
+        while (messages.length < this.MESSAGE_FETCH_TARGET) {
+            const remaining = this.MESSAGE_FETCH_TARGET - messages.length;
+            const limit = Math.min(this.BACKEND_MAX_LIMIT, remaining);
+            const response = await adminClient.request<BackendMessagesResponse>(
+                `/communications/messages?channel=${channel}&limit=${limit}&offset=${offset}`
+            );
+            const items = response.items || [];
+            if (items.length === 0) {
+                break;
+            }
+
+            messages.push(...items);
+            offset += items.length;
+
+            if (items.length < limit) {
+                break;
+            }
+        }
+
+        return messages;
     }
 
     /**
