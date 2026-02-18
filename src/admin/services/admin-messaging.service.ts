@@ -78,10 +78,20 @@ class AdminMessagingServiceImpl {
 
         try {
             // Fetch recent non-email messages from API (email excluded server-side).
-            const [smsMessages, whatsappMessages] = await Promise.all([
+            // Use allSettled so a single channel failure does not blank the entire thread list.
+            const [smsResult, whatsappResult] = await Promise.allSettled([
                 this.fetchMessagesByChannel('sms'),
                 this.fetchMessagesByChannel('whatsapp'),
             ]);
+
+            const smsMessages = smsResult.status === 'fulfilled' ? smsResult.value : [];
+            const whatsappMessages = whatsappResult.status === 'fulfilled' ? whatsappResult.value : [];
+            if (smsResult.status === 'rejected') {
+                console.error('Failed to fetch sms messages:', smsResult.reason);
+            }
+            if (whatsappResult.status === 'rejected') {
+                console.error('Failed to fetch whatsapp messages:', whatsappResult.reason);
+            }
 
             const dedupedMessages = new Map<number, BackendCommunicationMessage>();
             for (const msg of [...smsMessages, ...whatsappMessages]) {
