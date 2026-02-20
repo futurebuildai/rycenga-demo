@@ -20,9 +20,11 @@ import type {
     AccountFinancials,
     DashboardSummary,
     Order,
+    OrderLine,
     Invoice,
     InvoiceLine,
     Quote,
+    QuoteLine,
     User,
     UserRole,
 } from '../../connect/types/domain.js';
@@ -65,6 +67,7 @@ export interface AdminAccountAddress {
 
 export interface AdminOrder {
     id: string;
+    internalId: number;
     date: string;
     total: number;
     status: 'Pending' | 'Processing' | 'Shipped';
@@ -97,11 +100,40 @@ export interface AdminInvoiceLine {
 
 export interface AdminQuote {
     id: string;
+    internalId: number;
     date: string;
     expiryDate: string;
     total: number;
     status: 'Draft' | 'Sent' | 'Expired';
     name: string;
+}
+
+export interface AdminOrderDetails extends AdminOrder {
+    subtotal: number;
+    taxTotal: number;
+    lines: AdminOrderLine[];
+}
+
+export interface AdminQuoteDetails extends AdminQuote {
+    lines: AdminQuoteLine[];
+}
+
+export interface AdminOrderLine {
+    id: number;
+    itemCode: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+}
+
+export interface AdminQuoteLine {
+    id: number;
+    itemCode: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
 }
 
 export interface AdminAccountDetails extends AdminAccount {
@@ -219,6 +251,7 @@ const mapOrder = (raw: Order): AdminOrder => {
     }
     return {
         id: raw.orderNumber || String(raw.id),
+        internalId: raw.id,
         date: formatDate(raw.orderDate),
         total: raw.total,
         status,
@@ -247,6 +280,7 @@ const mapInvoiceLine = (raw: InvoiceLine): AdminInvoiceLine => ({
 
 const mapQuote = (raw: Quote): AdminQuote => ({
     id: raw.quoteNumber || String(raw.id),
+    internalId: raw.id,
     date: formatDate(raw.quoteDate),
     expiryDate: formatDate(raw.expiresOn),
     total: raw.total,
@@ -254,6 +288,24 @@ const mapQuote = (raw: Quote): AdminQuote => ({
         : raw.status === 'expired' ? 'Expired'
             : 'Draft',
     name: raw.quoteNumber,
+});
+
+const mapOrderLine = (raw: OrderLine): AdminOrderLine => ({
+    id: raw.id,
+    itemCode: raw.itemCode,
+    description: raw.description || raw.itemCode,
+    quantity: raw.quantityOrdered,
+    unitPrice: raw.unitPrice,
+    total: raw.extendedPrice,
+});
+
+const mapQuoteLine = (raw: QuoteLine): AdminQuoteLine => ({
+    id: raw.id,
+    itemCode: raw.itemCode,
+    description: raw.description || raw.itemCode,
+    quantity: raw.quantity,
+    unitPrice: raw.unitPrice,
+    total: raw.extendedPrice,
 });
 
 const mapAdminUser = (u: User): AdminUser => ({
@@ -313,6 +365,24 @@ class AdminDataServiceImpl {
         };
     }
 
+    async getOrders(accountId: number, limit = 10, offset = 0): Promise<{ items: AdminOrder[]; total: number }> {
+        const response = await adminClient.request<{ items: any[]; total: number }>(`/orders?account_id=${accountId}&limit=${limit}&offset=${offset}&status=open`);
+        const { items: orders, total } = response;
+        return {
+            items: orders.map(mapOrder),
+            total,
+        };
+    }
+
+    async getQuotes(accountId: number, limit = 10, offset = 0): Promise<{ items: AdminQuote[]; total: number }> {
+        const response = await adminClient.request<{ items: any[]; total: number }>(`/quotes?account_id=${accountId}&limit=${limit}&offset=${offset}&status=open`);
+        const { items: quotes, total } = response;
+        return {
+            items: quotes.map(mapQuote),
+            total,
+        };
+    }
+
     async getInvoice(id: number): Promise<AdminInvoiceDetails | null> {
         try {
             const [invoice, lines] = await Promise.all([
@@ -327,6 +397,42 @@ class AdminDataServiceImpl {
             };
         } catch (e) {
             console.error('Failed to fetch invoice', e);
+            return null;
+        }
+    }
+
+    async getOrder(id: number): Promise<AdminOrderDetails | null> {
+        try {
+            const [order, lines] = await Promise.all([
+                adminClient.request<Order>(`/orders/${id}`),
+                adminClient.request<OrderLine[]>(`/orders/${id}/lines`).catch(() => []),
+            ]);
+            const mapped = mapOrder(order);
+            return {
+                ...mapped,
+                subtotal: order.subtotal,
+                taxTotal: order.taxTotal,
+                lines: lines.map(mapOrderLine),
+            };
+        } catch (e) {
+            console.error('Failed to fetch order', e);
+            return null;
+        }
+    }
+
+    async getQuote(id: number): Promise<AdminQuoteDetails | null> {
+        try {
+            const [quote, lines] = await Promise.all([
+                adminClient.request<Quote>(`/quotes/${id}`),
+                adminClient.request<QuoteLine[]>(`/quotes/${id}/lines`).catch(() => []),
+            ]);
+            const mapped = mapQuote(quote);
+            return {
+                ...mapped,
+                lines: lines.map(mapQuoteLine),
+            };
+        } catch (e) {
+            console.error('Failed to fetch quote', e);
             return null;
         }
     }
@@ -406,17 +512,10 @@ class AdminDataServiceImpl {
 
     async getAccountDetails(id: number): Promise<AdminAccountDetails | null> {
         try {
-            const relatedLimit = 25;
-            const [account, addresses, financials, orders, quotes] = await Promise.all([
+            const [account, addresses, financials] = await Promise.all([
                 adminClient.request<Account>(`/accounts/${id}`),
                 adminClient.request<AccountAddress[]>(`/accounts/${id}/addresses`).catch((): AccountAddress[] => []),
                 adminClient.request<AccountFinancials>(`/accounts/${id}/financials`).catch((): AccountFinancials | null => null),
-                adminClient.request<PaginatedResponse<Order>>(`/orders?account_id=${id}&limit=${relatedLimit}&offset=0&status=open`)
-                    .then(r => r.items)
-                    .catch((): Order[] => []),
-                adminClient.request<PaginatedResponse<Quote>>(`/quotes?account_id=${id}&limit=${relatedLimit}&offset=0&status=open`)
-                    .then(r => r.items)
-                    .catch((): Quote[] => []),
             ]);
 
             const base = mapAccount(account, undefined, financials ?? undefined);
@@ -437,8 +536,8 @@ class AdminDataServiceImpl {
                 paymentTerms: account.paymentTermsCode || 'Net 30',
                 memberSince: '',
                 taxId: '',
-                openOrders: orders.map(mapOrder),
-                openQuotes: quotes.map(mapQuote),
+                openOrders: [],
+                openQuotes: [],
             };
         } catch (e) {
             console.error('Failed to fetch account details', e);
