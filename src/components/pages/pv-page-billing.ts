@@ -20,6 +20,8 @@ import { buildPaginationTokens, getPaginationBounds } from '../../utils/paginati
 import '../../features/billing/components/pv-payment-history-table.js';
 import '../../features/billing/components/pv-payment-modal.js';
 
+const MAX_API_PAGE_SIZE = 200;
+
 @customElement('pv-page-billing')
 export class PvPageBilling extends PvBase {
   static styles = [
@@ -165,12 +167,23 @@ export class PvPageBilling extends PvBase {
   private async hydrateSelectedInvoiceDetailsFromServer() {
     if (this.selectedInvoiceIds.size === 0) return;
     try {
-      const response = await SalesService.getInvoices(1000, 0, this.filterJobId ?? undefined);
       const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
-      const allInvoices: Invoice[] = response.items.map(mapInvoiceToLegacy);
       const next = new Map(this.selectedInvoiceDetails);
-      for (const invoice of allInvoices) {
-        if (this.selectedInvoiceIds.has(invoice.id)) {
+
+      const requestedIds = [...this.selectedInvoiceIds];
+      const fetchedInvoices = await Promise.all(
+        requestedIds.map(async (id) => {
+          try {
+            const raw = await SalesService.getInvoiceDetails(id);
+            return mapInvoiceToLegacy(raw);
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      for (const invoice of fetchedInvoices) {
+        if (invoice && this.selectedInvoiceIds.has(invoice.id)) {
           next.set(invoice.id, {
             id: invoice.id,
             invoiceNumber: invoice.invoiceNumber,
@@ -313,13 +326,23 @@ export class PvPageBilling extends PvBase {
 
   private async loadInvoiceSummary() {
     try {
-      const response = await SalesService.getInvoices(1000, 0, this.filterJobId ?? undefined);
       const { mapInvoiceToLegacy } = await import('../../connect/mappers.js');
-      const allInvoices = response.items.map(mapInvoiceToLegacy);
+      let offset = 0;
+      let total = 0;
+      let outstandingBalance = 0;
 
-      const outstanding = allInvoices.filter((i: Invoice) => i.status === 'open' || i.status === 'overdue');
-      this.outstandingInvoicesCount = outstanding.length;
-      this.outstandingBalance = outstanding.reduce((sum: number, inv: Invoice) => sum + inv.amountDue, 0);
+      while (offset < total || offset === 0) {
+        const response = await SalesService.getInvoices(MAX_API_PAGE_SIZE, offset, this.filterJobId ?? undefined, 'open');
+        total = response.total;
+        if (response.items.length === 0) break;
+
+        const invoices = response.items.map(mapInvoiceToLegacy);
+        outstandingBalance += invoices.reduce((sum: number, inv: Invoice) => sum + inv.amountDue, 0);
+        offset += response.items.length;
+      }
+
+      this.outstandingInvoicesCount = total;
+      this.outstandingBalance = outstandingBalance;
     } catch (e) {
       console.error('Failed to load invoice summary', e);
     }

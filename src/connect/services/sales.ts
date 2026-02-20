@@ -49,7 +49,7 @@ export const SalesService = {
     },
 
     // Maps to GET /invoices
-    getInvoices: (limit = 1000, offset = 0, JobId?: number) => {
+    getInvoices: (limit = 200, offset = 0, JobId?: number, status?: string) => {
         const params = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
@@ -57,8 +57,15 @@ export const SalesService = {
         if (typeof JobId === 'number') {
             params.set('JobId', String(JobId));
         }
+        if (status) {
+            params.set('status', status);
+        }
         return client.request<{ items: Invoice[]; total: number }>(`/invoices?${params.toString()}`);
     },
+
+    // Maps to GET /invoices/{id}
+    getInvoiceDetails: (invoiceId: number) =>
+        client.request<Invoice>(`/invoices/${invoiceId}`),
 
     // Maps to GET /v1/quotes
     getQuotes: ({ limit = 25, offset = 0, accountId, JobId }: PagingOptions = {}) => {

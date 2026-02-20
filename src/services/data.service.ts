@@ -161,7 +161,7 @@ class DataServiceImpl {
     /**
      * Get invoices via API
      */
-    async getInvoices(limit = 1000, offset = 0, jobId?: number): Promise<Invoice[]> {
+    async getInvoices(limit = 200, offset = 0, jobId?: number): Promise<Invoice[]> {
         const { items: backendInvoices } = await SalesService.getInvoices(limit, offset, jobId);
         this.invoicesData = backendInvoices.map(mapInvoiceToLegacy);
         return this.invoicesData;
@@ -171,9 +171,13 @@ class DataServiceImpl {
      * Get a single invoice by ID
      */
     async getInvoiceById(invoiceId: string | number, jobId?: number): Promise<Invoice | undefined> {
-        const invoices = await this.getInvoices(1000, 0, jobId);
         const id = typeof invoiceId === 'number' ? invoiceId : parseInt(invoiceId, 10);
-        return invoices.find(i => i.id === id || i.invoiceNumber === String(invoiceId));
+        const invoice = await SalesService.getInvoiceDetails(id);
+        const mapped = mapInvoiceToLegacy(invoice);
+        if (jobId && mapped.projectId && Number(mapped.projectId) !== jobId) {
+            return undefined;
+        }
+        return mapped.id === id || mapped.invoiceNumber === String(invoiceId) ? mapped : undefined;
     }
 
     /**
