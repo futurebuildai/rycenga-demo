@@ -1,10 +1,8 @@
-name: Docker Build and Publish
+name: Build and Publish (staging)
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["staging"]
 
 env:
   REGISTRY: ghcr.io
@@ -37,13 +35,12 @@ jobs:
             type=ref,event=pr
             type=sha
             type=raw,value=${{ github.sha }}
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/staging' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -65,18 +62,17 @@ jobs:
           min-versions-to-keep: 2
           delete-only-untagged-versions: 'true'
 
-    # Necessary to avoid permission issues on the self-hosted runner
       - name: Fix workspace permissions
         if: always()
         run: sudo chown -R $(whoami):$(whoami) .
 
   deploy:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     runs-on: [self-hosted, linux]
     env:
-      # Runner-local kubeconfig for velocity-frontend (no GitHub secret)
       KUBECONFIG_PATH: /opt/actions-runner/secrets/velocity-frontend.yaml
+      TARGET_NAMESPACE: staging
 
     steps:
       - name: Checkout repository
@@ -92,11 +88,11 @@ jobs:
             exit 1
           fi
 
-          # Ensure kubectl uses the runner-local kubeconfig
           export KUBECONFIG="$KUBECONFIG_PATH"
-
-          # Validate without dumping sensitive content
-          kubectl -n frontend get deploy >/dev/null
+          if [ "$(kubectl auth can-i get deployments -n "$TARGET_NAMESPACE")" != "yes" ]; then
+            echo "ERROR: runner identity cannot get deployments in namespace '$TARGET_NAMESPACE'"
+            exit 1
+          fi
 
       - name: Deploy to Kubernetes
         shell: bash
@@ -105,10 +101,15 @@ jobs:
         run: |
           set -euo pipefail
 
-          kubectl apply -f infra/k8s/frontend.yaml
-          kubectl apply -f infra/k8s/ingress-frontend.yaml
+          sed -e 's/namespace: frontend/namespace: staging/g' \
+            infra/k8s/frontend.yaml | kubectl apply -f -
+          sed -e 's/namespace: frontend/namespace: staging/g' \
+              -e 's/host: velocity.builderwire.net/host: staging-velocity.builderwire.net/g' \
+            infra/k8s/ingress-frontend.yaml | kubectl apply -f -
 
-          kubectl -n frontend set image deployment/velocity-frontend \
+          kubectl -n "$TARGET_NAMESPACE" scale deployment/velocity-frontend --replicas=1
+
+          kubectl -n "$TARGET_NAMESPACE" set image deployment/velocity-frontend \
             velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
 
-          kubectl -n frontend rollout status deployment/velocity-frontend --timeout=10m
+          kubectl -n "$TARGET_NAMESPACE" rollout status deployment/velocity-frontend --timeout=10m

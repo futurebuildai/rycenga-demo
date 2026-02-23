@@ -163,6 +163,13 @@ export function isMediaContent(content: MessageContent): content is MediaContent
     return 'mediaUrl' in content;
 }
 
+function normalizeMessageDirection(direction?: string): MessageDirection {
+    const value = (direction || '').toLowerCase();
+    if (value === 'inbound' || value === 'received' || value === 'incoming') return 'inbound';
+    if (value === 'outbound' || value === 'sent' || value === 'outgoing') return 'outbound';
+    return 'outbound';
+}
+
 // === Mappers ===
 
 /**
@@ -182,15 +189,16 @@ function mapMessageStatus(backendStatus?: string): MessageStatus {
  * Convert backend CommunicationMessage to frontend Message
  */
 export function mapBackendMessage(msg: BackendCommunicationMessage, threadId: string): Message {
+    const direction = normalizeMessageDirection(msg.direction);
     return {
         id: String(msg.id),
         threadId,
-        direction: msg.direction as MessageDirection,
+        direction,
         type: 'text',
         content: { text: msg.body || '' },
         createdAt: msg.createdAt,
         status: mapMessageStatus(msg.status),
-        senderName: msg.direction === 'inbound' ? msg.originator : undefined,
+        senderName: direction === 'inbound' ? msg.originator : undefined,
     };
 }
 
@@ -200,7 +208,8 @@ export function mapBackendMessage(msg: BackendCommunicationMessage, threadId: st
  * For outbound: recipient (who we sent it to)
  */
 export function getMessageContactPhone(msg: BackendCommunicationMessage): string {
-    return msg.direction === 'inbound'
+    const direction = normalizeMessageDirection(msg.direction);
+    return direction === 'inbound'
         ? (msg.originator || 'unknown')
         : (msg.recipient || 'unknown');
 }
