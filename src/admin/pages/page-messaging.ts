@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminMessagingService } from '../services/admin-messaging.service.js';
 import type { Thread, Message, ThreadTab } from '../services/messaging-types.js';
@@ -7,55 +7,11 @@ import type { Thread, Message, ThreadTab } from '../services/messaging-types.js'
 import '../components/messaging/thread-list.js';
 import '../components/messaging/chat-window.js';
 import '../components/messaging/new-thread-modal.js';
+import { pageMessagingStyles } from '../../styles/admin-messaging.js';
 
 @customElement('admin-page-messaging')
 export class PageMessaging extends LitElement {
-    static styles = css`
-        :host {
-            display: block;
-            height: calc(100vh - 64px);
-        }
-
-        .messaging-container {
-            display: flex;
-            height: 100%;
-            background: var(--admin-card-bg, #ffffff);
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-text-muted, #94a3b8);
-            background: var(--admin-bg, #f1f5f9);
-        }
-
-        .empty-icon {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        .empty-title {
-            font-family: var(--font-heading, 'Space Grotesk', sans-serif);
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--color-text, #0f172a);
-            margin: 0 0 8px;
-        }
-
-        .empty-description {
-            font-size: 14px;
-            color: var(--color-text-muted, #94a3b8);
-            margin: 0;
-        }
-    `;
+    static styles = pageMessagingStyles;
 
     @state() private threads: Thread[] = [];
     @state() private selectedThread: Thread | null = null;

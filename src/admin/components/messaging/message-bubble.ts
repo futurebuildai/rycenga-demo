@@ -1,192 +1,21 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { Message } from '../../services/messaging-types.js';
 import { isTextContent, isMediaContent } from '../../services/messaging-types.js';
+import { messageBubbleStyles } from '../../../styles/admin-messaging.js';
 
 @customElement('messaging-message-bubble')
 export class MessageBubble extends LitElement {
-    static styles = css`
-        :host {
-            display: block;
-        }
-
-        .message-row {
-            display: flex;
-            gap: 12px;
-            max-width: 100%;
-            margin-bottom: 4px;
-        }
-
-        .message-row.inbound {
-            justify-content: flex-start;
-        }
-
-        .message-row.outbound {
-            justify-content: flex-end;
-        }
-
-        .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--color-primary, #1e293b);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-            flex-shrink: 0;
-            align-self: flex-end;
-        }
-
-        .avatar.outbound {
-            background: var(--admin-accent, #6366f1);
-        }
-
-        .bubble-wrapper {
-            display: flex;
-            flex-direction: column;
-            max-width: 70%;
-        }
-
-        .bubble-wrapper.outbound {
-            align-items: flex-end;
-        }
-
-        .bubble {
-            padding: 12px 16px;
-            font-size: 14px;
-            line-height: 1.5;
-            word-wrap: break-word;
-        }
-
-        .bubble.inbound {
-            background: #f1f5f9;
-            color: var(--color-text, #0f172a);
-            border-radius: 16px 16px 16px 4px;
-        }
-
-        .bubble.outbound {
-            background: var(--admin-accent, #6366f1);
-            color: white;
-            border-radius: 16px 16px 4px 16px;
-        }
-
-        .timestamp {
-            font-size: 11px;
-            color: var(--color-text-muted, #94a3b8);
-            margin-top: 4px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .timestamp.outbound {
-            justify-content: flex-end;
-        }
-
-        .status-icon {
-            width: 14px;
-            height: 14px;
-        }
-
-        /* File Card Styles */
-        .file-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: white;
-            border: 1px solid var(--color-border, #e2e8f0);
-            border-radius: 12px;
-            min-width: 240px;
-        }
-
-        .bubble.outbound .file-card {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .file-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: #fee2e2;
-            color: #dc2626;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .file-icon.image {
-            background: #dbeafe;
-            color: #2563eb;
-        }
-
-        .bubble.outbound .file-icon {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .file-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .file-name {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--color-text, #0f172a);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .bubble.outbound .file-name {
-            color: white;
-        }
-
-        .file-size {
-            font-size: 11px;
-            color: var(--color-text-muted, #94a3b8);
-        }
-
-        .bubble.outbound .file-size {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .download-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: var(--admin-accent, #6366f1);
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: background 150ms ease;
-        }
-
-        .download-btn:hover {
-            background: var(--admin-accent-hover, #4f46e5);
-        }
-
-        .bubble.outbound .download-btn {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .bubble.outbound .download-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-    `;
+    static styles = messageBubbleStyles;
 
     @property({ type: Object }) message!: Message;
     @property({ type: Boolean }) showAvatar = true;
+
+    private getDirectionClass(direction: string): 'inbound' | 'outbound' {
+        const value = direction.toLowerCase();
+        if (value === 'inbound' || value === 'received' || value === 'incoming') return 'inbound';
+        return 'outbound';
+    }
 
     private formatTime(dateStr: string): string {
         const date = new Date(dateStr);
@@ -222,9 +51,10 @@ export class MessageBubble extends LitElement {
     private renderTextBubble() {
         const content = this.message.content;
         if (!isTextContent(content)) return null;
+        const direction = this.getDirectionClass(this.message.direction);
 
         return html`
-            <div class="bubble ${this.message.direction}">
+            <div class="bubble ${direction}">
                 ${content.text}
             </div>
         `;
@@ -233,12 +63,13 @@ export class MessageBubble extends LitElement {
     private renderFileBubble() {
         const content = this.message.content;
         if (!isMediaContent(content)) return null;
+        const direction = this.getDirectionClass(this.message.direction);
 
         const category = this.getMimeCategory(content.mimeType);
         const isImage = category === 'image';
 
         return html`
-            <div class="bubble ${this.message.direction}">
+            <div class="bubble ${direction}">
                 <div class="file-card">
                     <div class="file-icon ${isImage ? 'image' : ''}">
                         ${isImage
@@ -270,7 +101,8 @@ export class MessageBubble extends LitElement {
     }
 
     private renderStatusIcon() {
-        const { status, direction } = this.message;
+        const { status } = this.message;
+        const direction = this.getDirectionClass(this.message.direction);
         if (direction !== 'outbound') return null;
 
         if (status === 'read') {
@@ -292,7 +124,8 @@ export class MessageBubble extends LitElement {
     }
 
     render() {
-        const { direction, type, senderName } = this.message;
+        const { type, senderName } = this.message;
+        const direction = this.getDirectionClass(this.message.direction);
         const isInbound = direction === 'inbound';
 
         return html`
