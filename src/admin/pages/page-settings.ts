@@ -398,7 +398,7 @@ export class PageSettings extends LitElement {
                                 @change=${(e: Event) => this.brandingTemplateId = Number((e.target as HTMLSelectElement).value)}
                             >
                                 <option value="1">Template 1 (Default)</option>
-                                <option value="2">Template 2 (Split Layout)</option>
+                                <option value="2">Template 2 (Top Rail)</option>
                             </select>
                         </div>
 
