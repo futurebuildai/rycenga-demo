@@ -1,0 +1,117 @@
+name: Build and Publish (staging)
+
+on:
+  push:
+    branches: ["staging"]
+  pull_request:
+    branches: ["staging"]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            type=raw,value=${{ github.sha }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/staging' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  prune:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Prune old versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ github.event.repository.name }}
+          package-type: 'container'
+          min-versions-to-keep: 2
+          delete-only-untagged-versions: 'true'
+
+      - name: Fix workspace permissions
+        if: always()
+        run: sudo chown -R $(whoami):$(whoami) .
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    runs-on: [self-hosted, linux]
+    env:
+      KUBECONFIG_PATH: /opt/actions-runner/secrets/velocity-frontend.yaml
+      TARGET_NAMESPACE: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate runner kubeconfig
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -f "$KUBECONFIG_PATH" ]; then
+            echo "ERROR: kubeconfig not found at: $KUBECONFIG_PATH"
+            exit 1
+          fi
+
+          export KUBECONFIG="$KUBECONFIG_PATH"
+          if [ "$(kubectl auth can-i get deployments -n "$TARGET_NAMESPACE")" != "yes" ]; then
+            echo "ERROR: runner identity cannot get deployments in namespace '$TARGET_NAMESPACE'"
+            exit 1
+          fi
+
+      - name: Deploy to Kubernetes
+        shell: bash
+        env:
+          KUBECONFIG: ${{ env.KUBECONFIG_PATH }}
+        run: |
+          set -euo pipefail
+
+          sed -e 's/namespace: frontend/namespace: staging/g' \
+            infra/k8s/frontend.yaml | kubectl apply -f -
+          sed -e 's/namespace: frontend/namespace: staging/g' \
+              -e 's/host: velocity.builderwire.net/host: staging-velocity.builderwire.net/g' \
+            infra/k8s/ingress-frontend.yaml | kubectl apply -f -
+
+          kubectl -n "$TARGET_NAMESPACE" scale deployment/velocity-frontend --replicas=1
+
+          kubectl -n "$TARGET_NAMESPACE" set image deployment/velocity-frontend \
+            velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+
+          kubectl -n "$TARGET_NAMESPACE" rollout status deployment/velocity-frontend --timeout=10m
