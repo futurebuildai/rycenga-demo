@@ -41,17 +41,17 @@ export class PageUserDetails extends LitElement {
         .subtitle { color: var(--color-text-muted, #64748b); }
 
         .card {
-            background: #ffffff;
+            background: var(--admin-card-bg, #ffffff);
             padding: 1.5rem;
             border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-sm);
             margin-bottom: 1.5rem;
         }
 
         .card h3 {
             margin: 0 0 1rem;
             padding-bottom: 0.75rem;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--color-border);
             color: var(--color-text, #111827);
             font-family: var(--font-heading, 'Space Grotesk', sans-serif);
             font-size: 1rem;
@@ -76,16 +76,17 @@ export class PageUserDetails extends LitElement {
             font-size: 0.78rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            color: #475569;
+            color: var(--color-text-light);
         }
 
         .form-group input,
         .form-group select {
             padding: 0.55rem 0.75rem;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--color-border);
             border-radius: 8px;
             font-size: 0.9rem;
-            background: #fff;
+            background: var(--app-control-bg, #ffffff);
+            color: var(--color-text);
         }
 
         .toggle {
@@ -93,30 +94,30 @@ export class PageUserDetails extends LitElement {
             align-items: center;
             gap: 0.5rem;
             font-size: 0.88rem;
-            color: #475569;
+            color: var(--color-text-light);
         }
 
         .btn {
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--color-border);
             border-radius: 8px;
-            background: #fff;
-            color: #0f172a;
+            background: var(--app-control-bg, #ffffff);
+            color: var(--color-text);
             padding: 0.45rem 0.75rem;
             cursor: pointer;
             font-size: 0.88rem;
             font-weight: 600;
         }
 
-        .btn:hover:not(:disabled) { background: #f1f5f9; }
+        .btn:hover:not(:disabled) { background: var(--color-bg-alt); }
         .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
         .btn-primary {
-            background: #0f172a;
-            border-color: #0f172a;
-            color: #fff;
+            background: var(--admin-sidebar-bg);
+            border-color: var(--admin-sidebar-bg);
+            color: white;
         }
 
-        .btn-primary:hover:not(:disabled) { background: #1e293b; }
+        .btn-primary:hover:not(:disabled) { background: var(--admin-sidebar-hover); }
 
         .form-actions {
             margin-top: 1rem;
@@ -126,9 +127,9 @@ export class PageUserDetails extends LitElement {
             flex-wrap: wrap;
         }
 
-        .danger { color: #b91c1c; font-size: 0.88rem; }
-        .success { color: #15803d; font-size: 0.88rem; }
-        .muted { color: #64748b; font-size: 0.88rem; }
+        .danger { color: var(--status-error-text); font-size: 0.88rem; }
+        .success { color: var(--status-success-text); font-size: 0.88rem; }
+        .muted { color: var(--color-text-muted); font-size: 0.88rem; }
 
         .assignment-row {
             display: grid;
@@ -136,7 +137,7 @@ export class PageUserDetails extends LitElement {
             gap: 0.75rem;
             align-items: end;
             padding: 0.75rem 0;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--color-border);
         }
 
         .assignment-row:last-child { border-bottom: none; }

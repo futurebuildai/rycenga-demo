@@ -1,8 +1,9 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, svg } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
 import type { User } from '../../connect/types/domain.js';
 import { BrandingService } from '../../services/branding.service.js';
+import { ThemeService } from '../../services/theme.service.js';
 
 @customElement('admin-layout')
 export class AdminLayout extends LitElement {
@@ -154,21 +155,42 @@ export class AdminLayout extends LitElement {
             justify-content: center;
             width: 100%;
             padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--admin-signout-bg, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--admin-signout-border, rgba(255, 255, 255, 0.1));
             border-radius: 6px;
             font-size: 13px;
             font-weight: 500;
-            color: #94a3b8;
+            color: var(--admin-signout-color, #94a3b8);
             cursor: pointer;
             transition: all 150ms ease;
             font-family: var(--font-body, 'Inter', sans-serif);
         }
 
         .btn-signout:hover {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
+            background: var(--admin-signout-hover-bg, rgba(239, 68, 68, 0.1));
+            border-color: var(--admin-signout-hover-border, rgba(239, 68, 68, 0.2));
+            color: var(--admin-signout-hover-color, #ef4444);
+        }
+
+        .btn-theme {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            margin: 0 0 10px auto;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 150ms ease;
+            font-family: var(--font-body, 'Inter', sans-serif);
+        }
+
+        .btn-theme:hover {
+            color: #ffffff;
         }
 
         main {
@@ -179,6 +201,9 @@ export class AdminLayout extends LitElement {
 
     @state() private user: User | null = null;
     @state() private tenantName = '';
+    @state() private isDarkMode = ThemeService.isDarkMode();
+    @state() private currentPath = window.location.pathname;
+    private unsubscribeTheme?: () => void;
 
     connectedCallback() {
         super.connectedCallback();
@@ -186,6 +211,18 @@ export class AdminLayout extends LitElement {
         BrandingService.getBranding().then((branding) => {
             this.tenantName = branding.tenantName;
         });
+        this.unsubscribeTheme = ThemeService.subscribe((theme) => {
+            this.isDarkMode = theme === 'dark';
+        });
+        window.addEventListener('vaadin-router-location-changed', this.handleRouteChanged as EventListener);
+        window.addEventListener('popstate', this.handleRouteChanged);
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.unsubscribeTheme?.();
+        window.removeEventListener('vaadin-router-location-changed', this.handleRouteChanged as EventListener);
+        window.removeEventListener('popstate', this.handleRouteChanged);
     }
 
     private get userInitials(): string {
@@ -209,8 +246,40 @@ export class AdminLayout extends LitElement {
         AdminAuthService.logout();
     }
 
+    private handleThemeToggle() {
+        ThemeService.toggleTheme();
+    }
+
+    private handleRouteChanged = () => {
+        this.currentPath = window.location.pathname;
+    };
+
+    private renderThemeIcon() {
+        if (this.isDarkMode) {
+            return svg`
+                <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            `;
+        }
+
+        return svg`
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
+            </svg>
+        `;
+    }
+
     render() {
-        const path = window.location.pathname;
+        const path = this.currentPath;
         const isActive = (p: string) => path === p || path.startsWith(p + '/');
         const tenantName = this.tenantName || 'Velocity';
 
@@ -260,6 +329,14 @@ export class AdminLayout extends LitElement {
                             <div class="user-role">${this.displayRole}</div>
                         </div>
                     </div>
+                    <button
+                        class="btn-theme"
+                        @click=${this.handleThemeToggle}
+                        aria-label="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
+                        title="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
+                    >
+                        ${this.renderThemeIcon()}
+                    </button>
                     <button class="btn-signout" @click=${this.handleSignOut}>
                         <svg style="width:16px;height:16px;margin-right:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         Sign Out
