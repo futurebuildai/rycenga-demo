@@ -17,7 +17,8 @@ export class PvHeader extends PvBase {
         display: block;
         height: var(--header-height, 80px);
         background: var(--app-header-bg, #ffffff);
-        border-bottom: 1px solid var(--color-border);
+        border-bottom: var(--app-header-border-bottom, 1px solid var(--color-border));
+        box-shadow: var(--app-header-shadow, none);
         position: sticky;
         top: var(--impersonation-banner-height, 0px);
         z-index: 1000;
@@ -28,14 +29,15 @@ export class PvHeader extends PvBase {
         align-items: center;
         justify-content: space-between;
         height: 100%;
-        padding: 0;
+        padding: var(--app-header-inner-padding, 0);
       }
 
       .header-left {
-        width: var(--sidebar-width, 280px);
+        width: var(--app-header-left-width, var(--sidebar-width, 280px));
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: var(--app-header-left-justify, center);
+        padding-left: var(--app-header-left-padding-left, 0);
       }
 
       .home-link {
@@ -52,13 +54,14 @@ export class PvHeader extends PvBase {
 
       .logo {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
+        flex-direction: var(--app-header-logo-direction, column);
+        align-items: var(--app-header-logo-align, center);
+        justify-content: var(--app-header-logo-justify, center);
+        text-align: var(--app-header-logo-text-align, center);
         gap: var(--app-header-logo-gap, 4px);
         flex: 1;
         text-decoration: none;
+        padding: var(--app-header-logo-padding, 0);
       }
 
       .logo-icon {
@@ -85,34 +88,42 @@ export class PvHeader extends PvBase {
         font-size: var(--app-header-logo-name-size, 1.125rem);
         font-weight: 800;
         color: var(--color-primary);
-        letter-spacing: 0.05em;
+        letter-spacing: var(--app-header-logo-letter-spacing, 0.05em);
         line-height: 1;
+        text-transform: var(--app-header-logo-text-transform, none);
       }
 
       .header-right {
-        width: var(--sidebar-width, 280px);
+        width: var(--app-header-right-width, var(--sidebar-width, 280px));
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: var(--app-header-right-justify, flex-end);
         gap: var(--space-lg);
-        padding-right: var(--space-xl);
+        padding-right: var(--app-header-right-padding-right, var(--space-xl));
       }
 
       .utility-nav {
         display: flex;
         align-items: center;
-        gap: var(--space-md);
+        gap: var(--app-header-utility-gap, var(--space-md));
+        background: var(--app-header-utility-bg, transparent);
+        border: var(--app-header-utility-border, 0);
+        border-radius: var(--app-header-utility-radius, 0);
+        padding: var(--app-header-utility-padding, 0);
       }
 
       .utility-link {
         display: flex;
-        flex-direction: column;
+        flex-direction: var(--app-header-utility-direction, column);
         align-items: center;
         gap: var(--space-xs);
         color: var(--color-text);
-        font-size: var(--text-xs);
+        font-size: var(--app-header-utility-font-size, var(--text-xs));
         transition: color var(--transition-fast);
         text-decoration: none;
+        padding: var(--app-header-utility-link-padding, 0);
+        border-radius: var(--app-header-utility-link-radius, 0);
+        background: var(--app-header-utility-link-bg, transparent);
       }
 
       .utility-link:hover {
@@ -120,7 +131,8 @@ export class PvHeader extends PvBase {
       }
 
       .utility-link.active {
-        color: var(--color-accent);
+        color: var(--app-header-utility-link-active-color, var(--color-accent));
+        background: var(--app-header-utility-link-active-bg, transparent);
       }
 
       .menu-toggle {
@@ -141,11 +153,12 @@ export class PvHeader extends PvBase {
 
         .header-left {
           width: auto;
-          padding-left: var(--space-md);
+          padding-left: var(--app-header-mobile-left-padding, var(--space-md));
         }
 
         .header-right {
           width: auto;
+          padding-right: var(--app-header-mobile-right-padding, var(--space-md));
         }
       }
     `,

@@ -4,6 +4,7 @@ import { AdminAuthService } from '../services/admin-auth.service.js';
 import { AdminDataService } from '../services/admin-data.service.js';
 import { AdminBrandingService, type DealerBranding, DEFAULT_BRANDING } from '../services/admin-branding.service.js';
 import { BRANDING_REFRESH_SIGNAL_KEY } from '../../services/branding.service.js';
+import type { UserRole } from '../../connect/types/domain.js';
 import '../components/logo-upload.js';
 
 @customElement('admin-page-settings')
@@ -157,8 +158,8 @@ export class PageSettings extends LitElement {
     `;
 
     @state() private user = AdminAuthService.getUser();
-    @state() private teamMembers: Array<{name: string; email: string; role: string; status: string; lastLogin: string}> = [];
-    @state() private teamUnavailable = true;
+    @state() private teamMembers: Array<{id: number; name: string; email: string; role: string; status: 'Active' | 'Invited'; lastLogin: string}> = [];
+    @state() private teamUnavailable = false;
 
     @state() private toastMessage = '';
     @state() private toastType: 'success' | 'error' | 'info' = 'info';
@@ -175,7 +176,7 @@ export class PageSettings extends LitElement {
     @state() private inviting = false;
     @state() private inviteName = '';
     @state() private inviteEmail = '';
-    @state() private inviteRole = 'TENANT_STAFF';
+    @state() private inviteRole: UserRole = 'tenant_staff';
 
     // Branding state
     @state() private branding: DealerBranding = DEFAULT_BRANDING;
@@ -191,18 +192,19 @@ export class PageSettings extends LitElement {
     async connectedCallback() {
         super.connectedCallback();
         this.user = AdminAuthService.getUser();
-        if (this.user) {
-            this.teamMembers = [{
-                name: this.user.name || this.user.email,
-                email: this.user.email,
-                role: this.user.role.toUpperCase().replace('_', ' '),
-                status: 'Active',
-                lastLogin: 'Current session',
-            }];
-        }
+        await this.loadTeamMembers();
 
         // Load branding configuration
         await this.loadBranding();
+    }
+
+    private async loadTeamMembers() {
+        try {
+            this.teamMembers = await AdminDataService.getAdminTeamMembers();
+        } catch (e) {
+            console.error('Failed to load admin team members', e);
+            this.teamMembers = [];
+        }
     }
 
     disconnectedCallback() {
@@ -299,7 +301,7 @@ export class PageSettings extends LitElement {
     private handleInvite() {
         this.inviteName = '';
         this.inviteEmail = '';
-        this.inviteRole = 'TENANT_STAFF';
+        this.inviteRole = 'tenant_staff';
         this.showInviteModal = true;
     }
 
@@ -313,17 +315,7 @@ export class PageSettings extends LitElement {
         this.inviting = true;
         try {
             await AdminDataService.inviteTeamMember(this.inviteEmail, this.inviteName, this.inviteRole);
-
-            this.teamMembers = [
-                ...this.teamMembers,
-                {
-                    name: this.inviteName,
-                    email: this.inviteEmail,
-                    role: this.inviteRole,
-                    status: 'Invited',
-                    lastLogin: '-'
-                }
-            ];
+            await this.loadTeamMembers();
 
             this.showToast(`Invitation sent to ${this.inviteEmail}`, 'success');
             this.closeInviteModal();
@@ -332,6 +324,16 @@ export class PageSettings extends LitElement {
             this.showToast(msg, 'error');
         } finally {
             this.inviting = false;
+        }
+    }
+
+    private async resendInvite(member: { id: number; email: string }) {
+        try {
+            await AdminDataService.resendTeamMemberInvite(member.id);
+            this.showToast(`Invitation resent to ${member.email}`, 'success');
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : 'Failed to resend invite.';
+            this.showToast(msg, 'error');
         }
     }
 
@@ -398,7 +400,7 @@ export class PageSettings extends LitElement {
                                 @change=${(e: Event) => this.brandingTemplateId = Number((e.target as HTMLSelectElement).value)}
                             >
                                 <option value="1">Template 1 (Default)</option>
-                                <option value="2">Template 2 (Split Layout)</option>
+                                <option value="2">Template 2 (Top Rail)</option>
                             </select>
                         </div>
 
@@ -439,7 +441,7 @@ export class PageSettings extends LitElement {
                 <div class="card">
                     <div class="card-header">
                         <h3>Team Members</h3>
-                        <span style="font-size: 13px; color: var(--color-text-muted);">${this.teamMembers.length} active users</span>
+                        <span style="font-size: 13px; color: var(--color-text-muted);">${this.teamMembers.filter(m => m.status === 'Active').length} active users</span>
                     </div>
                     
                     <div class="team-list">
@@ -506,10 +508,8 @@ export class PageSettings extends LitElement {
                                     </span>
                                 </div>
                                 <div style="text-align: right">
-                                    ${member.role !== 'TENANT_OWNER' ? html`
-                                        <button class="action-btn" title="Remove User" aria-label="Remove ${member.name}">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
+                                    ${member.status === 'Invited' ? html`
+                                        <button class="btn-secondary" @click=${() => this.resendInvite(member)}>Resend</button>
                                     ` : ''}
                                 </div>
                             </div>
@@ -580,10 +580,10 @@ export class PageSettings extends LitElement {
                             <select 
                                 class="form-select"
                                 .value=${this.inviteRole}
-                                @change=${(e: Event) => this.inviteRole = (e.target as HTMLSelectElement).value}
+                                @change=${(e: Event) => this.inviteRole = (e.target as HTMLSelectElement).value as UserRole}
                             >
-                                <option value="TENANT_STAFF">Tenant Staff (Standard)</option>
-                                <option value="TENANT_OWNER">Tenant Owner (Admin)</option>
+                                <option value="tenant_staff">Tenant Staff (Standard)</option>
+                                <option value="tenant_owner">Tenant Owner (Admin)</option>
                             </select>
                         </div>
 

@@ -387,15 +387,17 @@ export interface NotificationPreferences {
 
 /**
  * Team member for account team management
- * MAPS TO: GET/POST/PUT /account/{id}/members
+ * MAPS TO: GET/POST/PUT /accounts/{id}/members
  */
-export type TeamMemberRole = 'owner' | 'admin' | 'purchaser' | 'viewer';
+export type TeamMemberRole = 'owner' | 'purchaser' | 'viewer';
 
 export interface TeamMember {
     id: number;
     name: string;
     email: string;
     role: TeamMemberRole;
+    status?: 'active' | 'invited';
+    invitedAt?: string;
     initials?: string;
 }
 
@@ -418,7 +420,7 @@ export interface ChangePasswordPayload {
 
 /**
  * Payload for inviting a team member
- * MAPS TO: POST /account/{id}/members/invite
+ * MAPS TO: POST /accounts/{id}/members/invite
  */
 export interface InviteMemberPayload {
     email: string;

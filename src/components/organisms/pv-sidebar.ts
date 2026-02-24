@@ -19,22 +19,24 @@ export class PvSidebar extends PvBase {
     css`
       :host {
         display: block;
-        width: var(--sidebar-width, 280px);
+        width: var(--app-sidebar-width, var(--sidebar-width, 280px));
         background: var(--app-sidebar-bg, var(--color-bg-alt));
         border-right: var(--app-sidebar-border-right, 1px solid var(--color-border));
         border-left: var(--app-sidebar-border-left, 0);
-        height: calc(100vh - var(--header-height, 80px));
-        position: sticky;
-        top: var(--header-height, 80px);
-        overflow-y: auto;
+        border-bottom: var(--app-sidebar-border-bottom, 0);
+        height: var(--app-sidebar-height, calc(100vh - var(--header-height, 80px)));
+        position: var(--app-sidebar-position, sticky);
+        top: var(--app-sidebar-top, var(--header-height, 80px));
+        overflow-y: var(--app-sidebar-overflow-y, auto);
+        overflow-x: var(--app-sidebar-overflow-x, hidden);
       }
 
       .account-user {
-        display: flex;
+        display: var(--app-sidebar-user-display, flex);
         align-items: center;
         gap: var(--space-md);
         padding: var(--space-xl);
-        border-bottom: 1px solid var(--color-border);
+        border-bottom: var(--app-sidebar-user-border-bottom, 1px solid var(--color-border));
       }
 
       .account-avatar {
@@ -72,8 +74,13 @@ export class PvSidebar extends PvBase {
       }
 
       .account-nav {
-        padding: var(--space-md);
+        padding: var(--app-sidebar-nav-padding, var(--space-md));
         flex: 1;
+        display: var(--app-sidebar-nav-display, block);
+        gap: var(--app-sidebar-nav-gap, 0);
+        flex-wrap: var(--app-sidebar-nav-wrap, nowrap);
+        align-items: var(--app-sidebar-nav-align, stretch);
+        overflow-x: var(--app-sidebar-nav-overflow-x, visible);
       }
 
       .account-nav-item {
@@ -85,9 +92,12 @@ export class PvSidebar extends PvBase {
         font-weight: 500;
         border-radius: var(--radius-md);
         transition: all var(--transition-fast);
-        margin-bottom: var(--space-xs);
+        margin-bottom: var(--app-sidebar-nav-item-margin, var(--space-xs));
         cursor: pointer;
         text-decoration: none;
+        white-space: var(--app-sidebar-nav-item-white-space, normal);
+        border: var(--app-sidebar-nav-item-border, 0);
+        background: var(--app-sidebar-nav-item-bg, transparent);
       }
 
       .account-nav-item:hover {
@@ -98,6 +108,7 @@ export class PvSidebar extends PvBase {
       .account-nav-item.active {
         background: var(--app-sidebar-nav-active-bg, var(--color-primary));
         color: white;
+        border-color: transparent;
       }
 
       .account-nav-item svg {
@@ -120,8 +131,9 @@ export class PvSidebar extends PvBase {
       }
 
       .account-sidebar-footer {
+        display: var(--app-sidebar-footer-display, block);
         padding: var(--space-lg);
-        border-top: 1px solid var(--color-border);
+        border-top: var(--app-sidebar-footer-border-top, 1px solid var(--color-border));
         margin-top: auto;
       }
 
@@ -172,15 +184,17 @@ export class PvSidebar extends PvBase {
 
       @media (max-width: 1023px) {
         :host {
-          position: fixed;
-          left: -280px;
-          top: var(--header-height, 80px);
+          position: var(--app-sidebar-mobile-position, fixed);
+          left: var(--app-sidebar-mobile-left, -280px);
+          top: var(--app-sidebar-mobile-top, var(--header-height, 80px));
+          width: var(--app-sidebar-mobile-width, var(--sidebar-width, 280px));
+          height: var(--app-sidebar-mobile-height, calc(100vh - var(--header-height, 80px)));
           z-index: 100;
           transition: left var(--transition-base);
         }
 
         :host(.open) {
-          left: 0;
+          left: var(--app-sidebar-mobile-open-left, 0);
         }
       }
     `,
