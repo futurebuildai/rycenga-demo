@@ -7,11 +7,12 @@ import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
+import { AuthService } from '../../services/auth.service.js';
 import { MembersService } from '../../connect/services/members.js';
 import { PvToast } from '../atoms/pv-toast.js';
 import { pageShellStyles } from '../../styles/shared.js';
 import { teamPageStyles } from '../../styles/pages.js';
-import type { TeamMember, TeamMemberRole, InviteMemberPayload } from '../../connect/types/domain.js';
+import type { TeamMember, TeamMemberRole, InviteMemberPayload, UserRole } from '../../connect/types/domain.js';
 
 @customElement('pv-page-team')
 export class PvPageTeam extends PvBase {
@@ -27,6 +28,7 @@ export class PvPageTeam extends PvBase {
   @state() private showInviteModal = false;
   @state() private inviteEmail = '';
   @state() private inviteRole: TeamMemberRole = 'viewer';
+  @state() private currentUserRole: UserRole | null = null;
 
   private getAccountId(): number {
     return DataService.getCurrentAccountId() || 1;
@@ -35,6 +37,7 @@ export class PvPageTeam extends PvBase {
   async connectedCallback() {
     super.connectedCallback();
     try {
+      this.currentUserRole = AuthService.getUser()?.role ?? null;
       const members = await MembersService.getMembers(this.getAccountId());
       this.teamMembers = members.map(m => ({
         ...m,
@@ -63,6 +66,10 @@ export class PvPageTeam extends PvBase {
   }
 
   private handleInvite() {
+    if (!this.canManageTeam()) {
+      PvToast.show('Only owners can manage team members', 'warning');
+      return;
+    }
     this.showInviteModal = true;
   }
 
@@ -90,6 +97,10 @@ export class PvPageTeam extends PvBase {
   }
 
   private async submitInvite() {
+    if (!this.canManageTeam()) {
+      PvToast.show('Only owners can manage team members', 'warning');
+      return;
+    }
     const email = this.inviteEmail.trim();
     if (!email) {
       PvToast.show('Email is required', 'warning');
@@ -120,6 +131,10 @@ export class PvPageTeam extends PvBase {
   }
 
   private async handleEditMember(member: TeamMember) {
+    if (!this.canManageTeam()) {
+      PvToast.show('Only owners can manage team members', 'warning');
+      return;
+    }
     // In production, this would open a modal to edit role
     const newRole = prompt(`Edit role for ${member.name} (owner/purchaser/viewer):`, member.role.toLowerCase());
     if (!newRole) return;
@@ -144,6 +159,10 @@ export class PvPageTeam extends PvBase {
   }
 
   private async handleResendInvite(member: TeamMember) {
+    if (!this.canManageTeam()) {
+      PvToast.show('Only owners can manage team members', 'warning');
+      return;
+    }
     if (!member.id) return;
     try {
       await MembersService.resendInvite(this.getAccountId(), member.id);
@@ -152,6 +171,12 @@ export class PvPageTeam extends PvBase {
       console.error('Failed to resend invite', e);
       PvToast.show('Failed to resend invitation', 'error');
     }
+  }
+
+  private canManageTeam(): boolean {
+    return this.currentUserRole === 'account_admin' ||
+      this.currentUserRole === 'tenant_owner' ||
+      this.currentUserRole === 'tenant_staff';
   }
 
   render() {
@@ -171,6 +196,7 @@ export class PvPageTeam extends PvBase {
         <button 
           class="btn btn-primary" 
           @click=${this.handleInvite}
+          ?disabled=${!this.canManageTeam()}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -269,10 +295,10 @@ export class PvPageTeam extends PvBase {
             <div class="team-actions-cell">
               <span class="team-role ${this.getRoleClass(member.role)}">${member.role}</span>
               ${member.status === 'invited' ? html`<span class="team-role">Invited</span>` : ''}
-              ${member.status === 'invited' ? html`
+              ${member.status === 'invited' && this.canManageTeam() ? html`
                 <button class="btn btn-outline btn-sm" @click=${() => this.handleResendInvite(member)}>Resend</button>
               ` : ''}
-              <button class="btn btn-outline btn-sm" @click=${() => this.handleEditMember(member)}>Edit</button>
+              ${this.canManageTeam() ? html`<button class="btn btn-outline btn-sm" @click=${() => this.handleEditMember(member)}>Edit</button>` : ''}
             </div>
           </div>
         `)}
@@ -285,6 +311,7 @@ export class PvPageTeam extends PvBase {
           <li><strong>Purchaser:</strong> Can place orders on behalf of the account</li>
           <li><strong>Viewer:</strong> View-only access to orders and projects</li>
         </ul>
+        ${!this.canManageTeam() ? html`<p>Team management actions are restricted to Owner users.</p>` : ''}
       </div>
     `;
   }

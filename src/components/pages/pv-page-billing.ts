@@ -8,12 +8,13 @@ import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
+import { AuthService } from '../../services/auth.service.js';
 import { BillingService } from '../../connect/services/billing.js';
 import { SalesService } from '../../connect/services/sales.js';
 import { DocumentsService } from '../../connect/services/documents.js';
 import { PvToast } from '../atoms/pv-toast.js';
 import type { Invoice, InvoiceLine } from '../../types/index.js';
-import type { Statement } from '../../connect/types/domain.js';
+import type { Statement, UserRole } from '../../connect/types/domain.js';
 import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles, paginationStyles } from '../../styles/shared.js';
 import { billingPageStyles } from '../../styles/pages.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
@@ -63,11 +64,13 @@ export class PvPageBilling extends PvBase {
   @state() private selectedInvoiceDetails: Map<number, { id: number; invoiceNumber: string; amount: number; isPayable: boolean }> = new Map();
   @state() private paymentRequestId: string | null = null;
   @state() private showPaymentRequestBanner = false;
+  @state() private currentUserRole: UserRole | null = null;
 
   private unsubscribeRouter?: () => void;
 
   async connectedCallback() {
     super.connectedCallback();
+    this.currentUserRole = AuthService.getUser()?.role ?? null;
     this.readFilterParams();
     this.readDeepLinkParams();
     this.unsubscribeRouter = RouterService.subscribe(() => {
@@ -271,6 +274,10 @@ export class PvPageBilling extends PvBase {
   }
 
   private async openBulkPayModal() {
+    if (!this.canManageBilling()) {
+      PvToast.show('Only owners can make payments', 'warning');
+      return;
+    }
     if (this.selectedInvoiceIds.size === 0) return;
 
     await this.hydrateSelectedInvoiceDetailsFromServer();
@@ -416,6 +423,10 @@ export class PvPageBilling extends PvBase {
   }
 
   private openPaymentModal(invoice: Invoice) {
+    if (!this.canManageBilling()) {
+      PvToast.show('Only owners can make payments', 'warning');
+      return;
+    }
     // When paying a single invoice from its row, clear multi-selection and use the legacy props
     this.selectedInvoiceIds = new Set([invoice.id]);
     this.selectedInvoiceDetails = new Map();
@@ -457,6 +468,12 @@ export class PvPageBilling extends PvBase {
 
   private dismissPaymentRequestBanner() {
     this.showPaymentRequestBanner = false;
+  }
+
+  private canManageBilling(): boolean {
+    return this.currentUserRole === 'account_admin' ||
+      this.currentUserRole === 'tenant_owner' ||
+      this.currentUserRole === 'tenant_staff';
   }
 
   private async downloadInvoicePdf(invoice: Invoice) {
@@ -578,7 +595,7 @@ export class PvPageBilling extends PvBase {
               <button
                 class="btn btn-cta btn-sm"
                 @click=${() => this.openPaymentModal(invoice)}
-                ?disabled=${!isPayable}
+                ?disabled=${!isPayable || !this.canManageBilling()}
               >Pay</button>
             </div>
           `;
@@ -715,7 +732,7 @@ export class PvPageBilling extends PvBase {
           <button
             class="btn btn-cta"
             @click=${() => this.openPaymentModal(invoice)}
-            ?disabled=${invoice.status === 'paid' || invoice.status === 'void' || invoice.status === 'cancelled'}
+            ?disabled=${invoice.status === 'paid' || invoice.status === 'void' || invoice.status === 'cancelled' || !this.canManageBilling()}
           >Pay Invoice</button>
           <button class="btn btn-outline" @click=${() => this.downloadInvoicePdf(invoice)}>Download PDF</button>
         </div>
@@ -767,7 +784,7 @@ export class PvPageBilling extends PvBase {
           </div>
           <div class="bulk-pay-actions">
             <button class="btn-clear-selection" @click=${this.clearSelection}>Clear</button>
-            <button class="btn btn-cta" @click=${this.openBulkPayModal}>Pay Selected</button>
+            <button class="btn btn-cta" @click=${this.openBulkPayModal} ?disabled=${!this.canManageBilling()}>Pay Selected</button>
           </div>
         </div>
       ` : ''}
