@@ -545,10 +545,19 @@ class AdminDataServiceImpl {
         }
     }
 
-    async inviteTeamMember(_email: string, _name: string, _role: string): Promise<void> {
-        // Backend team invitation endpoint not yet available.
-        // Wire to POST /team/invite when implemented.
-        throw new Error('Team invitations are not yet available. This feature is coming soon.');
+    async inviteTeamMember(email: string, name: string, role: UserRole): Promise<void> {
+        const payload = {
+            name: name.trim(),
+            email: email.trim(),
+            role,
+        };
+        if (!payload.name || !payload.email) {
+            throw new Error('Name and email are required.');
+        }
+        await adminClient.request<User>('/admin/users/invite', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
     }
 }
 

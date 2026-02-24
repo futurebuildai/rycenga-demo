@@ -4,6 +4,7 @@ import { AdminAuthService } from '../services/admin-auth.service.js';
 import { AdminDataService } from '../services/admin-data.service.js';
 import { AdminBrandingService, type DealerBranding, DEFAULT_BRANDING } from '../services/admin-branding.service.js';
 import { BRANDING_REFRESH_SIGNAL_KEY } from '../../services/branding.service.js';
+import type { UserRole } from '../../connect/types/domain.js';
 import '../components/logo-upload.js';
 
 @customElement('admin-page-settings')
@@ -158,7 +159,7 @@ export class PageSettings extends LitElement {
 
     @state() private user = AdminAuthService.getUser();
     @state() private teamMembers: Array<{name: string; email: string; role: string; status: string; lastLogin: string}> = [];
-    @state() private teamUnavailable = true;
+    @state() private teamUnavailable = false;
 
     @state() private toastMessage = '';
     @state() private toastType: 'success' | 'error' | 'info' = 'info';
@@ -175,7 +176,7 @@ export class PageSettings extends LitElement {
     @state() private inviting = false;
     @state() private inviteName = '';
     @state() private inviteEmail = '';
-    @state() private inviteRole = 'TENANT_STAFF';
+    @state() private inviteRole: UserRole = 'tenant_staff';
 
     // Branding state
     @state() private branding: DealerBranding = DEFAULT_BRANDING;
@@ -195,7 +196,7 @@ export class PageSettings extends LitElement {
             this.teamMembers = [{
                 name: this.user.name || this.user.email,
                 email: this.user.email,
-                role: this.user.role.toUpperCase().replace('_', ' '),
+                role: this.user.role.toUpperCase(),
                 status: 'Active',
                 lastLogin: 'Current session',
             }];
@@ -299,7 +300,7 @@ export class PageSettings extends LitElement {
     private handleInvite() {
         this.inviteName = '';
         this.inviteEmail = '';
-        this.inviteRole = 'TENANT_STAFF';
+        this.inviteRole = 'tenant_staff';
         this.showInviteModal = true;
     }
 
@@ -319,7 +320,7 @@ export class PageSettings extends LitElement {
                 {
                     name: this.inviteName,
                     email: this.inviteEmail,
-                    role: this.inviteRole,
+                    role: this.inviteRole.toUpperCase(),
                     status: 'Invited',
                     lastLogin: '-'
                 }
@@ -580,10 +581,10 @@ export class PageSettings extends LitElement {
                             <select 
                                 class="form-select"
                                 .value=${this.inviteRole}
-                                @change=${(e: Event) => this.inviteRole = (e.target as HTMLSelectElement).value}
+                                @change=${(e: Event) => this.inviteRole = (e.target as HTMLSelectElement).value as UserRole}
                             >
-                                <option value="TENANT_STAFF">Tenant Staff (Standard)</option>
-                                <option value="TENANT_OWNER">Tenant Owner (Admin)</option>
+                                <option value="tenant_staff">Tenant Staff (Standard)</option>
+                                <option value="tenant_owner">Tenant Owner (Admin)</option>
                             </select>
                         </div>
 

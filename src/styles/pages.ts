@@ -1824,6 +1824,105 @@ export const teamPageStyles = css`
     margin-bottom: var(--space-xl);
   }
 
+  .invite-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal-overlay, 2000);
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+  }
+
+  .invite-modal {
+    width: 100%;
+    max-width: 520px;
+    background: var(--app-surface-bg, var(--color-bg-alt));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--color-border);
+  }
+
+  .invite-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-lg) var(--space-xl);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .invite-modal-title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .invite-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    background: transparent;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .invite-modal-close:hover {
+    background: var(--color-border);
+    color: var(--color-text);
+  }
+
+  .invite-modal-body {
+    padding: var(--space-xl);
+  }
+
+  .invite-modal-body .form-group {
+    margin-bottom: var(--space-lg);
+  }
+
+  .invite-modal-body .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .invite-role-select {
+    width: 100%;
+    padding: var(--space-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background: var(--app-control-bg, #ffffff);
+    transition: border-color var(--transition-fast);
+  }
+
+  .invite-role-select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .invite-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    padding: var(--space-lg) var(--space-xl);
+    border-top: 1px solid var(--color-border);
+  }
+
+  @media (max-width: 640px) {
+    .invite-modal-header,
+    .invite-modal-body,
+    .invite-modal-footer {
+      padding: var(--space-lg);
+    }
+  }
+
   .team-list {
     display: flex;
     flex-direction: column;
@@ -1888,11 +1987,6 @@ export const teamPageStyles = css`
   .team-role.owner {
     background: rgba(249, 115, 22, 0.1);
     color: var(--color-accent);
-  }
-
-  .team-role.admin {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--app-info-color, #3b82f6);
   }
 
   .team-actions-cell {
