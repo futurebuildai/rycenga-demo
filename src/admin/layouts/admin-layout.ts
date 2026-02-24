@@ -60,7 +60,7 @@ export class AdminLayout extends LitElement {
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            color: #475569;
+            color: var(--color-text-muted, #475569);
             font-weight: 600;
             margin: 16px 12px 8px;
         }
@@ -146,7 +146,7 @@ export class AdminLayout extends LitElement {
 
         .user-role {
             font-size: 12px;
-            color: #64748b;
+            color: var(--color-text-muted, #64748b);
         }
 
         .btn-signout {
