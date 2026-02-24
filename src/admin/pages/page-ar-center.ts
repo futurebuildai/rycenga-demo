@@ -16,7 +16,7 @@ export class PageArCenter extends LitElement {
             justify-content: center;
             height: 60vh;
             text-align: center;
-            background: white;
+            background: var(--admin-card-bg, #ffffff);
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 40px;
@@ -25,24 +25,24 @@ export class PageArCenter extends LitElement {
         .icon-circle {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            background: var(--status-success-bg, #f0fdf4);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 24px;
-            color: #16a34a;
+            color: var(--status-success-text, #16a34a);
         }
 
         h2 {
             font-family: var(--font-heading);
             font-size: 2rem;
-            color: #1e293b;
+            color: var(--color-text, #1e293b);
             margin: 0 0 16px;
         }
 
         p {
-            color: #64748b;
+            color: var(--color-text-muted, #64748b);
             font-size: 1.125rem;
             max-width: 480px;
             line-height: 1.6;
@@ -50,7 +50,7 @@ export class PageArCenter extends LitElement {
         }
 
         .badge {
-            background: #16a34a;
+            background: var(--color-success, #16a34a);
             color: white;
             padding: 6px 12px;
             border-radius: 20px;

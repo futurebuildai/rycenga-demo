@@ -133,6 +133,20 @@
     --app-project-color-4: #8b5cf6;
     --app-project-color-5: #ec4899;
     --app-project-color-6: #14b8a6;
+    --app-billing-tab-active-color: var(--color-primary);
+    --app-billing-tab-active-border: var(--color-primary);
+    --app-btn-outline-bg: transparent;
+    --app-btn-outline-color: var(--color-primary);
+    --app-btn-outline-border: var(--color-primary);
+    --app-btn-outline-hover-bg: var(--color-primary);
+    --app-btn-outline-hover-border: var(--color-primary);
+    --app-btn-outline-hover-color: #ffffff;
+    --app-btn-back-bg: transparent;
+    --app-btn-back-color: var(--color-primary);
+    --app-btn-back-border: var(--color-primary);
+    --app-btn-back-hover-bg: var(--color-primary);
+    --app-btn-back-hover-border: var(--color-primary);
+    --app-btn-back-hover-color: #ffffff;
 
     /* Header */
     --app-header-bg: #ffffff;
@@ -173,6 +187,22 @@
     /* Indigo 600 */
     --admin-card-bg: #ffffff;
     --admin-bg: #f1f5f9;
+    --admin-signout-bg: rgba(255, 255, 255, 0.05);
+    --admin-signout-border: rgba(255, 255, 255, 0.1);
+    --admin-signout-color: #94a3b8;
+    --admin-signout-hover-bg: rgba(239, 68, 68, 0.1);
+    --admin-signout-hover-border: rgba(239, 68, 68, 0.2);
+    --admin-signout-hover-color: #ef4444;
+    --admin-action-link-color: #2563eb;
+    --admin-action-link-hover-bg: #eff6ff;
+    --admin-messaging-surface-bg: var(--admin-card-bg);
+    --admin-messaging-control-bg: #ffffff;
+    --admin-messaging-control-hover-bg: var(--admin-bg);
+    --admin-messaging-thread-active-bg: rgba(99, 102, 241, 0.08);
+    --admin-messaging-chip-bg: #e2e8f0;
+    --admin-messaging-chip-color: #475569;
+    --admin-messaging-date-chip-bg: rgba(0, 0, 0, 0.05);
+    --admin-messaging-toggle-active-bg: rgba(99, 102, 241, 0.1);
     /* Slate 100 */
 }
 
@@ -294,4 +324,126 @@
     --color-bg: #f8fafc;
     --color-bg-alt: #eef2ff;
     --color-border: #d7def7;
+}
+
+:root[data-theme='dark'] {
+    --color-text: #e4e4e7;
+    --color-text-light: #d4d4d8;
+    --color-text-muted: #a1a1aa;
+    --color-bg: #111113;
+    --color-bg-alt: #202024;
+    --color-border: #32323a;
+
+    --status-success-bg: rgba(34, 197, 94, 0.2);
+    --status-info-bg: rgba(59, 130, 246, 0.2);
+    --status-warning-bg: rgba(234, 179, 8, 0.2);
+    --status-error-bg: rgba(239, 68, 68, 0.2);
+    --status-neutral-bg: rgba(148, 163, 184, 0.2);
+    --status-accent-bg: rgba(249, 115, 22, 0.2);
+    --status-purple-bg: rgba(168, 85, 247, 0.2);
+
+    --glass-bg: rgba(32, 32, 36, 0.88);
+    --glass-bg-dark: rgba(17, 17, 19, 0.94);
+    --glass-border: rgba(161, 161, 170, 0.2);
+
+    --app-layout-background: #111113;
+    --app-main-bg: #111113;
+    --app-surface-bg: #202024;
+    --app-surface-contrast-bg: #2a2a31;
+    --app-control-bg: #46464f;
+    --app-header-bg: #111113;
+    --app-header-link-hover: var(--color-accent-light);
+    --app-header-utility-bg: rgba(50, 50, 58, 0.7);
+    --app-header-utility-border: 1px solid rgba(161, 161, 170, 0.25);
+    --app-header-utility-link-bg: transparent;
+    --app-header-utility-link-active-bg: transparent;
+    --app-header-utility-link-active-color: var(--color-text);
+    --app-sidebar-bg: #111113;
+    --app-sidebar-nav-hover-bg: #32323a;
+    --app-sidebar-nav-active-bg: #32323a;
+    --app-sidebar-border-right: 1px solid #32323a;
+    --app-login-card-bg: #202024;
+    --app-billing-tab-active-color: var(--color-accent-light);
+    --app-billing-tab-active-border: var(--color-accent-light);
+    --app-btn-outline-color: #d4d4d8;
+    --app-btn-outline-border: #52525b;
+    --app-btn-outline-hover-bg: #3f3f46;
+    --app-btn-outline-hover-border: #63636b;
+    --app-btn-outline-hover-color: #ffffff;
+    --app-btn-back-color: #d4d4d8;
+    --app-btn-back-border: #52525b;
+    --app-btn-back-hover-bg: #3f3f46;
+    --app-btn-back-hover-border: #63636b;
+    --app-btn-back-hover-color: #ffffff;
+
+    --app-danger-bg: rgba(239, 68, 68, 0.2);
+    --app-danger-strong-bg: rgba(127, 29, 29, 0.4);
+    --app-danger-strong-text: #fecaca;
+    --app-muted-strong-color: #d4d4d8;
+
+    --admin-bg: #111113;
+    --admin-card-bg: #202024;
+    --admin-sidebar-bg: #111113;
+    --admin-sidebar-hover: #202024;
+    --admin-sidebar-text: #a1a1aa;
+    --admin-sidebar-text-active: #ffffff;
+    --admin-signout-bg: rgba(63, 63, 70, 0.55);
+    --admin-signout-border: rgba(113, 113, 122, 0.9);
+    --admin-signout-color: #e4e4e7;
+    --admin-signout-hover-bg: rgba(127, 29, 29, 0.34);
+    --admin-signout-hover-border: rgba(239, 68, 68, 0.42);
+    --admin-signout-hover-color: #fecaca;
+    --admin-action-link-color: #93c5fd;
+    --admin-action-link-hover-bg: rgba(59, 130, 246, 0.16);
+    --admin-messaging-surface-bg: #202024;
+    --admin-messaging-control-bg: #2a2a31;
+    --admin-messaging-control-hover-bg: #32323a;
+    --admin-messaging-thread-active-bg: rgba(99, 102, 241, 0.2);
+    --admin-messaging-chip-bg: #32323a;
+    --admin-messaging-chip-color: #d4d4d8;
+    --admin-messaging-date-chip-bg: rgba(161, 161, 170, 0.18);
+    --admin-messaging-toggle-active-bg: rgba(99, 102, 241, 0.2);
+}
+
+:root[data-theme='dark'][data-template='2'] {
+    --app-layout-background: radial-gradient(circle at top left, #202024 0%, #18181d 46%, #111113 100%);
+    --app-main-bg: #18181d;
+    --app-main-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+
+    --app-sidebar-border-bottom: 1px solid #32323a;
+    --app-sidebar-bg: rgba(32, 32, 36, 0.72);
+    --app-sidebar-nav-item-border: 1px solid rgba(161, 161, 170, 0.22);
+    --app-sidebar-nav-item-bg: rgba(50, 50, 58, 0.55);
+    --app-sidebar-nav-hover-bg: rgba(70, 70, 79, 0.75);
+    --app-sidebar-nav-active-bg: #32323a;
+
+    --app-surface-bg: #202024;
+    --app-surface-contrast-bg: #2a2a31;
+    --app-control-bg: #46464f;
+
+    --app-header-bg: linear-gradient(90deg, #18181d 0%, #202024 100%);
+    --app-header-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+    --app-header-link-hover: #ffffff;
+    --app-header-utility-bg: rgba(50, 50, 58, 0.84);
+    --app-header-utility-border: 1px solid rgba(161, 161, 170, 0.24);
+    --app-header-utility-link-active-bg: transparent;
+    --app-header-utility-link-active-color: var(--color-text);
+    --app-billing-tab-active-color: #c9d6f0;
+    --app-billing-tab-active-border: #c9d6f0;
+    --app-btn-outline-border: #5b6175;
+    --app-btn-outline-hover-bg: #52566a;
+    --app-btn-outline-hover-border: #656b83;
+    --app-btn-back-border: #5b6175;
+    --app-btn-back-hover-bg: #52566a;
+    --app-btn-back-hover-border: #656b83;
+    --admin-action-link-color: #bfd8ff;
+    --admin-action-link-hover-bg: rgba(82, 109, 170, 0.3);
+    --admin-messaging-surface-bg: #2a2a31;
+    --admin-messaging-control-bg: #32323a;
+    --admin-messaging-control-hover-bg: #3f3f46;
+    --admin-messaging-thread-active-bg: rgba(99, 102, 241, 0.24);
+    --admin-messaging-chip-bg: #3f3f46;
+    --admin-messaging-chip-color: #e4e4e7;
+    --admin-messaging-date-chip-bg: rgba(161, 161, 170, 0.24);
+    --admin-messaging-toggle-active-bg: rgba(99, 102, 241, 0.24);
 }

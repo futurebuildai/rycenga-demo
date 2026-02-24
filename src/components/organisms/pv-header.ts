@@ -3,10 +3,11 @@
  * Displays logo and utility navigation
  */
 
-import { html, css } from 'lit';
+import { html, css, svg } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { BrandingService, type BrandingInfo } from '../../services/branding.service.js';
+import { ThemeService } from '../../services/theme.service.js';
 
 @customElement('pv-header')
 export class PvHeader extends PvBase {
@@ -106,10 +107,10 @@ export class PvHeader extends PvBase {
         display: flex;
         align-items: center;
         gap: var(--app-header-utility-gap, var(--space-md));
-        background: var(--app-header-utility-bg, transparent);
-        border: var(--app-header-utility-border, 0);
-        border-radius: var(--app-header-utility-radius, 0);
-        padding: var(--app-header-utility-padding, 0);
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
       }
 
       .utility-link {
@@ -131,8 +132,19 @@ export class PvHeader extends PvBase {
       }
 
       .utility-link.active {
-        color: var(--app-header-utility-link-active-color, var(--color-accent));
-        background: var(--app-header-utility-link-active-bg, transparent);
+        color: var(--color-text);
+        background: transparent;
+      }
+
+      .theme-toggle {
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        min-width: 44px;
+        justify-content: center;
+        padding: var(--space-sm);
+        background: transparent;
+        color: var(--color-text);
       }
 
       .menu-toggle {
@@ -172,7 +184,9 @@ export class PvHeader extends PvBase {
     }
 
     @state() private branding: BrandingInfo = BrandingService.getBrandingSync();
+    @state() private isDarkMode = ThemeService.isDarkMode();
     private unsubscribeBranding?: () => void;
+    private unsubscribeTheme?: () => void;
 
     connectedCallback() {
         super.connectedCallback();
@@ -182,11 +196,43 @@ export class PvHeader extends PvBase {
         this.unsubscribeBranding = BrandingService.subscribe((branding) => {
             this.branding = branding;
         });
+        this.unsubscribeTheme = ThemeService.subscribe((theme) => {
+            this.isDarkMode = theme === 'dark';
+        });
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
         this.unsubscribeBranding?.();
+        this.unsubscribeTheme?.();
+    }
+
+    private handleThemeToggle() {
+        ThemeService.toggleTheme();
+    }
+
+    private renderThemeIcon() {
+        if (this.isDarkMode) {
+            return svg`
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            `;
+        }
+
+        return svg`
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
+          </svg>
+        `;
     }
 
     render() {
@@ -223,6 +269,14 @@ export class PvHeader extends PvBase {
               </svg>
               <span>Account</span>
             </a>
+            <button
+              class="utility-link theme-toggle"
+              @click=${this.handleThemeToggle}
+              aria-label="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
+              title="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
+            >
+              ${this.renderThemeIcon()}
+            </button>
             <button class="menu-toggle" @click=${this.handleMenuToggle} aria-label="Menu">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="3" y1="12" x2="21" y2="12"></line>
