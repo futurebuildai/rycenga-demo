@@ -189,38 +189,38 @@ export const adminEntityDetailPageStyles = css`
   .status-Open,
   .status-Sent,
   .status-Processing {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--status-info-bg);
+    color: var(--status-info-text);
   }
 
   .status-Paid,
   .status-Shipped {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--status-success-bg);
+    color: var(--status-success-text);
   }
 
   .status-Overdue,
   .status-Past,
   .status-Expired {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--status-error-bg);
+    color: var(--status-error-text);
   }
 
   .status-Pending {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--status-warning-bg);
+    color: var(--status-warning-text);
   }
 
   .status-Draft {
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--status-neutral-bg);
+    color: var(--status-neutral-text);
   }
 
   .meta {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
-    background: white;
+    background: var(--admin-card-bg, #ffffff);
     padding: 1.5rem;
     border-radius: 8px;
     border: 1px solid var(--color-border);
@@ -236,7 +236,7 @@ export const adminEntityDetailPageStyles = css`
 
   .meta-item .value {
     font-size: 1.125rem;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--color-text);
   }
 
@@ -248,7 +248,7 @@ export const adminEntityDetailPageStyles = css`
   .data-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
+    background: var(--admin-card-bg, #ffffff);
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--color-border);
@@ -261,6 +261,10 @@ export const adminEntityDetailPageStyles = css`
     border-bottom: 1px solid var(--color-border);
   }
 
+  .data-table td {
+    color: var(--color-text);
+  }
+
   .data-table th {
     background: var(--color-bg-alt);
     font-weight: 500;
@@ -270,7 +274,12 @@ export const adminEntityDetailPageStyles = css`
 
   .text-right { text-align: right !important; }
   .text-center { text-align: center; }
-  .font-mono { font-family: ui-monospace, monospace; }
+  .font-mono {
+    font-family: ui-monospace, monospace;
+    color: var(--color-text);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
   .font-medium { font-weight: 500; }
 
   .btn-primary {
@@ -328,9 +337,9 @@ export const adminAccountDetailsPageStyles = css`
     font-weight: 500;
   }
 
-  .status-Active { background: #dcfce7; color: #166534; }
-  .status-Hold { background: #fef3c7; color: #92400e; }
-  .status-Overdue { background: #fee2e2; color: #991b1b; }
+  .status-Active { background: var(--status-success-bg); color: var(--status-success-text); }
+  .status-Hold { background: var(--status-warning-bg); color: var(--status-warning-text); }
+  .status-Overdue { background: var(--status-error-bg); color: var(--status-error-text); }
 
   .cards-grid {
     display: grid;
@@ -340,10 +349,10 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .card {
-    background: #ffffff;
+    background: var(--admin-card-bg, #ffffff);
     padding: 1.5rem;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
   }
 
   .card-elevated {
@@ -354,8 +363,8 @@ export const adminAccountDetailsPageStyles = css`
   .card h3 {
     margin: 0 0 1rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    color: var(--color-text, #111827);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
     font-family: var(--font-heading, 'Space Grotesk', sans-serif);
     font-size: 1rem;
   }
@@ -371,12 +380,12 @@ export const adminAccountDetailsPageStyles = css`
   .label {
     display: block;
     font-size: 0.8125rem;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--color-text-muted);
     margin-bottom: 0.125rem;
   }
 
   .value {
-    color: var(--color-text, #111827);
+    color: var(--color-text);
     font-weight: 500;
   }
 
@@ -387,7 +396,7 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .value-positive {
-    color: #059669;
+    color: var(--app-success-color, #22c55e);
   }
 
   .financials-row {
@@ -398,7 +407,7 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .email-link {
-    color: #2563eb;
+    color: var(--color-primary);
     text-decoration: none;
   }
 
@@ -409,7 +418,7 @@ export const adminAccountDetailsPageStyles = css`
   .tab-bar {
     display: flex;
     gap: 0;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid var(--color-border);
     margin-bottom: 1.5rem;
   }
 
@@ -423,33 +432,33 @@ export const adminAccountDetailsPageStyles = css`
     font-size: 0.875rem;
     font-weight: 500;
     font-family: var(--font-body, 'Inter', sans-serif);
-    color: var(--color-text-muted, #6b7280);
+    color: var(--color-text-muted);
     transition: all 150ms ease;
     position: relative;
     z-index: 10;
   }
 
   .tab-btn:hover {
-    color: var(--color-text, #0f172a);
+    color: var(--color-text);
   }
 
   .tab-btn.active {
-    color: var(--color-accent, #f97316);
-    border-bottom-color: var(--color-accent, #f97316);
+    color: var(--app-billing-tab-active-color, var(--color-accent));
+    border-bottom-color: var(--app-billing-tab-active-border, var(--color-accent));
   }
 
   .tab-content {
-    background: #ffffff;
+    background: var(--admin-card-bg, #ffffff);
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    color: var(--color-text-muted, #6b7280);
+    box-shadow: var(--shadow-sm);
+    color: var(--color-text-muted);
     position: relative;
     z-index: 5;
   }
 
   .error-msg {
-    color: var(--color-error, #ef4444);
+    color: var(--color-error);
   }
 
   .status-stamp {
@@ -470,15 +479,15 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .stamp-good {
-    color: #22c55e;
-    border-color: #22c55e;
-    background: rgba(34, 197, 94, 0.05);
+    color: var(--status-success-text);
+    border-color: var(--status-success-text);
+    background: var(--status-success-bg);
   }
 
   .stamp-bad {
-    color: #ef4444;
-    border-color: #ef4444;
-    background: rgba(239, 68, 68, 0.05);
+    color: var(--status-error-text);
+    border-color: var(--status-error-text);
+    background: var(--status-error-bg);
   }
 
   .pagination {
@@ -487,7 +496,7 @@ export const adminAccountDetailsPageStyles = css`
     align-items: center;
     margin-top: 1.5rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border);
   }
 
   .pagination-info {
@@ -507,19 +516,19 @@ export const adminAccountDetailsPageStyles = css`
 
   .pagination-btn {
     padding: 0.5rem 1rem;
-    border: 1px solid var(--color-border, #e2e8f0);
-    background: white;
+    border: 1px solid var(--color-border);
+    background: var(--app-control-bg, #ffffff);
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text, #0f172a);
+    color: var(--color-text);
     transition: all 0.2s;
   }
 
   .pagination-btn:hover:not(:disabled) {
-    border-color: var(--color-primary-light, #bfdbfe);
-    background: var(--color-bg-alt, #f8fafc);
+    border-color: var(--color-primary-light);
+    background: var(--color-bg-alt);
   }
 
   .pagination-btn:disabled {
@@ -528,9 +537,9 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .pagination-btn.active {
-    background: var(--admin-sidebar-bg, #0f172a);
+    background: var(--admin-sidebar-bg);
     color: white;
-    border-color: var(--admin-sidebar-bg, #0f172a);
+    border-color: var(--admin-sidebar-bg);
   }
 
   .btn-primary {
@@ -550,26 +559,26 @@ export const adminAccountDetailsPageStyles = css`
   .btn-primary:hover { background: var(--color-cta-hover); }
 
   .btn-message {
-    background-color: var(--admin-sidebar-bg, #0f172a) !important;
+    background-color: var(--admin-sidebar-bg) !important;
   }
 
   .btn-message:hover {
-    background-color: var(--color-primary, #1e293b) !important;
+    background-color: var(--color-primary) !important;
   }
 
   .data-table { width: 100%; border-collapse: collapse; }
-  .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-  .data-table th { font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-light); font-weight: 600; background: #f8fafc; }
+  .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--color-border); }
+  .data-table th { font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-light); font-weight: 600; background: var(--color-bg-alt); }
   .data-table tr:last-child td { border-bottom: none; }
 
-  .row-selected { background: #fff7ed; }
-  .row-selected:hover { background: #ffedd5 !important; }
+  .row-selected { background: var(--status-accent-bg); }
+  .row-selected:hover { background: var(--status-accent-bg) !important; }
 
   .text-right { text-align: right; }
   .text-center { text-align: center; }
   .font-mono { font-family: 'Space Mono', monospace; letter-spacing: -0.5px; }
   .font-medium { font-weight: 500; }
-  .text-muted { color: var(--color-text-muted); }
+  .text-muted { color: var(--color-text-light); }
   .text-danger { color: var(--color-error); font-weight: 600; }
 
   .tab-header {
@@ -593,13 +602,13 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .link-primary {
-    color: var(--color-primary);
+    color: var(--admin-action-link-color, var(--color-primary));
     text-decoration: none;
     font-weight: 500;
   }
 
   .link-primary-light {
-    color: var(--color-primary);
+    color: var(--admin-action-link-color, var(--color-primary));
     text-decoration: none;
   }
 
@@ -625,11 +634,11 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .modal {
-    background: white;
+    background: var(--admin-card-bg, #ffffff);
     padding: 2rem;
     border-radius: 8px;
     width: 400px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
   }
 
   .modal-title {
@@ -645,7 +654,7 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .payment-summary {
-    background: #f8fafc;
+    background: var(--color-bg-alt);
     padding: 1.5rem;
     border-radius: 8px;
     margin-bottom: 1.5rem;
@@ -678,8 +687,8 @@ export const adminAccountDetailsPageStyles = css`
   }
 
   .btn-secondary {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--app-control-bg, #ffffff);
+    border: 1px solid var(--color-border);
     color: var(--color-text);
     padding: 0.5rem 1rem;
     border-radius: 6px;
@@ -689,9 +698,11 @@ export const adminAccountDetailsPageStyles = css`
   select.form-select {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     margin-top: 0.5rem;
+    background: var(--app-control-bg, #ffffff);
+    color: var(--color-text);
   }
 
   .toast {
@@ -709,11 +720,316 @@ export const adminAccountDetailsPageStyles = css`
 
   .toast-success { background: #059669; color: white; }
   .toast-error { background: #dc2626; color: white; }
-  .toast-info { background: #0f172a; color: white; }
+  .toast-info { background: var(--color-primary); color: white; }
 
   @keyframes toast-in {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+`;
+
+export const adminAccountsPageStyles = css`
+  :host {
+    display: block;
+    color: var(--color-text);
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--color-text);
+    font-family: var(--font-heading, 'Space Grotesk', sans-serif);
+  }
+
+  .page-subtitle {
+    margin-top: 4px;
+    color: var(--color-text-muted);
+  }
+
+  .search-input {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    min-width: 260px;
+    transition: border-color 150ms ease;
+    background: var(--app-control-bg, #ffffff);
+    color: var(--color-text);
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .controls-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .controls-row .spacer {
+    margin-left: auto;
+  }
+
+  .filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-right: 8px;
+    color: var(--color-text);
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    background: var(--app-control-bg, #ffffff);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text);
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--color-primary-light);
+    background: var(--color-bg-alt);
+  }
+
+  .filter-btn.active {
+    background: var(--admin-sidebar-bg);
+    color: white;
+    border-color: var(--admin-sidebar-bg);
+  }
+
+  .sort-select {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text);
+    background: var(--app-control-bg, #ffffff);
+    cursor: pointer;
+    outline: none;
+    height: 35px;
+  }
+
+  .sort-select:focus {
+    border-color: var(--color-accent);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--admin-card-bg, #ffffff);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  th, td {
+    text-align: left;
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    background: var(--color-bg-alt);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--color-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  tr {
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  tr:hover {
+    background: var(--color-bg-alt);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .company-name {
+    font-weight: 500;
+  }
+
+  .company-id {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .contact-name {
+    font-weight: 500;
+  }
+
+  .contact-phone {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .status-Active { background: #dcfce7; color: #166534; }
+  .status-Hold { background: #fef3c7; color: #92400e; }
+  .status-Overdue { background: #fee2e2; color: #991b1b; }
+
+  .btn-view {
+    color: var(--admin-action-link-color, var(--color-primary));
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.875rem;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .btn-view:hover {
+    background: var(--admin-action-link-hover-bg, var(--color-bg-alt));
+  }
+
+  .empty-row td {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 2rem;
+  }
+
+  .metric-value {
+    font-family: 'Space Mono', monospace;
+    letter-spacing: -0.5px;
+  }
+
+  .text-danger {
+    color: var(--color-error);
+    font-weight: 600;
+  }
+
+  .zero-value {
+    color: var(--color-text-muted);
+  }
+
+  .credit-limit {
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+
+  .badge-age {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .age-current { background: #dcfce7; color: #166534; }
+  .age-30 { background: #fef9c3; color: #854d0e; }
+  .age-60 { background: #ffedd5; color: #9a3412; }
+  .age-90 { background: #fee2e2; color: #991b1b; }
+  .age-plus { background: #7f1d1d; color: white; }
+
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--admin-card-bg, #ffffff);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pagination-info {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .pagination-info span {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .pagination-divider {
+    margin-left: 1rem;
+    color: var(--color-text-muted);
+  }
+
+  .per-page-label {
+    margin-left: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text);
+  }
+
+  .per-page-select {
+    margin-left: 0.5rem;
+    padding: 0.25rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background: var(--app-control-bg, #ffffff);
+    color: var(--color-text);
+  }
+
+  .pagination-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    background: var(--app-control-bg, #ffffff);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text);
+    transition: all 0.2s;
+  }
+
+  .pagination-btn:hover:not(:disabled) {
+    border-color: var(--color-primary-light);
+    background: var(--color-bg-alt);
+  }
+
+  .pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pagination-btn.active {
+    background: var(--admin-sidebar-bg);
+    color: white;
+    border-color: var(--admin-sidebar-bg);
+  }
+
+  .pagination-ellipsis-inline {
+    align-self: center;
+    color: var(--color-text-muted);
+  }
+
+  .error-msg {
+    color: var(--color-error);
   }
 `;
 
@@ -1241,6 +1557,7 @@ export const estimatesPageStyles = css`
 export const billingPageStyles = css`
   :host {
     display: block;
+    color: var(--color-text);
   }
 
   .billing-summary {
@@ -1301,8 +1618,8 @@ export const billingPageStyles = css`
   }
 
   .billing-tab.active {
-    color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    color: var(--app-billing-tab-active-color, var(--color-primary));
+    border-bottom-color: var(--app-billing-tab-active-border, var(--color-primary));
   }
 
   .invoice-row {
@@ -1453,6 +1770,7 @@ export const billingPageStyles = css`
 
   .invoice-number {
     font-weight: 600;
+    color: var(--color-text);
   }
 
   .invoice-project {
@@ -1462,6 +1780,7 @@ export const billingPageStyles = css`
 
   .invoice-amount {
     font-weight: 600;
+    color: var(--color-text);
   }
 
   .detail-title-row {

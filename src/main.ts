@@ -5,6 +5,7 @@
 
 // Import global theme CSS
 import './styles/theme.css';
+import { ThemeService } from './services/theme.service.js';
 
 // Import root component
 import './components/pv-app.js';
@@ -19,6 +20,8 @@ declare global {
         showToast: (message: string, type?: ToastType, duration?: number) => PvToast | null;
     }
 }
+
+ThemeService.init();
 
 window.showToast = (message: string, type: ToastType = 'info', duration = 3000) => {
     return PvToast.show(message, type, duration);

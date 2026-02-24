@@ -68,7 +68,7 @@ export class LogoUpload extends LitElement {
             max-height: 80px;
             object-fit: contain;
             border-radius: 4px;
-            background: #f8fafc;
+            background: var(--app-surface-bg, #f8fafc);
             padding: 8px;
         }
 
@@ -99,21 +99,21 @@ export class LogoUpload extends LitElement {
         }
 
         .btn-remove {
-            background: white;
-            color: #ef4444;
-            border: 1px solid #fecaca;
+            background: var(--app-surface-contrast-bg, #ffffff);
+            color: var(--app-danger-color, #ef4444);
+            border: 1px solid var(--color-border, #e2e8f0);
         }
 
         .btn-remove:hover {
-            background: #fef2f2;
-            border-color: #ef4444;
+            background: var(--app-danger-bg, rgba(239, 68, 68, 0.1));
+            border-color: var(--app-danger-color, #ef4444);
         }
 
         .error-message {
             margin-top: 8px;
             padding: 8px 12px;
-            background: #fef2f2;
-            color: #dc2626;
+            background: var(--app-danger-bg, rgba(239, 68, 68, 0.1));
+            color: var(--app-danger-color, #ef4444);
             border-radius: 6px;
             font-size: 13px;
         }

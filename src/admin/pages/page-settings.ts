@@ -77,7 +77,7 @@ export class PageSettings extends LitElement {
             color: var(--color-text);
             box-sizing: border-box;
             transition: all 0.15s ease;
-            background: white;
+            background: var(--app-control-bg, #ffffff);
         }
 
         input:focus,
@@ -89,8 +89,8 @@ export class PageSettings extends LitElement {
 
         input:disabled,
         select:disabled {
-            background: #f8fafc;
-            color: #94a3b8;
+            background: var(--app-surface-bg, #f8fafc);
+            color: var(--color-text-muted, #94a3b8);
         }
 
         .btn-primary {
@@ -114,6 +114,28 @@ export class PageSettings extends LitElement {
             cursor: not-allowed;
         }
 
+        .btn-secondary {
+            background: var(--app-surface-contrast-bg, #ffffff);
+            border: 1px solid var(--color-border, #e2e8f0);
+            color: var(--color-text);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-family: var(--font-body);
+            transition: all 0.15s ease;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--app-surface-bg, #f8fafc);
+            border-color: var(--color-primary-light, #94a3b8);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -129,7 +151,7 @@ export class PageSettings extends LitElement {
         .branding-preview {
             margin-top: 16px;
             padding: 16px;
-            background: #f8fafc;
+            background: var(--app-surface-bg, #f8fafc);
             border-radius: 6px;
             font-size: 13px;
             color: var(--color-text-muted);
@@ -151,14 +173,14 @@ export class PageSettings extends LitElement {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             animation: toast-in 200ms ease-out;
         }
-        .toast-success { background: #059669; color: white; }
-        .toast-error { background: #dc2626; color: white; }
-        .toast-info { background: #0f172a; color: white; }
+        .toast-success { background: var(--color-success, #059669); color: white; }
+        .toast-error { background: var(--color-error, #dc2626); color: white; }
+        .toast-info { background: var(--color-primary, #0f172a); color: white; }
         @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     `;
 
     @state() private user = AdminAuthService.getUser();
-    @state() private teamMembers: Array<{id: number; name: string; email: string; role: string; status: 'Active' | 'Invited'; lastLogin: string}> = [];
+    @state() private teamMembers: Array<{ id: number; name: string; email: string; role: string; status: 'Active' | 'Invited'; lastLogin: string }> = [];
     @state() private teamUnavailable = false;
 
     @state() private toastMessage = '';
@@ -472,8 +494,8 @@ export class PageSettings extends LitElement {
                                 font-size: 11px;
                                 font-weight: 600;
                             }
-                            .role-owner { background: #eff6ff; color: #1d4ed8; }
-                            .role-staff { background: #f1f5f9; color: #475569; }
+                            .role-owner { background: var(--status-info-bg, #eff6ff); color: var(--status-info-text, #1d4ed8); }
+                            .role-staff { background: var(--status-neutral-bg, #f1f5f9); color: var(--status-neutral-text, #475569); }
                             
                             .status-active { color: #15803d; font-weight: 500; display: flex; align-items: center; gap: 6px; }
                             .status-active::before { content: ''; width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
@@ -516,7 +538,7 @@ export class PageSettings extends LitElement {
                         `)}
                     </div>
                     ${this.teamUnavailable ? html`
-                        <div style="padding: 16px; background: #f8fafc; border-radius: 6px; margin-top: 12px; font-size: 13px; color: var(--color-text-muted, #94a3b8);">
+                        <div style="padding: 16px; background: var(--app-surface-bg, #f8fafc); border-radius: 6px; margin-top: 12px; font-size: 13px; color: var(--color-text-muted, #94a3b8);">
                             Full team management is coming soon. Currently showing only your account.
                         </div>
                     ` : ''}
@@ -604,16 +626,15 @@ export class PageSettings extends LitElement {
                         z-index: 1000;
                     }
                     .modal {
-                        background: white; padding: 2rem; border-radius: 8px; width: 400px;
+                        background: var(--admin-card-bg, #ffffff); padding: 2rem; border-radius: 8px; width: 400px;
                         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
                     }
                     .modal-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; font-family: var(--font-heading); }
                     .modal-actions { margin-top: 2rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
-                    .btn-secondary { background: white; border: 1px solid #e2e8f0; color: var(--color-text); padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;}
                     .form-select {
                         width: 100%; padding: 10px 12px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 6px;
                         font-family: var(--font-body); font-size: 14px; color: var(--color-text);
-                        background: white;
+                        background: var(--app-control-bg, #ffffff);
                     }
                 </style>
             ` : ''}

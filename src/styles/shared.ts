@@ -122,14 +122,15 @@ export const buttonStyles = css`
   }
 
   .btn-outline {
-    background-color: transparent;
-    color: var(--color-primary);
-    border: 2px solid var(--color-primary);
+    background-color: var(--app-btn-outline-bg, transparent);
+    color: var(--app-btn-outline-color, var(--color-primary));
+    border: 2px solid var(--app-btn-outline-border, var(--color-primary));
   }
 
   .btn-outline:hover {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--app-btn-outline-hover-bg, var(--color-primary));
+    border-color: var(--app-btn-outline-hover-border, var(--color-primary));
+    color: var(--app-btn-outline-hover-color, white);
   }
 
   .btn-sm {
@@ -424,9 +425,9 @@ export const detailViewStyles = css`
     align-items: center;
     gap: var(--space-sm);
     padding: var(--space-sm) var(--space-md);
-    background: transparent;
-    color: var(--color-primary);
-    border: 2px solid var(--color-primary);
+    background: var(--app-btn-back-bg, transparent);
+    color: var(--app-btn-back-color, var(--color-primary));
+    border: 2px solid var(--app-btn-back-border, var(--color-primary));
     border-radius: var(--radius-md);
     font-weight: 600;
     cursor: pointer;
@@ -434,8 +435,9 @@ export const detailViewStyles = css`
   }
 
   .btn-back:hover {
-    background: var(--color-primary);
-    color: white;
+    background: var(--app-btn-back-hover-bg, var(--color-primary));
+    border-color: var(--app-btn-back-hover-border, var(--color-primary));
+    color: var(--app-btn-back-hover-color, white);
   }
 
   .detail-card {

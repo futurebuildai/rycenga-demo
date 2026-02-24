@@ -190,7 +190,7 @@ export const threadListStyles = css`
     }
 
     .thread-item.active {
-        background: rgba(99, 102, 241, 0.08);
+        background: var(--admin-messaging-thread-active-bg, rgba(99, 102, 241, 0.08));
         border-left-color: var(--admin-accent, #6366f1);
     }
 
@@ -340,7 +340,7 @@ export const chatWindowStyles = css`
         justify-content: space-between;
         padding: 16px 24px;
         border-bottom: 1px solid var(--color-border, #e2e8f0);
-        background: white;
+        background: var(--admin-messaging-surface-bg, var(--admin-card-bg, #ffffff));
     }
 
     .header-left {
@@ -384,8 +384,8 @@ export const chatWindowStyles = css`
     }
 
     .account-badge {
-        background: #e2e8f0;
-        color: #475569;
+        background: var(--admin-messaging-chip-bg, var(--color-bg-alt));
+        color: var(--admin-messaging-chip-color, var(--color-text-light));
         padding: 4px 10px;
         border-radius: 999px;
         font-size: 12px;
@@ -432,7 +432,7 @@ export const chatWindowStyles = css`
         align-items: center;
         gap: 8px;
         padding: 8px 16px;
-        background: white;
+        background: var(--admin-messaging-control-bg, var(--app-control-bg, #ffffff));
         border: 1px solid var(--color-border, #e2e8f0);
         border-radius: 8px;
         color: var(--color-text, #0f172a);
@@ -486,7 +486,7 @@ export const chatWindowStyles = css`
     }
 
     .date-separator span {
-        background: rgba(0, 0, 0, 0.05);
+        background: var(--admin-messaging-date-chip-bg, rgba(0, 0, 0, 0.05));
         padding: 6px 16px;
         border-radius: 999px;
         font-size: 12px;
@@ -505,7 +505,7 @@ export const chatWindowStyles = css`
     /* Input Footer */
     .message-footer {
         padding: 16px 24px;
-        background: white;
+        background: var(--admin-messaging-surface-bg, var(--admin-card-bg, #ffffff));
         border-top: 1px solid var(--color-border, #e2e8f0);
     }
 
@@ -657,9 +657,9 @@ export const messageBubbleStyles = css`
     }
 
     .bubble.inbound {
-        background: #ffffff;
+        background: var(--admin-messaging-surface-bg, var(--admin-card-bg, #ffffff));
         border: 1px solid var(--color-border, #e2e8f0);
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        box-shadow: var(--shadow-sm);
         color: var(--color-text, #0f172a);
         border-radius: 16px 16px 16px 4px;
     }
@@ -694,7 +694,7 @@ export const messageBubbleStyles = css`
         align-items: center;
         gap: 12px;
         padding: 12px 16px;
-        background: white;
+        background: var(--admin-messaging-surface-bg, var(--admin-card-bg, #ffffff));
         border: 1px solid var(--color-border, #e2e8f0);
         border-radius: 12px;
         min-width: 240px;
@@ -709,8 +709,8 @@ export const messageBubbleStyles = css`
         width: 40px;
         height: 40px;
         border-radius: 8px;
-        background: #fee2e2;
-        color: #dc2626;
+        background: var(--status-error-bg);
+        color: var(--status-error-text);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -718,8 +718,8 @@ export const messageBubbleStyles = css`
     }
 
     .file-icon.image {
-        background: #dbeafe;
-        color: #2563eb;
+        background: var(--status-info-bg);
+        color: var(--status-info-text);
     }
 
     .bubble.outbound .file-icon {
@@ -807,7 +807,7 @@ export const assignTeamModalStyles = css`
     }
 
     .modal {
-        background: white;
+        background: var(--admin-messaging-surface-bg, var(--admin-card-bg, #ffffff));
         border-radius: 12px;
         width: min(400px, 100%);
         box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
@@ -984,7 +984,7 @@ export const assignTeamModalStyles = css`
     }
 
     .btn-secondary:hover {
-        background: var(--admin-bg, #f1f5f9);
+        background: var(--admin-messaging-control-hover-bg, var(--admin-bg, #f1f5f9));
     }
 
     .btn-primary {
@@ -1037,7 +1037,7 @@ export const newThreadModalStyles = css`
     }
 
     .modal {
-        background: white;
+        background: var(--admin-messaging-surface-bg, var(--admin-card-bg, #ffffff));
         border-radius: 12px;
         width: 100%;
         max-width: 520px;
@@ -1129,7 +1129,8 @@ export const newThreadModalStyles = css`
         font-family: var(--font-body, 'Inter', sans-serif);
         transition: border-color 150ms ease, box-shadow 150ms ease;
         box-sizing: border-box;
-        background: white;
+        background: var(--admin-messaging-control-bg, var(--app-control-bg, #ffffff));
+        color: var(--color-text, #0f172a);
     }
 
     .form-select {
@@ -1198,7 +1199,7 @@ export const newThreadModalStyles = css`
         flex: 1;
         padding: 10px 16px;
         border: 1px solid var(--color-border, #e2e8f0);
-        background: white;
+        background: var(--admin-messaging-control-bg, var(--app-control-bg, #ffffff));
         border-radius: 8px;
         font-size: 13px;
         font-weight: 500;
@@ -1214,7 +1215,7 @@ export const newThreadModalStyles = css`
     }
 
     .toggle-btn.active {
-        background: rgba(99, 102, 241, 0.1);
+        background: var(--admin-messaging-toggle-active-bg, rgba(99, 102, 241, 0.1));
         border-color: var(--admin-accent, #6366f1);
         color: var(--admin-accent, #6366f1);
     }
@@ -1239,13 +1240,13 @@ export const newThreadModalStyles = css`
     }
 
     .btn-cancel {
-        background: white;
+        background: var(--admin-messaging-control-bg, var(--app-control-bg, #ffffff));
         border: 1px solid var(--color-border, #e2e8f0);
         color: var(--color-text, #0f172a);
     }
 
     .btn-cancel:hover {
-        background: var(--admin-bg, #f1f5f9);
+        background: var(--admin-messaging-control-hover-bg, var(--admin-bg, #f1f5f9));
     }
 
     .btn-primary {
@@ -1274,10 +1275,10 @@ export const newThreadModalStyles = css`
         align-items: center;
         gap: 8px;
         padding: 10px 12px;
-        background: #fef3c7;
+        background: var(--status-warning-bg);
         border-radius: 8px;
         font-size: 13px;
-        color: #92400e;
+        color: var(--status-warning-text);
         margin-top: 8px;
     }
 
@@ -1287,16 +1288,16 @@ export const newThreadModalStyles = css`
 
     .form-error {
         font-size: 12px;
-        color: #dc2626;
+        color: var(--color-error);
         margin-top: 6px;
     }
 
     .form-input.error {
-        border-color: #dc2626;
+        border-color: var(--color-error);
     }
 
     .form-input.error:focus {
-        border-color: #dc2626;
+        border-color: var(--color-error);
         box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
     }
 
@@ -1313,6 +1314,8 @@ export const newThreadModalStyles = css`
         font-size: 13px;
         font-family: var(--font-body, 'Inter', sans-serif);
         box-sizing: border-box;
+        background: var(--admin-messaging-control-bg, var(--app-control-bg, #ffffff));
+        color: var(--color-text, #0f172a);
     }
 
     .account-search:focus {
