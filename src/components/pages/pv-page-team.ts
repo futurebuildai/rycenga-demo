@@ -11,8 +11,7 @@ import { MembersService } from '../../connect/services/members.js';
 import { PvToast } from '../atoms/pv-toast.js';
 import { pageShellStyles } from '../../styles/shared.js';
 import { teamPageStyles } from '../../styles/pages.js';
-import type { TeamMember as LegacyTeamMember } from '../../types/index.js';
-import type { TeamMemberRole, InviteMemberPayload } from '../../connect/types/domain.js';
+import type { TeamMember, TeamMemberRole, InviteMemberPayload } from '../../connect/types/domain.js';
 
 @customElement('pv-page-team')
 export class PvPageTeam extends PvBase {
@@ -22,7 +21,7 @@ export class PvPageTeam extends PvBase {
     teamPageStyles,
   ];
 
-  @state() private teamMembers: LegacyTeamMember[] = [];
+  @state() private teamMembers: TeamMember[] = [];
   @state() private loading = true;
   @state() private inviting = false;
   @state() private showInviteModal = false;
@@ -36,8 +35,11 @@ export class PvPageTeam extends PvBase {
   async connectedCallback() {
     super.connectedCallback();
     try {
-      const accountData = await DataService.getAccountData();
-      this.teamMembers = accountData.team;
+      const members = await MembersService.getMembers(this.getAccountId());
+      this.teamMembers = members.map(m => ({
+        ...m,
+        initials: m.initials || this.getInitials(m.name, m.email),
+      }));
     } catch (e) {
       console.error('Failed to load team data', e);
       PvToast.show('Failed to load team', 'error');
@@ -49,6 +51,15 @@ export class PvPageTeam extends PvBase {
   private getRoleClass(role: string): string {
     if (role.toLowerCase() === 'owner') return 'owner';
     return '';
+  }
+
+  private getInitials(name: string, email: string): string {
+    const source = (name || '').trim() || email.split('@')[0] || '';
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return source.slice(0, 2).toUpperCase();
   }
 
   private handleInvite() {
@@ -108,7 +119,7 @@ export class PvPageTeam extends PvBase {
     }
   }
 
-  private async handleEditMember(member: LegacyTeamMember) {
+  private async handleEditMember(member: TeamMember) {
     // In production, this would open a modal to edit role
     const newRole = prompt(`Edit role for ${member.name} (owner/purchaser/viewer):`, member.role.toLowerCase());
     if (!newRole) return;
@@ -120,16 +131,26 @@ export class PvPageTeam extends PvBase {
     }
 
     try {
-      // Using placeholder ID since legacy TeamMember doesn't have id - backend would lookup by email
-      await MembersService.updateMember(this.getAccountId(), 0, newRole as TeamMemberRole);
+      await MembersService.updateMember(this.getAccountId(), member.id, newRole as TeamMemberRole);
       PvToast.show(`Role updated for ${member.name}`, 'success');
       // Optimistic update using email for matching
       this.teamMembers = this.teamMembers.map(m =>
-        m.email === member.email ? { ...m, role: newRole.charAt(0).toUpperCase() + newRole.slice(1) } : m
+        m.email === member.email ? { ...m, role: newRole as TeamMemberRole } : m
       );
     } catch (e) {
       console.error('Failed to update member', e);
       PvToast.show('Failed to update member', 'error');
+    }
+  }
+
+  private async handleResendInvite(member: TeamMember) {
+    if (!member.id) return;
+    try {
+      await MembersService.resendInvite(this.getAccountId(), member.id);
+      PvToast.show(`Invitation resent to ${member.email}`, 'success');
+    } catch (e) {
+      console.error('Failed to resend invite', e);
+      PvToast.show('Failed to resend invitation', 'error');
     }
   }
 
@@ -247,6 +268,10 @@ export class PvPageTeam extends PvBase {
             </div>
             <div class="team-actions-cell">
               <span class="team-role ${this.getRoleClass(member.role)}">${member.role}</span>
+              ${member.status === 'invited' ? html`<span class="team-role">Invited</span>` : ''}
+              ${member.status === 'invited' ? html`
+                <button class="btn btn-outline btn-sm" @click=${() => this.handleResendInvite(member)}>Resend</button>
+              ` : ''}
               <button class="btn btn-outline btn-sm" @click=${() => this.handleEditMember(member)}>Edit</button>
             </div>
           </div>

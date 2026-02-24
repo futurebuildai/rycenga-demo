@@ -15,12 +15,21 @@ export const MembersService = {
 
     /**
      * Invite a new team member
-     * MAPS TO: POST /accounts/{accountId}/invite
+     * MAPS TO: POST /accounts/{accountId}/members/invite
      */
     inviteMember: (accountId: number, payload: InviteMemberPayload): Promise<TeamMember> =>
-        client.request<TeamMember>(`/accounts/${accountId}/invite`, {
+        client.request<TeamMember>(`/accounts/${accountId}/members/invite`, {
             method: 'POST',
             body: JSON.stringify(payload),
+        }),
+
+    /**
+     * Resend an invitation email for a pending member
+     * MAPS TO: POST /accounts/{accountId}/members/{memberId}/resend-invite
+     */
+    resendInvite: (accountId: number, memberId: number): Promise<{ message: string }> =>
+        client.request<{ message: string }>(`/accounts/${accountId}/members/${memberId}/resend-invite`, {
+            method: 'POST',
         }),
 
     /**

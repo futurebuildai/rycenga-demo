@@ -153,6 +153,7 @@ export interface AdminUser {
     name: string;
     role: string;
     isActive: boolean;
+    lastLoginAt?: string;
     accountId?: number;
     phone?: string;
     accountAssignments?: AdminAccountAssignment[];
@@ -314,6 +315,7 @@ const mapAdminUser = (u: User): AdminUser => ({
     name: u.name || '(No Name)',
     role: u.role,
     isActive: u.isActive,
+    lastLoginAt: u.lastLoginAt,
     accountId: u.accountId,
     phone: u.phone || undefined,
     accountAssignments: u.accountAssignments?.map((a) => ({
@@ -466,6 +468,20 @@ class AdminDataServiceImpl {
         };
     }
 
+    async getAdminTeamMembers(): Promise<Array<{ id: number; name: string; email: string; role: string; status: 'Active' | 'Invited'; lastLogin: string }>> {
+        const { items } = await this.getUsers(200, 0, '');
+        return items
+            .filter((u) => u.role === 'tenant_owner' || u.role === 'tenant_staff')
+            .map((u) => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                role: u.role.toUpperCase(),
+                status: u.lastLoginAt ? 'Active' : 'Invited',
+                lastLogin: u.lastLoginAt ? formatDate(u.lastLoginAt) : '-',
+            }));
+    }
+
     async createUser(input: CreateAdminUserInput): Promise<AdminUser> {
         const payload: Record<string, unknown> = {
             name: input.name,
@@ -557,6 +573,12 @@ class AdminDataServiceImpl {
         await adminClient.request<User>('/admin/users/invite', {
             method: 'POST',
             body: JSON.stringify(payload),
+        });
+    }
+
+    async resendTeamMemberInvite(userId: number): Promise<void> {
+        await adminClient.request<{ message: string }>(`/admin/users/${userId}/resend-invite`, {
+            method: 'POST',
         });
     }
 }

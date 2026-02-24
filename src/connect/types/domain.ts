@@ -396,6 +396,8 @@ export interface TeamMember {
     name: string;
     email: string;
     role: TeamMemberRole;
+    status?: 'active' | 'invited';
+    invitedAt?: string;
     initials?: string;
 }
 
@@ -418,7 +420,7 @@ export interface ChangePasswordPayload {
 
 /**
  * Payload for inviting a team member
- * MAPS TO: POST /accounts/{id}/invite
+ * MAPS TO: POST /accounts/{id}/members/invite
  */
 export interface InviteMemberPayload {
     email: string;
