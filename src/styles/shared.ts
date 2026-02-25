@@ -142,6 +142,28 @@ export const buttonStyles = css`
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  .sign-out-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--app-btn-outline-bg, transparent);
+    color: var(--app-btn-outline-color, var(--color-primary));
+    border: 2px solid var(--app-btn-outline-border, var(--color-primary));
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .sign-out-btn:hover {
+    background: var(--app-btn-outline-hover-bg, var(--color-primary));
+    border-color: var(--app-btn-outline-hover-border, var(--color-primary));
+    color: var(--app-btn-outline-hover-color, white);
+  }
 `;
 
 /**
