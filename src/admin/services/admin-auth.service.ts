@@ -153,6 +153,25 @@ class AdminAuthServiceImpl {
         }
     }
 
+    async stopImpersonation(): Promise<{ success: boolean; reason?: string }> {
+        try {
+            const response = await adminClient.request<OTPVerifyResponse>('/auth/impersonation/stop', {
+                method: 'POST',
+            });
+            adminClient.setToken(response.token);
+            localStorage.setItem(SESSION_KEY, JSON.stringify({
+                email: response.user.email,
+                loginTime: new Date().toISOString(),
+                user: response.user,
+            }));
+            localStorage.removeItem(IMPERSONATION_KEY);
+            this.notifyListeners(true);
+            return { success: true };
+        } catch {
+            return { success: false, reason: 'Failed to stop impersonation.' };
+        }
+    }
+
     logout(): void {
         adminClient.clearToken();
         localStorage.removeItem(SESSION_KEY);
