@@ -156,6 +156,8 @@
     --app-header-logo-font-size: 1.25rem;
     --app-header-logo-name-size: 1.125rem;
     --app-header-logo-bg: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    --app-logo-filter: none;
+    --app-logo-text-color: var(--color-primary);
     --app-header-link-hover: var(--color-accent);
     --app-impersonation-bg: linear-gradient(90deg, #7f1d1d, #991b1b);
     --app-impersonation-button-border: 1px solid rgba(255, 255, 255, 0.45);
@@ -352,6 +354,8 @@
     --app-surface-contrast-bg: #2a2a31;
     --app-control-bg: #46464f;
     --app-header-bg: #111113;
+    --app-logo-filter: brightness(0) invert(1);
+    --app-logo-text-color: var(--color-text);
     --app-header-link-hover: var(--color-accent-light);
     --app-header-utility-bg: rgba(50, 50, 58, 0.7);
     --app-header-utility-border: 1px solid rgba(161, 161, 170, 0.25);

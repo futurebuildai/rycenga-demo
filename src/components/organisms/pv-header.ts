@@ -11,9 +11,9 @@ import { ThemeService } from '../../services/theme.service.js';
 
 @customElement('pv-header')
 export class PvHeader extends PvBase {
-    static styles = [
-        ...PvBase.styles,
-        css`
+  static styles = [
+    ...PvBase.styles,
+    css`
       :host {
         display: block;
         height: var(--header-height, 80px);
@@ -82,13 +82,14 @@ export class PvHeader extends PvBase {
         height: 100%;
         object-fit: contain;
         display: block;
+        filter: var(--app-logo-filter, none);
       }
 
       .logo-name {
         font-family: var(--font-heading);
         font-size: var(--app-header-logo-name-size, 1.125rem);
         font-weight: 800;
-        color: var(--color-primary);
+        color: var(--app-logo-text-color, var(--color-primary));
         letter-spacing: var(--app-header-logo-letter-spacing, 0.05em);
         line-height: 1;
         text-transform: var(--app-header-logo-text-transform, none);
@@ -174,46 +175,46 @@ export class PvHeader extends PvBase {
         }
       }
     `,
-    ];
+  ];
 
-    private handleMenuToggle() {
-        this.dispatchEvent(new CustomEvent('menu-toggle', {
-            bubbles: true,
-            composed: true,
-        }));
-    }
+  private handleMenuToggle() {
+    this.dispatchEvent(new CustomEvent('menu-toggle', {
+      bubbles: true,
+      composed: true,
+    }));
+  }
 
-    @state() private branding: BrandingInfo = BrandingService.getBrandingSync();
-    @state() private isDarkMode = ThemeService.isDarkMode();
-    private unsubscribeBranding?: () => void;
-    private unsubscribeTheme?: () => void;
+  @state() private branding: BrandingInfo = BrandingService.getBrandingSync();
+  @state() private isDarkMode = ThemeService.isDarkMode();
+  private unsubscribeBranding?: () => void;
+  private unsubscribeTheme?: () => void;
 
-    connectedCallback() {
-        super.connectedCallback();
-        BrandingService.getBranding().then((branding) => {
-            this.branding = branding;
-        });
-        this.unsubscribeBranding = BrandingService.subscribe((branding) => {
-            this.branding = branding;
-        });
-        this.unsubscribeTheme = ThemeService.subscribe((theme) => {
-            this.isDarkMode = theme === 'dark';
-        });
-    }
+  connectedCallback() {
+    super.connectedCallback();
+    BrandingService.getBranding().then((branding) => {
+      this.branding = branding;
+    });
+    this.unsubscribeBranding = BrandingService.subscribe((branding) => {
+      this.branding = branding;
+    });
+    this.unsubscribeTheme = ThemeService.subscribe((theme) => {
+      this.isDarkMode = theme === 'dark';
+    });
+  }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        this.unsubscribeBranding?.();
-        this.unsubscribeTheme?.();
-    }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.unsubscribeBranding?.();
+    this.unsubscribeTheme?.();
+  }
 
-    private handleThemeToggle() {
-        ThemeService.toggleTheme();
-    }
+  private handleThemeToggle() {
+    ThemeService.toggleTheme();
+  }
 
-    private renderThemeIcon() {
-        if (this.isDarkMode) {
-            return svg`
+  private renderThemeIcon() {
+    if (this.isDarkMode) {
+      return svg`
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="5"></circle>
                 <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -226,21 +227,21 @@ export class PvHeader extends PvBase {
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
               </svg>
             `;
-        }
+    }
 
-        return svg`
+    return svg`
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
           </svg>
         `;
-    }
+  }
 
-    render() {
-        const tenantName = this.branding.tenantName || 'Velocity';
-        const logoUrl = this.branding.logoBase64 && this.branding.logoType
-            ? `data:${this.branding.logoType};base64,${this.branding.logoBase64}`
-            : null;
-        return html`
+  render() {
+    const tenantName = this.branding.tenantName || 'Velocity';
+    const logoUrl = this.branding.logoBase64 && this.branding.logoType
+      ? `data:${this.branding.logoType};base64,${this.branding.logoBase64}`
+      : null;
+    return html`
       <div class="header-inner">
         <div class="header-left">
           <a href="https://builderwire.com" class="home-link" title="${tenantName} Home" target="_blank">
@@ -254,8 +255,8 @@ export class PvHeader extends PvBase {
         <a href="/" class="logo">
           <div class="logo-icon">
             ${logoUrl
-                ? html`<img class="logo-image" src="${logoUrl}" alt="${tenantName} logo">`
-                : html`⬡`}
+        ? html`<img class="logo-image" src="${logoUrl}" alt="${tenantName} logo">`
+        : html`⬡`}
           </div>
           <span class="logo-name">${tenantName}</span>
         </a>
@@ -288,11 +289,11 @@ export class PvHeader extends PvBase {
         </div>
       </div>
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'pv-header': PvHeader;
-    }
+  interface HTMLElementTagNameMap {
+    'pv-header': PvHeader;
+  }
 }

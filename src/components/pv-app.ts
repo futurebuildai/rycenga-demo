@@ -240,9 +240,9 @@ export class PvApp extends PvBase {
     }
   }
 
-  private exitImpersonation() {
-    localStorage.removeItem('impersonation_session');
-    AuthService.logout();
+  private async exitImpersonation() {
+    const { AdminAuthService } = await import('../admin/services/admin-auth.service.js');
+    await AdminAuthService.stopImpersonation();
     window.location.assign('/admin');
   }
 
