@@ -161,27 +161,6 @@ export class PvSidebar extends PvBase {
         text-decoration: underline;
       }
 
-      .sign-out-btn {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-sm);
-        padding: var(--space-md);
-        background: transparent;
-        color: var(--color-primary);
-        border: 2px solid var(--color-primary);
-        border-radius: var(--radius-md);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-      }
-
-      .sign-out-btn:hover {
-        background: var(--color-primary);
-        color: white;
-      }
-
       @media (max-width: 1023px) {
         :host {
           position: var(--app-sidebar-mobile-position, fixed);
