@@ -62,13 +62,14 @@ export class PvLogin extends PvBase {
         height: 100%;
         object-fit: contain;
         display: block;
+        filter: var(--app-logo-filter, none);
       }
 
       .logo-name-main {
         font-family: var(--font-heading);
         font-size: var(--text-xl);
         font-weight: 800;
-        color: var(--color-primary);
+        color: var(--app-logo-text-color, var(--color-primary));
         letter-spacing: 0.05em;
         display: block;
       }
@@ -249,8 +250,8 @@ export class PvLogin extends PvBase {
           <div class="login-header">
             <div class="login-logo-icon">
               ${logoUrl
-                ? html`<img class="login-logo-image" src="${logoUrl}" alt="${tenantName} logo">`
-                : html`⬡`}
+        ? html`<img class="login-logo-image" src="${logoUrl}" alt="${tenantName} logo">`
+        : html`⬡`}
             </div>
             <div class="login-logo-text">
               <span class="logo-name-main">${tenantName}</span>
