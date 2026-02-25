@@ -25,6 +25,16 @@ export const AuthService = {
         return response;
     },
 
+    stopImpersonation: async (): Promise<LoginResponse> => {
+        const response = await client.request<LoginResponse>('/auth/impersonation/stop', {
+            method: 'POST',
+        });
+        if (response.token) {
+            client.setToken(response.token);
+        }
+        return response;
+    },
+
     getProfile: () => client.request<User>('/auth/me'),
 
     logout: () => {
