@@ -3,6 +3,8 @@ import { customElement, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccountDetails, AdminInvoice, AdminOrder, AdminQuote } from '../services/admin-data.service.js';
+import { ARCenterService } from '../services/ar-center.service.js';
+import type { CreatePaymentRequestPayload } from '../../connect/types/domain.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import { adminAccountDetailsPageStyles } from '../../styles/pages.js';
 
@@ -81,6 +83,14 @@ export class PageAccountDetails extends LitElement {
     // Payment Request State
     @state() private selectedInvoices: Set<string> = new Set();
     @state() private showPaymentModal = false;
+    @state() private prDeliverySms = true;
+    @state() private prDeliveryEmail = true;
+    @state() private prRecipientPhone = '';
+    @state() private prRecipientEmail = '';
+    @state() private prMessageSubject = '';
+    @state() private prMessageBody = '';
+    @state() private prSending = false;
+    @state() private prShowPreview = false;
 
     private toggleInvoice(id: string) {
         const newSet = new Set(this.selectedInvoices);
@@ -102,6 +112,18 @@ export class PageAccountDetails extends LitElement {
     }
 
     private openPaymentModal() {
+        this.prRecipientPhone = this.account?.phone || '';
+        this.prRecipientEmail = this.account?.email || '';
+        this.prDeliverySms = !!this.account?.phone;
+        this.prDeliveryEmail = !!this.account?.email;
+        const invoiceNums = Array.from(this.selectedInvoices).slice(0, 5).join(', ');
+        const selectedTotal = this.invoicesList
+            .filter(i => this.selectedInvoices.has(i.id))
+            .reduce((sum, i) => sum + i.balance, 0);
+        this.prMessageSubject = `Payment Request - ${this.selectedInvoices.size > 1 ? this.selectedInvoices.size + ' Invoices' : invoiceNums}`;
+        this.prMessageBody = `Hi {contactName},\n\nPlease review and pay the following invoice(s): ${invoiceNums}\n\nTotal due: $${selectedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n\nThank you,\n{dealerName}`;
+        this.prShowPreview = false;
+        this.prSending = false;
         this.showPaymentModal = true;
     }
 
@@ -109,10 +131,48 @@ export class PageAccountDetails extends LitElement {
         this.showPaymentModal = false;
     }
 
-    private handleSendPaymentRequest() {
-        this.showToast(`Payment request sent for ${this.selectedInvoices.size} invoice(s).`, 'success');
-        this.selectedInvoices = new Set();
-        this.closePaymentModal();
+    private validatePaymentForm(): string | null {
+        if (!this.prDeliverySms && !this.prDeliveryEmail) return 'Select at least one delivery method.';
+        if (this.prDeliverySms && !this.prRecipientPhone.trim()) return 'Phone number is required for SMS delivery.';
+        if (this.prDeliveryEmail && !this.prRecipientEmail.trim()) return 'Email is required for email delivery.';
+        if (this.prDeliveryEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.prRecipientEmail.trim())) return 'Please enter a valid email address.';
+        if (this.prDeliverySms && !/^\+?\d{7,15}$/.test(this.prRecipientPhone.replace(/[\s()-]/g, ''))) return 'Please enter a valid phone number.';
+        if (!this.prMessageBody.trim()) return 'Message body cannot be empty.';
+        return null;
+    }
+
+    private async handleSendPaymentRequest() {
+        const error = this.validatePaymentForm();
+        if (error) {
+            this.showToast(error, 'error');
+            return;
+        }
+
+        this.prSending = true;
+        try {
+            const invoiceIds = this.invoicesList
+                .filter(i => this.selectedInvoices.has(i.id))
+                .map(i => i.internalId);
+            const payload: CreatePaymentRequestPayload = {
+                accountId: this.account!.id,
+                invoiceIds,
+                deliverySms: this.prDeliverySms,
+                deliveryEmail: this.prDeliveryEmail,
+                recipientPhone: this.prDeliverySms ? this.prRecipientPhone.trim() : undefined,
+                recipientEmail: this.prDeliveryEmail ? this.prRecipientEmail.trim() : undefined,
+                messageSubject: this.prMessageSubject.trim(),
+                messageBody: this.prMessageBody.trim(),
+            };
+            await ARCenterService.createPaymentRequest(payload);
+            const methods = [this.prDeliverySms && 'SMS (Twilio)', this.prDeliveryEmail && 'Email (Resend)'].filter(Boolean).join(' & ');
+            this.showToast(`Payment request sent via ${methods} for ${this.selectedInvoices.size} invoice(s).`, 'success');
+            this.selectedInvoices = new Set();
+            this.closePaymentModal();
+        } catch {
+            this.showToast('Failed to send payment request. Please try again.', 'error');
+        } finally {
+            this.prSending = false;
+        }
     }
 
     private renderTabContent() {
@@ -484,24 +544,83 @@ export class PageAccountDetails extends LitElement {
 
             ${this.showPaymentModal ? html`
                 <div class="modal-overlay" @click=${this.closePaymentModal} role="dialog" aria-modal="true" aria-label="Request payment">
-                    <div class="modal" @click=${(e: Event) => e.stopPropagation()}>
-                        <div class="modal-title">Request Payment (Coming Soon)</div>
+                    <div class="modal modal-lg" @click=${(e: Event) => e.stopPropagation()}>
+                        <div class="modal-title">Request Payment</div>
+
+                        <!-- Invoice Summary -->
                         <div class="payment-summary">
-                            <p class="payment-summary-title">
-                                You have selected ${this.selectedInvoices.size} invoice(s).
-                            </p>
+                            <p class="payment-summary-title">${this.selectedInvoices.size} invoice(s) selected</p>
                             <ul class="payment-summary-list">
-                                ${Array.from(this.selectedInvoices).slice(0, 3).map(id => html`<li>${id}</li>`)}
-                                ${this.selectedInvoices.size > 3 ? html`<li>...and ${this.selectedInvoices.size - 3} more</li>` : ''}
+                                ${this.invoicesList.filter(i => this.selectedInvoices.has(i.id)).slice(0, 5).map(i => html`
+                                    <li>${i.id} — $${i.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</li>
+                                `)}
+                                ${this.selectedInvoices.size > 5 ? html`<li>...and ${this.selectedInvoices.size - 5} more</li>` : ''}
                             </ul>
+                            <p class="payment-summary-total">
+                                Total: <strong>$${this.invoicesList.filter(i => this.selectedInvoices.has(i.id)).reduce((sum, i) => sum + i.balance, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                            </p>
                         </div>
-                        <p class="payment-summary-note">
-                            This feature will allow you to generate a payment link and send it via email or SMS to the customer.
-                        </p>
+
+                        <!-- Delivery Method -->
+                        <div class="form-section">
+                            <label class="form-section-label">Delivery Method</label>
+                            <div class="checkbox-row">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" .checked=${this.prDeliverySms} @change=${(e: Event) => this.prDeliverySms = (e.target as HTMLInputElement).checked} />
+                                    SMS (Twilio)
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" .checked=${this.prDeliveryEmail} @change=${(e: Event) => this.prDeliveryEmail = (e.target as HTMLInputElement).checked} />
+                                    Email (Resend)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Recipient Fields -->
+                        ${this.prDeliverySms ? html`
+                            <div class="form-group-inline">
+                                <label>Recipient Phone</label>
+                                <input class="form-select" type="tel" .value=${this.prRecipientPhone} @input=${(e: Event) => this.prRecipientPhone = (e.target as HTMLInputElement).value} placeholder="+1 555 123 4567" />
+                            </div>
+                        ` : ''}
+                        ${this.prDeliveryEmail ? html`
+                            <div class="form-group-inline">
+                                <label>Recipient Email</label>
+                                <input class="form-select" type="email" .value=${this.prRecipientEmail} @input=${(e: Event) => this.prRecipientEmail = (e.target as HTMLInputElement).value} placeholder="accounts@company.com" />
+                            </div>
+                        ` : ''}
+
+                        <!-- Message -->
+                        <div class="form-group-inline">
+                            <label>Subject</label>
+                            <input class="form-select" type="text" .value=${this.prMessageSubject} @input=${(e: Event) => this.prMessageSubject = (e.target as HTMLInputElement).value} />
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Message Body</label>
+                            <textarea class="form-select form-textarea" rows="5" .value=${this.prMessageBody} @input=${(e: Event) => this.prMessageBody = (e.target as HTMLTextAreaElement).value}></textarea>
+                            <span class="form-hint">Variables: {contactName}, {invoiceNumbers}, {totalAmount}, {dealerName}</span>
+                        </div>
+
+                        <!-- Preview Toggle -->
+                        <button class="btn-preview" @click=${() => this.prShowPreview = !this.prShowPreview}>
+                            ${this.prShowPreview ? 'Hide Preview' : 'Show Preview'}
+                        </button>
+                        ${this.prShowPreview ? html`
+                            <div class="preview-box">
+                                <div class="preview-subject">${this.prMessageSubject}</div>
+                                <div class="preview-body">${this.prMessageBody
+                                    .replace(/{contactName}/g, this.account?.primaryContact || 'Customer')
+                                    .replace(/{invoiceNumbers}/g, Array.from(this.selectedInvoices).join(', '))
+                                    .replace(/{totalAmount}/g, '$' + this.invoicesList.filter(i => this.selectedInvoices.has(i.id)).reduce((s, i) => s + i.balance, 0).toLocaleString('en-US', { minimumFractionDigits: 2 }))
+                                    .replace(/{dealerName}/g, 'Your Company')}</div>
+                            </div>
+                        ` : ''}
 
                         <div class="modal-actions">
-                            <button class="btn-secondary" @click=${this.closePaymentModal}>Close</button>
-                            <button class="btn-primary" disabled>Send Request</button>
+                            <button class="btn-secondary" @click=${this.closePaymentModal} ?disabled=${this.prSending}>Cancel</button>
+                            <button class="btn-primary" @click=${this.handleSendPaymentRequest} ?disabled=${this.prSending}>
+                                ${this.prSending ? 'Sending...' : 'Send Request'}
+                            </button>
                         </div>
                     </div>
                 </div>

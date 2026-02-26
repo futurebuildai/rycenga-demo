@@ -488,3 +488,90 @@ export interface PaymentTransaction {
     referenceType?: string;
     referenceId?: number;
 }
+
+// --- AR Center (Accounts Receivable) ---
+
+export type PaymentRequestStatus =
+    | 'sent'
+    | 'viewed'
+    | 'paid'
+    | 'partially_paid'
+    | 'overdue'
+    | 'cancelled';
+
+export interface PaymentRequestInvoice {
+    invoiceId: number;
+    invoiceNumber: string;
+    amountAtRequest: number;
+    amountPaid: number;
+}
+
+export interface PaymentRequest {
+    id: number;
+    accountId: number;
+    accountName: string;
+    createdByUserId: number;
+    status: PaymentRequestStatus;
+    totalAmount: number;
+    remainingAmount: number;
+    messageSubject: string;
+    messageBody: string;
+    deliverySms: boolean;
+    deliveryEmail: boolean;
+    recipientPhone: string | null;
+    recipientEmail: string | null;
+    reminderCount: number;
+    lastReminderAt: string | null;
+    viewedAt: string | null;
+    paidAt: string | null;
+    invoices: PaymentRequestInvoice[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreatePaymentRequestPayload {
+    accountId: number;
+    invoiceIds: number[];
+    deliverySms: boolean;
+    deliveryEmail: boolean;
+    recipientPhone?: string;
+    recipientEmail?: string;
+    messageSubject?: string;
+    messageBody?: string;
+}
+
+export interface ARSummary {
+    totalOutstanding: number;
+    openRequests: number;
+    paidThisMonth: number;
+    overdueCount: number;
+}
+
+export type AutomationCondition =
+    | 'past_due'
+    | 'due_in_3_days'
+    | 'due_in_7_days'
+    | 'due_today';
+
+export interface AutomationRule {
+    id: number;
+    name: string;
+    condition: AutomationCondition;
+    messageTemplate: string;
+    followUpIntervalDays: number;
+    maxFollowUps: number;
+    isActive: boolean;
+    activeInvoices: number;
+    totalSent: number;
+    totalCollected: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface BulkPreviewAccount {
+    accountId: number;
+    accountName: string;
+    invoiceIds: number[];
+    invoiceCount: number;
+    totalAmount: number;
+}
