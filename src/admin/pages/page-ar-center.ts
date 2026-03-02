@@ -89,6 +89,9 @@ export class PageArCenter extends LitElement {
     @state() private toastMessage = '';
     @state() private toastType: 'success' | 'error' | 'info' = 'info';
     private toastTimer?: ReturnType<typeof setTimeout>;
+    private requestsLoadVersion = 0;
+    private summaryLoadVersion = 0;
+    private automationsLoadVersion = 0;
 
     // --- Lifecycle ---
     async connectedCallback() {
@@ -118,18 +121,24 @@ export class PageArCenter extends LitElement {
 
     // --- Data Loading ---
     private async loadSummary() {
+        const version = ++this.summaryLoadVersion;
         this.summaryLoading = true;
         this.summaryError = false;
         try {
-            this.summary = await ARCenterService.getSummary();
+            const summary = await ARCenterService.getSummary();
+            if (version !== this.summaryLoadVersion) return;
+            this.summary = summary;
         } catch {
+            if (version !== this.summaryLoadVersion) return;
             this.summaryError = true;
         } finally {
+            if (version !== this.summaryLoadVersion) return;
             this.summaryLoading = false;
         }
     }
 
     private async loadRequests() {
+        const version = ++this.requestsLoadVersion;
         this.requestsLoading = true;
         this.requestsError = false;
         try {
@@ -141,23 +150,31 @@ export class PageArCenter extends LitElement {
                 this.searchQuery || undefined,
                 this.sortOption
             );
+            if (version !== this.requestsLoadVersion) return;
             this.requests = items;
             this.requestsTotal = total;
         } catch {
+            if (version !== this.requestsLoadVersion) return;
             this.requestsError = true;
         } finally {
+            if (version !== this.requestsLoadVersion) return;
             this.requestsLoading = false;
         }
     }
 
     private async loadAutomations() {
+        const version = ++this.automationsLoadVersion;
         this.automationsLoading = true;
         this.automationsError = false;
         try {
-            this.automations = await ARCenterService.getAutomations();
+            const automations = await ARCenterService.getAutomations();
+            if (version !== this.automationsLoadVersion) return;
+            this.automations = automations;
         } catch {
+            if (version !== this.automationsLoadVersion) return;
             this.automationsError = true;
         } finally {
+            if (version !== this.automationsLoadVersion) return;
             this.automationsLoading = false;
         }
     }
@@ -519,12 +536,7 @@ export class PageArCenter extends LitElement {
     private renderRequestsTab() {
         const statuses: Array<{ label: string; value: PaymentRequestStatus | '' }> = [
             { label: 'All', value: '' },
-            { label: 'Sent', value: 'sent' },
-            { label: 'Viewed', value: 'viewed' },
-            { label: 'Partial', value: 'partially_paid' },
-            { label: 'Paid', value: 'paid' },
             { label: 'Overdue', value: 'overdue' },
-            { label: 'Cancelled', value: 'cancelled' },
         ];
 
         const totalPages = Math.ceil(this.requestsTotal / this.requestsPageSize);
