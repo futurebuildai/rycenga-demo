@@ -1,17 +1,17 @@
 /**
  * AR Center Service
- * Manages payment requests and automation rules for accounts receivable.
+ * Account roll-up is the canonical data source for AR Center.
  */
 
 import { adminClient } from './admin-client.js';
 import type {
-    PaymentRequest,
-    PaymentRequestStatus,
-    CreatePaymentRequestPayload,
     ARSummary,
     AutomationRule,
     AutomationCondition,
     BulkPreviewAccount,
+    ARAccountRow,
+    ARAccountInvoice,
+    ARAccountContactPayload,
 } from '../../connect/types/domain.js';
 
 interface BackendARSummary {
@@ -38,9 +38,19 @@ interface BackendARAccountSummary {
     overdueInvoiceCount: number;
     dueNext7Days: number;
     latestInvoiceDate?: string;
+    latestInvoiceNumber?: string;
     lastPaymentAt?: string;
     lastPaymentAmount: number;
     agingBucket: string;
+    lastContactedAt?: string;
+    nextActionAt?: string;
+    contactChannel?: 'sms' | 'email' | 'both' | 'none';
+    contactCount?: number;
+}
+
+interface BackendARAccountInvoicesResponse {
+    items: ARAccountInvoice[];
+    total: number;
 }
 
 function formatDate(iso: string | undefined): string {
@@ -64,39 +74,29 @@ class ARCenterServiceImpl {
         };
     }
 
-    private mapBackendAccountToRequest(account: BackendARAccountSummary): PaymentRequest {
-        const anchorTime =
-            account.latestInvoiceDate ||
-            account.lastPaymentAt ||
-            new Date().toISOString();
-        const status: PaymentRequestStatus =
-            account.totalBalance <= 0
-                ? 'paid'
-                : account.pastDueBalance > 0
-                    ? 'overdue'
-                    : 'sent';
-
+    private mapBackendAccount(account: BackendARAccountSummary): ARAccountRow {
         return {
-            id: account.accountId,
             accountId: account.accountId,
+            accountNumber: account.accountNumber,
             accountName: account.accountName,
-            createdByUserId: 0,
-            status,
-            totalAmount: account.totalBalance,
-            remainingAmount: account.totalBalance,
-            messageSubject: `AR Balance - ${account.accountName}`,
-            messageBody: `Account ${account.accountName} currently has ${account.openInvoiceCount} open invoice(s).`,
-            deliverySms: false,
-            deliveryEmail: false,
-            recipientPhone: account.phone || null,
-            recipientEmail: account.email || null,
-            reminderCount: 0,
-            lastReminderAt: null,
-            viewedAt: null,
-            paidAt: status === 'paid' ? anchorTime : null,
-            invoices: [],
-            createdAt: anchorTime,
-            updatedAt: anchorTime,
+            email: account.email || null,
+            phone: account.phone || null,
+            currencyCode: account.currencyCode,
+            totalBalance: account.totalBalance,
+            pastDueBalance: account.pastDueBalance,
+            currentBalance: account.currentBalance,
+            openInvoiceCount: account.openInvoiceCount,
+            overdueInvoiceCount: account.overdueInvoiceCount,
+            dueNext7Days: account.dueNext7Days,
+            latestInvoiceDate: account.latestInvoiceDate || null,
+            latestInvoiceNumber: account.latestInvoiceNumber || null,
+            lastPaymentAt: account.lastPaymentAt || null,
+            lastPaymentAmount: account.lastPaymentAmount,
+            agingBucket: account.agingBucket,
+            lastContactedAt: account.lastContactedAt || null,
+            nextActionAt: account.nextActionAt || null,
+            contactChannel: account.contactChannel || 'none',
+            contactCount: account.contactCount ?? 0,
         };
     }
 
@@ -105,39 +105,39 @@ class ARCenterServiceImpl {
         return this.mapBackendSummary(summary);
     }
 
-    async getPaymentRequests(
+    async getAccounts(
         limit = 10,
         offset = 0,
-        status?: PaymentRequestStatus,
         search?: string,
-        sort: 'newest' | 'oldest' | 'amount-desc' | 'amount-asc' = 'newest'
-    ): Promise<{ items: PaymentRequest[]; total: number }> {
+        sort: 'newest' | 'oldest' | 'amount-desc' | 'amount-asc' = 'newest',
+        pastDueOnly = false
+    ): Promise<{ items: ARAccountRow[]; total: number }> {
         const sortMap: Record<string, string> = {
             'amount-desc': 'balance_desc',
             'amount-asc': 'balance_asc',
             newest: 'last_payment_desc',
             oldest: 'name_asc',
         };
+
         const query = new URLSearchParams({
             limit: String(limit),
             offset: String(offset),
             sort: sortMap[sort] || 'balance_desc',
         });
-        if (status === 'overdue') query.set('pastDueOnly', 'true');
+        if (pastDueOnly) query.set('pastDueOnly', 'true');
         if (search) query.set('search', search);
 
         const response = await adminClient.request<{ items: BackendARAccountSummary[]; total: number }>(`/admin/ar/accounts?${query}`);
-        let items = response.items.map((item) => this.mapBackendAccountToRequest(item));
-        if (status) {
-            items = items.filter((item) => item.status === status);
-        }
-        return { items, total: response.total };
+        return {
+            items: response.items.map((item) => this.mapBackendAccount(item)),
+            total: response.total,
+        };
     }
 
-    async getPaymentRequest(id: number): Promise<PaymentRequest | null> {
+    async getAccount(id: number): Promise<ARAccountRow | null> {
         try {
             const account = await adminClient.request<BackendARAccountSummary>(`/admin/ar/accounts/${id}`);
-            return this.mapBackendAccountToRequest(account);
+            return this.mapBackendAccount(account);
         } catch (error) {
             if (error instanceof Error && /\b404\b/.test(error.message)) {
                 return null;
@@ -146,48 +146,46 @@ class ARCenterServiceImpl {
         }
     }
 
-    async createPaymentRequest(payload: CreatePaymentRequestPayload): Promise<PaymentRequest> {
-        return adminClient.request<PaymentRequest>('/admin/payment-requests', {
+    async getAccountInvoices(accountId: number, limit = 25, offset = 0, status = 'open'): Promise<{ items: ARAccountInvoice[]; total: number }> {
+        const query = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+            status,
+        });
+        const response = await adminClient.request<BackendARAccountInvoicesResponse>(`/admin/ar/accounts/${accountId}/invoices?${query}`);
+        return {
+            items: response.items,
+            total: response.total,
+        };
+    }
+
+    async sendAccountContact(accountId: number, payload: ARAccountContactPayload): Promise<{ success: boolean; message: string; reminderCount: number }> {
+        return adminClient.request<{ success: boolean; message: string; reminderCount: number }>(
+            `/admin/ar/accounts/${accountId}/contact`,
+            {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            }
+        );
+    }
+
+    async bulkContact(payload: { requests: ARAccountContactPayload[] }): Promise<{ created: number; failed: number }> {
+        return adminClient.request<{ created: number; failed: number }>('/admin/ar/accounts/bulk-contact', {
             method: 'POST',
             body: JSON.stringify(payload),
         });
     }
 
-    async sendReminder(id: number, delivery: 'sms' | 'email' | 'both'): Promise<{ success: boolean; message: string; reminderCount: number }> {
-        return adminClient.request<{ success: boolean; message: string; reminderCount: number }>(
-            `/admin/payment-requests/${id}/remind`,
-            { method: 'POST', body: JSON.stringify({ delivery }) }
-        );
-    }
-
-    async cancelRequest(id: number): Promise<PaymentRequest | null> {
-        try {
-            return await adminClient.request<PaymentRequest>(`/admin/payment-requests/${id}/cancel`, { method: 'PUT' });
-        } catch (error) {
-            if (error instanceof Error && /\b404\b/.test(error.message)) {
-                return null;
-            }
-            throw error;
-        }
-    }
-
-    async bulkCreateRequests(requests: CreatePaymentRequestPayload[]): Promise<{ created: number; failed: number }> {
-        return adminClient.request<{ created: number; failed: number }>('/admin/payment-requests/bulk', {
-            method: 'POST',
-            body: JSON.stringify({ requests }),
-        });
-    }
-
     async getBulkPreview(condition: AutomationCondition): Promise<BulkPreviewAccount[]> {
-        return adminClient.request<BulkPreviewAccount[]>(`/admin/payment-requests/bulk-preview?condition=${condition}`);
+        return adminClient.request<BulkPreviewAccount[]>(`/admin/ar/bulk-preview?condition=${condition}`);
     }
 
     async getAutomations(): Promise<AutomationRule[]> {
-        return adminClient.request<AutomationRule[]>('/admin/automations');
+        return adminClient.request<AutomationRule[]>('/admin/ar/automations');
     }
 
     async createAutomation(payload: Omit<AutomationRule, 'id' | 'activeInvoices' | 'totalSent' | 'totalCollected' | 'createdAt' | 'updatedAt'>): Promise<AutomationRule> {
-        return adminClient.request<AutomationRule>('/admin/automations', {
+        return adminClient.request<AutomationRule>('/admin/ar/automations', {
             method: 'POST',
             body: JSON.stringify(payload),
         });
@@ -195,7 +193,7 @@ class ARCenterServiceImpl {
 
     async updateAutomation(id: number, payload: Partial<Omit<AutomationRule, 'id' | 'createdAt' | 'updatedAt'>>): Promise<AutomationRule | null> {
         try {
-            return await adminClient.request<AutomationRule>(`/admin/automations/${id}`, {
+            return await adminClient.request<AutomationRule>(`/admin/ar/automations/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(payload),
             });
@@ -208,12 +206,12 @@ class ARCenterServiceImpl {
     }
 
     async deleteAutomation(id: number): Promise<void> {
-        await adminClient.request<void>(`/admin/automations/${id}`, { method: 'DELETE' });
+        await adminClient.request<void>(`/admin/ar/automations/${id}`, { method: 'DELETE' });
     }
 
     async toggleAutomation(id: number): Promise<AutomationRule | null> {
         try {
-            return await adminClient.request<AutomationRule>(`/admin/automations/${id}/toggle`, { method: 'PUT' });
+            return await adminClient.request<AutomationRule>(`/admin/ar/automations/${id}/toggle`, { method: 'PUT' });
         } catch (error) {
             if (error instanceof Error && /\b404\b/.test(error.message)) {
                 return null;

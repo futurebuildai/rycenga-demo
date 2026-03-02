@@ -491,46 +491,44 @@ export interface PaymentTransaction {
 
 // --- AR Center (Accounts Receivable) ---
 
-export type PaymentRequestStatus =
-    | 'sent'
-    | 'viewed'
-    | 'paid'
-    | 'partially_paid'
-    | 'overdue'
-    | 'cancelled';
+export type ARAccountStatusFilter = '' | 'overdue';
 
-export interface PaymentRequestInvoice {
-    invoiceId: number;
-    invoiceNumber: string;
-    amountAtRequest: number;
-    amountPaid: number;
-}
-
-export interface PaymentRequest {
-    id: number;
+export interface ARAccountRow {
     accountId: number;
+    accountNumber: string;
     accountName: string;
-    createdByUserId: number;
-    status: PaymentRequestStatus;
-    totalAmount: number;
-    remainingAmount: number;
-    messageSubject: string;
-    messageBody: string;
-    deliverySms: boolean;
-    deliveryEmail: boolean;
-    recipientPhone: string | null;
-    recipientEmail: string | null;
-    reminderCount: number;
-    lastReminderAt: string | null;
-    viewedAt: string | null;
-    paidAt: string | null;
-    invoices: PaymentRequestInvoice[];
-    createdAt: string;
-    updatedAt: string;
+    email: string | null;
+    phone: string | null;
+    currencyCode: string;
+    totalBalance: number;
+    pastDueBalance: number;
+    currentBalance: number;
+    openInvoiceCount: number;
+    overdueInvoiceCount: number;
+    dueNext7Days: number;
+    latestInvoiceDate: string | null;
+    latestInvoiceNumber: string | null;
+    lastPaymentAt: string | null;
+    lastPaymentAmount: number;
+    agingBucket: string;
+    lastContactedAt: string | null;
+    nextActionAt: string | null;
+    contactChannel: 'sms' | 'email' | 'both' | 'none';
+    contactCount: number;
 }
 
-export interface CreatePaymentRequestPayload {
-    accountId: number;
+export interface ARAccountInvoice {
+    id: number;
+    invoiceNumber: string;
+    invoiceDate: string;
+    dueDate?: string;
+    total: number;
+    balanceDue: number;
+    status: InvoiceStatus;
+}
+
+export interface ARAccountContactPayload {
+    accountId?: number;
     invoiceIds: number[];
     deliverySms: boolean;
     deliveryEmail: boolean;

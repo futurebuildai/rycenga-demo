@@ -4,7 +4,7 @@ import { Router } from '@vaadin/router';
 import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccountDetails, AdminInvoice, AdminOrder, AdminQuote } from '../services/admin-data.service.js';
 import { ARCenterService } from '../services/ar-center.service.js';
-import type { CreatePaymentRequestPayload } from '../../connect/types/domain.js';
+import type { ARAccountContactPayload } from '../../connect/types/domain.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import { adminAccountDetailsPageStyles } from '../../styles/pages.js';
 
@@ -153,7 +153,7 @@ export class PageAccountDetails extends LitElement {
             const invoiceIds = this.invoicesList
                 .filter(i => this.selectedInvoices.has(i.id))
                 .map(i => i.internalId);
-            const payload: CreatePaymentRequestPayload = {
+            const payload: ARAccountContactPayload = {
                 accountId: this.account!.id,
                 invoiceIds,
                 deliverySms: this.prDeliverySms,
@@ -163,7 +163,7 @@ export class PageAccountDetails extends LitElement {
                 messageSubject: this.prMessageSubject.trim(),
                 messageBody: this.prMessageBody.trim(),
             };
-            await ARCenterService.createPaymentRequest(payload);
+            await ARCenterService.sendAccountContact(this.account!.id, payload);
             const methods = [this.prDeliverySms && 'SMS (Twilio)', this.prDeliveryEmail && 'Email (Resend)'].filter(Boolean).join(' & ');
             this.showToast(`Payment request sent via ${methods} for ${this.selectedInvoices.size} invoice(s).`, 'success');
             this.selectedInvoices = new Set();
@@ -609,10 +609,10 @@ export class PageAccountDetails extends LitElement {
                             <div class="preview-box">
                                 <div class="preview-subject">${this.prMessageSubject}</div>
                                 <div class="preview-body">${this.prMessageBody
-                                    .replace(/{contactName}/g, this.account?.primaryContact || 'Customer')
-                                    .replace(/{invoiceNumbers}/g, Array.from(this.selectedInvoices).join(', '))
-                                    .replace(/{totalAmount}/g, '$' + this.invoicesList.filter(i => this.selectedInvoices.has(i.id)).reduce((s, i) => s + i.balance, 0).toLocaleString('en-US', { minimumFractionDigits: 2 }))
-                                    .replace(/{dealerName}/g, 'Your Company')}</div>
+                        .replace(/{contactName}/g, this.account?.primaryContact || 'Customer')
+                        .replace(/{invoiceNumbers}/g, Array.from(this.selectedInvoices).join(', '))
+                        .replace(/{totalAmount}/g, '$' + this.invoicesList.filter(i => this.selectedInvoices.has(i.id)).reduce((s, i) => s + i.balance, 0).toLocaleString('en-US', { minimumFractionDigits: 2 }))
+                        .replace(/{dealerName}/g, 'Your Company')}</div>
                             </div>
                         ` : ''}
 

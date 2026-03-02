@@ -100,23 +100,10 @@ export class PageLogin extends LitElement {
                 pointer-events: none;
             }
 
-            .input-wrap input {
-                width: 100%;
-                padding: var(--space-md, 0.75rem);
+            .input-wrap .form-input {
                 padding-left: calc(var(--space-md, 1rem) * 2 + 10px);
-                border: 2px solid var(--color-border, #e2e8f0);
-                border-radius: var(--radius-md, 6px);
-                font-size: var(--text-base, 1rem);
-                font-family: var(--font-body, 'Inter', sans-serif);
-                transition: border-color var(--transition-fast, 150ms ease);
-                box-sizing: border-box;
                 background: var(--app-control-bg, #ffffff);
                 color: var(--color-text);
-            }
-
-            .input-wrap input:focus {
-                outline: none;
-                border-color: var(--color-accent, #f97316);
             }
 
             .btn-login {
@@ -250,6 +237,7 @@ export class PageLogin extends LitElement {
                                     <input
                                         type="text"
                                         id="admin-otp"
+                                        class="form-input"
                                         maxlength="6"
                                         placeholder="123456"
                                         required
@@ -273,6 +261,7 @@ export class PageLogin extends LitElement {
                                     <input
                                         type="email"
                                         id="admin-email"
+                                        class="form-input"
                                         placeholder="admin@company.com"
                                         required
                                         .value=${this.email}
@@ -291,6 +280,7 @@ export class PageLogin extends LitElement {
                                     <input
                                         type="password"
                                         id="admin-password"
+                                        class="form-input"
                                         placeholder="••••••••"
                                         required
                                         .value=${this.password}

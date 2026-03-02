@@ -239,6 +239,7 @@ export class PvLogin extends PvBase {
                 <input 
                   type="email" 
                   id="login-email" 
+                  class="form-input"
                   placeholder="name@company.com" 
                   required
                   .value=${this.email}
@@ -257,6 +258,7 @@ export class PvLogin extends PvBase {
                 <input 
                   type="password" 
                   id="login-password" 
+                  class="form-input"
                   placeholder="••••••••" 
                   required
                   .value=${this.password}
