@@ -20,20 +20,20 @@ export class PvLogin extends PvBase {
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        background: var(--app-login-bg, linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%));
+        background: var(--app-login-bg);
       }
 
       .login-container {
         width: 100%;
-        max-width: var(--app-login-container-max-width, 420px);
+        max-width: var(--app-login-container-max-width);
         padding: var(--space-xl);
       }
 
       .login-card {
-        background: var(--app-login-card-bg, #ffffff);
-        border-radius: var(--app-login-card-radius, var(--radius-xl));
-        padding: var(--app-login-card-padding, var(--space-2xl));
-        box-shadow: var(--app-login-card-shadow, var(--shadow-xl));
+        background: var(--app-login-card-bg);
+        border-radius: var(--app-login-card-radius);
+        padding: var(--app-login-card-padding);
+        box-shadow: var(--app-login-card-shadow);
       }
 
       .login-header {
@@ -45,12 +45,12 @@ export class PvLogin extends PvBase {
       }
 
       .login-logo-icon {
-        font-size: var(--app-login-logo-font-size, 2.5rem);
-        color: var(--color-primary);
-        width: var(--app-login-logo-size, 64px);
-        height: var(--app-login-logo-size, 64px);
-        border-radius: var(--app-login-logo-radius, 16px);
-        background: var(--app-login-logo-bg, color-mix(in srgb, var(--color-primary) 12%, transparent));
+        font-size: var(--app-login-logo-font-size);
+        color: var(--app-logo-text-color);
+        width: var(--app-login-logo-size);
+        height: var(--app-login-logo-size);
+        border-radius: var(--app-login-logo-radius);
+        background: var(--app-login-logo-bg);
         display: grid;
         place-items: center;
         margin-bottom: var(--space-md);
@@ -62,14 +62,14 @@ export class PvLogin extends PvBase {
         height: 100%;
         object-fit: contain;
         display: block;
-        filter: var(--app-logo-filter, none);
+        filter: var(--app-logo-filter);
       }
 
       .logo-name-main {
         font-family: var(--font-heading);
         font-size: var(--text-xl);
         font-weight: 800;
-        color: var(--app-logo-text-color, var(--color-primary));
+        color: var(--app-logo-text-color);
         letter-spacing: 0.05em;
         display: block;
       }
@@ -82,8 +82,8 @@ export class PvLogin extends PvBase {
       }
 
       .login-error {
-        background: var(--app-danger-bg, rgba(239, 68, 68, 0.1));
-        color: var(--app-danger-color, var(--color-error));
+        background: var(--app-danger-bg);
+        color: var(--app-danger-color);
         padding: var(--space-md);
         border-radius: var(--radius-md);
         font-size: var(--text-sm);
@@ -93,42 +93,6 @@ export class PvLogin extends PvBase {
 
       .form-group {
         margin-bottom: var(--space-lg);
-      }
-
-      .form-group label {
-        display: block;
-        font-size: var(--text-sm);
-        font-weight: 500;
-        color: var(--color-text);
-        margin-bottom: var(--space-xs);
-      }
-
-      .input-with-icon {
-        position: relative;
-      }
-
-      .input-with-icon svg {
-        position: absolute;
-        left: var(--space-md);
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--color-text-muted);
-        pointer-events: none;
-      }
-
-      .input-with-icon input {
-        width: 100%;
-        padding: var(--space-md);
-        padding-left: calc(var(--space-md) * 2 + 18px);
-        border: 2px solid var(--color-border);
-        border-radius: var(--radius-md);
-        font-size: var(--text-base);
-        transition: border-color var(--transition-fast);
-      }
-
-      .input-with-icon input:focus {
-        outline: none;
-        border-color: var(--color-accent);
       }
 
       .form-footer {
@@ -175,7 +139,6 @@ export class PvLogin extends PvBase {
         transform: translateY(-2px);
         box-shadow: var(--shadow-lg);
       }
-
     `,
   ];
 
@@ -276,6 +239,7 @@ export class PvLogin extends PvBase {
                 <input 
                   type="email" 
                   id="login-email" 
+                  class="form-input"
                   placeholder="name@company.com" 
                   required
                   .value=${this.email}
@@ -294,6 +258,7 @@ export class PvLogin extends PvBase {
                 <input 
                   type="password" 
                   id="login-password" 
+                  class="form-input"
                   placeholder="••••••••" 
                   required
                   .value=${this.password}

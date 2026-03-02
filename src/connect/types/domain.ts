@@ -488,3 +488,88 @@ export interface PaymentTransaction {
     referenceType?: string;
     referenceId?: number;
 }
+
+// --- AR Center (Accounts Receivable) ---
+
+export type ARAccountStatusFilter = '' | 'overdue';
+
+export interface ARAccountRow {
+    accountId: number;
+    accountNumber: string;
+    accountName: string;
+    email: string | null;
+    phone: string | null;
+    currencyCode: string;
+    totalBalance: number;
+    pastDueBalance: number;
+    currentBalance: number;
+    openInvoiceCount: number;
+    overdueInvoiceCount: number;
+    dueNext7Days: number;
+    latestInvoiceDate: string | null;
+    latestInvoiceNumber: string | null;
+    lastPaymentAt: string | null;
+    lastPaymentAmount: number;
+    agingBucket: string;
+    lastContactedAt: string | null;
+    nextActionAt: string | null;
+    contactChannel: 'sms' | 'email' | 'both' | 'none';
+    contactCount: number;
+}
+
+export interface ARAccountInvoice {
+    id: number;
+    invoiceNumber: string;
+    invoiceDate: string;
+    dueDate?: string;
+    total: number;
+    balanceDue: number;
+    status: InvoiceStatus;
+}
+
+export interface ARAccountContactPayload {
+    accountId?: number;
+    invoiceIds: number[];
+    deliverySms: boolean;
+    deliveryEmail: boolean;
+    recipientPhone?: string;
+    recipientEmail?: string;
+    messageSubject?: string;
+    messageBody?: string;
+}
+
+export interface ARSummary {
+    totalOutstanding: number;
+    openRequests: number;
+    paidThisMonth: number;
+    overdueCount: number;
+}
+
+export type AutomationCondition =
+    | 'past_due'
+    | 'due_in_3_days'
+    | 'due_in_7_days'
+    | 'due_today';
+
+export interface AutomationRule {
+    id: number;
+    name: string;
+    condition: AutomationCondition;
+    messageTemplate: string;
+    followUpIntervalDays: number;
+    maxFollowUps: number;
+    isActive: boolean;
+    activeInvoices: number;
+    totalSent: number;
+    totalCollected: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface BulkPreviewAccount {
+    accountId: number;
+    accountName: string;
+    invoiceIds: number[];
+    invoiceCount: number;
+    totalAmount: number;
+}
