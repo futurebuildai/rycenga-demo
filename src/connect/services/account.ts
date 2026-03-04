@@ -43,4 +43,14 @@ export const AccountService = {
      */
     getAccountFinancials: (id: number): Promise<AccountFinancials> =>
         client.request<AccountFinancials>(`/accounts/${id}/financials`),
+
+    /**
+     * Update account SMS consent
+     * MAPS TO: PUT /accounts/{id}/sms-consent
+     */
+    updateSMSConsent: (id: number, smsConsent: boolean): Promise<{ smsConsent: boolean }> =>
+        client.request<{ smsConsent: boolean }>(`/accounts/${id}/sms-consent`, {
+            method: 'PUT',
+            body: JSON.stringify({ smsConsent }),
+        }),
 };
