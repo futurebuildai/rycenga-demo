@@ -149,6 +149,28 @@ export class AdminLayout extends LitElement {
             color: var(--color-text-muted, #64748b);
         }
 
+        .btn-theme {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 150ms ease;
+            font-family: var(--font-body, 'Inter', sans-serif);
+        }
+
+        .btn-theme:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
         .btn-signout {
             display: flex;
             align-items: center;
@@ -172,26 +194,7 @@ export class AdminLayout extends LitElement {
             color: var(--admin-signout-hover-color, #ef4444);
         }
 
-        .btn-theme {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            margin: 0 0 10px auto;
-            background: transparent;
-            border: none;
-            border-radius: 0;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: all 150ms ease;
-            font-family: var(--font-body, 'Inter', sans-serif);
-        }
 
-        .btn-theme:hover {
-            color: #ffffff;
-        }
 
         main {
             overflow-y: auto;
@@ -327,15 +330,16 @@ export class AdminLayout extends LitElement {
                             <div class="user-name">${this.user?.name || 'Admin User'}</div>
                             <div class="user-role">${this.displayRole}</div>
                         </div>
+                        <button
+                            class="btn-theme"
+                            @click=${this.handleThemeToggle}
+                            aria-label="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
+                            title="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
+                        >
+                            ${this.renderThemeIcon()}
+                        </button>
                     </div>
-                    <button
-                        class="btn-theme"
-                        @click=${this.handleThemeToggle}
-                        aria-label="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
-                        title="${this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}"
-                    >
-                        ${this.renderThemeIcon()}
-                    </button>
+
                     <button class="btn-signout" @click=${this.handleSignOut}>
                         <svg style="width:16px;height:16px;margin-right:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         Sign Out
