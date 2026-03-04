@@ -63,6 +63,7 @@ export interface Account {
     number?: string;
     email?: string;
     phone?: string;
+    smsConsent?: boolean;
     active: boolean;
     addresses?: AccountAddress[];
     currencyCode: string;
@@ -551,10 +552,13 @@ export type AutomationCondition =
     | 'due_in_7_days'
     | 'due_today';
 
+export type AutomationChannel = 'sms' | 'email';
+
 export interface AutomationRule {
     id: number;
     name: string;
     condition: AutomationCondition;
+    channel: AutomationChannel;
     messageTemplate: string;
     followUpIntervalDays: number;
     maxFollowUps: number;

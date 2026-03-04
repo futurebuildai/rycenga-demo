@@ -10,6 +10,7 @@ import type {
     ARAccountRow,
     ARAccountStatusFilter,
     ARSummary,
+    AutomationChannel,
     AutomationCondition,
     AutomationRule,
     BulkPreviewAccount,
@@ -69,6 +70,7 @@ export class PageArCenter extends LitElement {
     @state() private automationEditing: AutomationRule | null = null;
     @state() private autoFormName = '';
     @state() private autoFormCondition: AutomationCondition = 'past_due';
+    @state() private autoFormChannel: AutomationChannel = 'sms';
     @state() private autoFormTemplate = '';
     @state() private autoFormInterval = 7;
     @state() private autoFormMaxFollowUps = 3;
@@ -364,10 +366,18 @@ export class PageArCenter extends LitElement {
         }
     }
 
+    private formatChannelLabel(channel: AutomationChannel): string {
+        switch (channel) {
+            case 'sms': return 'sms';
+            case 'email': return 'email';
+        }
+    }
+
     private openAutomationModal(rule?: AutomationRule) {
         this.automationEditing = rule ?? null;
         this.autoFormName = rule?.name ?? '';
         this.autoFormCondition = rule?.condition ?? 'past_due';
+        this.autoFormChannel = rule?.channel ?? 'sms';
         this.autoFormTemplate = rule?.messageTemplate ?? 'Hi {contactName}, invoice {invoiceNumbers} for {totalAmount} is due. Please arrange payment.';
         this.autoFormInterval = rule?.followUpIntervalDays ?? 7;
         this.autoFormMaxFollowUps = rule?.maxFollowUps ?? 3;
@@ -388,6 +398,7 @@ export class PageArCenter extends LitElement {
                 await ARCenterService.updateAutomation(this.automationEditing.id, {
                     name: this.autoFormName.trim(),
                     condition: this.autoFormCondition,
+                    channel: this.autoFormChannel,
                     messageTemplate: this.autoFormTemplate.trim(),
                     followUpIntervalDays: this.autoFormInterval,
                     maxFollowUps: this.autoFormMaxFollowUps,
@@ -398,6 +409,7 @@ export class PageArCenter extends LitElement {
                 await ARCenterService.createAutomation({
                     name: this.autoFormName.trim(),
                     condition: this.autoFormCondition,
+                    channel: this.autoFormChannel,
                     messageTemplate: this.autoFormTemplate.trim(),
                     followUpIntervalDays: this.autoFormInterval,
                     maxFollowUps: this.autoFormMaxFollowUps,
@@ -768,6 +780,7 @@ export class PageArCenter extends LitElement {
                             <tr>
                                 <th>Rule Name</th>
                                 <th>Condition</th>
+                                <th>Channel</th>
                                 <th>Follow-Up</th>
                                 <th>Active Invoices</th>
                                 <th>Total Sent</th>
@@ -781,6 +794,7 @@ export class PageArCenter extends LitElement {
                                 <tr>
                                     <td><strong>${rule.name}</strong></td>
                                     <td><span class="condition-badge">${this.formatConditionLabel(rule.condition)}</span></td>
+                                    <td class="text-muted">${this.formatChannelLabel(rule.channel)}</td>
                                     <td class="text-muted">${rule.followUpIntervalDays > 0 ? `Every ${rule.followUpIntervalDays}d (max ${rule.maxFollowUps})` : `Once (max ${rule.maxFollowUps})`}</td>
                                     <td>${rule.activeInvoices}</td>
                                     <td>${rule.totalSent}</td>
@@ -823,6 +837,13 @@ export class PageArCenter extends LitElement {
                         </select>
                     </div>
                     <div class="form-group-inline">
+                        <label>Delivery Channel</label>
+                        <select class="form-input" .value=${this.autoFormChannel} @change=${(e: Event) => { this.autoFormChannel = (e.target as HTMLSelectElement).value as AutomationChannel; }}>
+                            <option value="sms">sms</option>
+                            <option value="email">email</option>
+                        </select>
+                    </div>
+                    <div class="form-group-inline">
                         <label>Message Template</label>
                         <textarea class="form-input form-textarea" rows="4" .value=${this.autoFormTemplate} @input=${(e: Event) => { this.autoFormTemplate = (e.target as HTMLTextAreaElement).value; }}></textarea>
                     </div>
@@ -833,7 +854,7 @@ export class PageArCenter extends LitElement {
                         </div>
                         <div class="form-group-inline">
                             <label>Max Follow-ups</label>
-                            <input class="form-input" type="number" min="1" max="20" .value=${String(this.autoFormMaxFollowUps)} @input=${(e: Event) => { this.autoFormMaxFollowUps = parseInt((e.target as HTMLInputElement).value) || 1; }} />
+                            <input class="form-input" type="number" min="1" max="3" .value=${String(this.autoFormMaxFollowUps)} @input=${(e: Event) => { this.autoFormMaxFollowUps = Math.min(3, Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1)); }} />
                         </div>
                     </div>
                     <div class="modal-actions">

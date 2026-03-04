@@ -134,6 +134,7 @@ export class PageMessaging extends LitElement {
             const message = await AdminMessagingService.sendMessage({
                 threadId: currentThread.id,
                 recipient: currentThread.contact.phone,
+                accountId: currentThread.contact.accountId,
                 type: 'text',
                 content: { text: e.detail.text },
             });
@@ -196,6 +197,7 @@ export class PageMessaging extends LitElement {
                 const message = await AdminMessagingService.sendMessage({
                     threadId: currentThread.id,
                     recipient: currentThread.contact.phone,
+                    accountId: currentThread.contact.accountId,
                     type: 'file',
                     content: {
                         mediaUrl: `/uploads/${file.name}`,
@@ -306,7 +308,9 @@ export class PageMessaging extends LitElement {
             const { thread, message } = await AdminMessagingService.startConversation(
                 contactPhone,
                 initialMessage,
-                'sms'
+                'sms',
+                undefined,
+                accountId
             );
 
             // Enhance thread contact with provided name
@@ -358,7 +362,7 @@ export class PageMessaging extends LitElement {
                 ></messaging-thread-list>
 
                 ${this.selectedThread
-                    ? html`
+                ? html`
                         <messaging-chat-window
                             .thread=${this.selectedThread}
                             .messages=${this.messages}
@@ -368,7 +372,7 @@ export class PageMessaging extends LitElement {
                             @assign-agents=${this.handleAssignAgents}
                         ></messaging-chat-window>
                     `
-                    : html`
+                : html`
                         <div class="empty-state">
                             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -377,7 +381,7 @@ export class PageMessaging extends LitElement {
                             <p class="empty-description">Choose a thread from the list to start messaging</p>
                         </div>
                     `
-                }
+            }
             </div>
 
             <messaging-new-thread-modal

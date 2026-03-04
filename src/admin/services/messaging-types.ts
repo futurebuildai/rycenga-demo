@@ -45,6 +45,7 @@ export interface BackendMessagesResponse {
 export interface BackendSendMessageRequest {
     channel: 'sms' | 'email';
     to: string;
+    accountId?: number;
     subject?: string;
     message: string;
     reference?: string;
@@ -144,6 +145,7 @@ export interface MessageListResponse {
 export interface SendMessagePayload {
     threadId: string;
     recipient?: string;
+    accountId?: number;
     type: MessageType;
     content: MessageContent;
 }
