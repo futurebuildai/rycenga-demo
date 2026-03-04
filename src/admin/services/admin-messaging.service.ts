@@ -216,7 +216,7 @@ class AdminMessagingServiceImpl {
      * Backend endpoint: POST /communications/messages
      */
     async sendMessage(payload: SendMessagePayload): Promise<Message> {
-        const { threadId, recipient, content } = payload;
+        const { threadId, recipient, accountId, content } = payload;
         const allMessages = await this.fetchAllMessages();
 
         // Extract message text
@@ -228,13 +228,16 @@ class AdminMessagingServiceImpl {
         }
 
         let to = recipient?.trim() || '';
-        if (!to) {
+        let resolvedAccountId = accountId;
+
+        if (!to || !resolvedAccountId) {
             const conversationId = parseConversationThreadId(threadId);
             const fromConversation = conversationId !== null
                 ? allMessages.find((msg) => msg.conversationId === conversationId)
                 : allMessages.find((msg) => getBackendThreadId(msg) === threadId);
             if (fromConversation) {
-                to = getMessageContactPhone(fromConversation);
+                if (!to) to = getMessageContactPhone(fromConversation);
+                if (!resolvedAccountId) resolvedAccountId = fromConversation.accountId;
             }
         }
         if (!to || to === 'unknown') {
@@ -244,6 +247,7 @@ class AdminMessagingServiceImpl {
         const request: BackendSendMessageRequest = {
             channel: 'sms',
             to,
+            accountId: resolvedAccountId,
             message: messageText,
         };
 
@@ -270,11 +274,13 @@ class AdminMessagingServiceImpl {
         phone: string,
         message: string,
         channel: 'sms' | 'email' = 'sms',
-        subject?: string
+        subject?: string,
+        accountId?: number
     ): Promise<{ thread: Thread; message: Message }> {
         const request: BackendSendMessageRequest = {
             channel,
             to: phone,
+            accountId,
             message,
             subject: channel === 'email' ? subject : undefined,
         };
