@@ -63,7 +63,6 @@ export interface Account {
     number?: string;
     email?: string;
     phone?: string;
-    smsConsent?: boolean;
     active: boolean;
     addresses?: AccountAddress[];
     currencyCode: string;
@@ -380,9 +379,13 @@ export interface TokenResponse {
  * Notification preferences for settings page
  * MAPS TO: PUT /users/{id}/notifications
  */
+/**
+ * NotificationPreferences - User notification settings scoped to the current account
+ * MAPS TO: GET/PUT /me/preferences
+ */
 export interface NotificationPreferences {
     emailNotifications: boolean;
-    smsNotifications: boolean;
+    smsConsent: boolean;
     orderUpdates: boolean;
 }
 
