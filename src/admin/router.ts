@@ -9,6 +9,7 @@ import './pages/page-quote-details.js';
 import './pages/page-settings.js';
 import './pages/page-messaging.js';
 import './pages/page-ar-center.js';
+import './pages/page-docs.js';
 import './pages/page-users.js';
 import './pages/page-user-details.js';
 
@@ -27,6 +28,7 @@ export function initRouter(outlet: HTMLElement): Router {
         { path: '/admin/settings', component: 'admin-page-settings' },
         { path: '/admin/messaging', component: 'admin-page-messaging' },
         { path: '/admin/ar-center', component: 'admin-page-ar-center' },
+        { path: '/admin/docs', component: 'admin-page-docs' },
         { path: '(.*)', redirect: '/admin' },
     ]);
 

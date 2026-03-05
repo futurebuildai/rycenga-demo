@@ -577,3 +577,68 @@ export interface BulkPreviewAccount {
     invoiceCount: number;
     totalAmount: number;
 }
+
+// --- Document Management (Docs) ---
+
+export interface DocumentDTO {
+    id: number;
+    tenantId: string;
+    accountId: number;
+    accountName: string;
+    fileName: string;
+    s3Key: string;
+    fileSize: number;
+    createdAt: string;
+}
+
+export interface SharedDocumentDTO extends DocumentDTO {
+    requiresAck: boolean;
+    acknowledgedAt: string | null;
+    status: 'pending' | 'acknowledged';
+}
+
+export interface InboxDocumentDTO extends DocumentDTO {
+    memo: string | null;
+    attentionTo: string | null;
+    assignedUserId: number | null;
+}
+
+export interface DocsSummary {
+    totalShared: number;
+    pendingAck: number;
+    acknowledgedThisMonth: number;
+    inboxNeedsAttention: number;
+}
+
+export interface PresignedUrlResponse {
+    uploadUrl: string;
+    s3Key: string;
+}
+
+export interface DocumentViewUrlResponse {
+    viewUrl: string;
+    contentType: string;
+}
+
+export interface SharePayload {
+    fileName: string;
+    s3Key: string;
+    fileSize: number;
+    fileType: string;
+    accountId: number;
+    requiresAck: boolean;
+    memo?: string;
+}
+
+export type DocsStatusFilter = '' | 'pending' | 'acknowledged';
+export type InboxFilter = '' | 'unassigned';
+export type DocsSortOption = 'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
+
+export interface DocsFilterParams {
+    search?: string;
+    status?: DocsStatusFilter;
+    filter?: InboxFilter;
+    sort?: DocsSortOption;
+    page?: number;
+    pageSize?: number;
+}
