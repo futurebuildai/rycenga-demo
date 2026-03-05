@@ -104,12 +104,32 @@ export class PvApp extends PvBase {
         color: var(--color-text-muted);
       }
 
+      .sidebar-backdrop {
+        display: none;
+      }
+
       @media (max-width: 1023px) {
         .app-main {
           padding: var(--app-main-padding-mobile, var(--app-main-padding, var(--space-2xl)));
           margin: var(--app-main-margin-mobile, var(--app-main-margin, 0));
           border-radius: var(--app-main-radius-mobile, var(--app-main-radius, 0));
           box-shadow: var(--app-main-shadow-mobile, var(--app-main-shadow, none));
+        }
+
+        .sidebar-backdrop {
+          display: block;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 150;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease;
+        }
+
+        .sidebar-backdrop.visible {
+          opacity: 1;
+          pointer-events: auto;
         }
       }
     `,
@@ -224,6 +244,10 @@ export class PvApp extends PvBase {
     this.sidebarOpen = !this.sidebarOpen;
   }
 
+  private closeSidebar() {
+    this.sidebarOpen = false;
+  }
+
   private refreshImpersonationState() {
     const raw = localStorage.getItem('impersonation_session');
     if (!raw) {
@@ -287,12 +311,15 @@ export class PvApp extends PvBase {
         @menu-toggle=${this.handleMenuToggle}
       ></pv-header>
 
+      <div class="sidebar-backdrop ${this.sidebarOpen ? 'visible' : ''}" @click=${this.closeSidebar}></div>
+
       <div class="app-layout">
-        <pv-sidebar 
+        <pv-sidebar
           class="${this.sidebarOpen ? 'open' : ''}"
           .activeRoute=${this.currentRoute}
+          @nav-select=${this.closeSidebar}
         ></pv-sidebar>
-        
+
         <main class="app-main">
           ${this.renderPage()}
         </main>

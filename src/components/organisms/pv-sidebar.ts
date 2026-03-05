@@ -163,17 +163,27 @@ export class PvSidebar extends PvBase {
 
       @media (max-width: 1023px) {
         :host {
-          position: var(--app-sidebar-mobile-position, fixed);
-          left: var(--app-sidebar-mobile-left, -280px);
-          top: var(--app-sidebar-mobile-top, var(--header-height, 80px));
-          width: var(--app-sidebar-mobile-width, var(--sidebar-width, 280px));
-          height: var(--app-sidebar-mobile-height, calc(100vh - var(--header-height, 80px)));
-          z-index: 100;
-          transition: left var(--transition-base);
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(0.95);
+          width: min(320px, calc(100vw - 32px));
+          max-height: calc(100vh - 64px);
+          height: auto;
+          z-index: 200;
+          border-radius: var(--radius-xl, 16px);
+          border-right: none;
+          box-shadow: var(--shadow-xl, 0 20px 60px rgba(0, 0, 0, 0.3));
+          overflow-y: auto;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         :host(.open) {
-          left: var(--app-sidebar-mobile-open-left, 0);
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+          pointer-events: auto;
         }
       }
     `,
@@ -227,6 +237,10 @@ export class PvSidebar extends PvBase {
 
   private handleNavClick(route: RouteId) {
     RouterService.navigate(route);
+    this.dispatchEvent(new CustomEvent('nav-select', {
+      bubbles: true,
+      composed: true,
+    }));
   }
 
   private handleSignOut() {

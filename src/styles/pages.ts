@@ -1174,11 +1174,22 @@ export const projectsPageStyles = css`
     border-radius: var(--radius-md);
     font-size: var(--text-base);
     background: var(--app-control-bg, #ffffff);
+    min-width: 130px;
+  }
+
+  @media (max-width: 480px) {
+    .filters-bar {
+      flex-direction: column;
+    }
+
+    .filter-search {
+      max-width: 100%;
+    }
   }
 
   .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr));
     gap: var(--space-lg);
   }
 
@@ -1347,6 +1358,20 @@ export const ordersPageStyles = css`
     }
   }
 
+  @media (max-width: 768px) {
+    .filter-chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: var(--space-xs);
+    }
+
+    .filter-chip {
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+  }
+
   .order-row-info {
     display: flex;
     flex-direction: column;
@@ -1457,6 +1482,24 @@ export const ordersPageStyles = css`
     color: var(--color-text-muted);
     font-size: var(--text-sm);
   }
+
+  @media (max-width: 768px) {
+    .line-items-table th,
+    .line-items-table td {
+      padding: var(--space-sm);
+      font-size: var(--text-sm);
+    }
+
+    .line-items-table th:first-child,
+    .line-items-table td:first-child {
+      width: 50%;
+    }
+
+    .line-items-table th:nth-child(n+2),
+    .line-items-table td:nth-child(n+2) {
+      white-space: nowrap;
+    }
+  }
 `;
 
 export const estimatesPageStyles = css`
@@ -1519,6 +1562,7 @@ export const estimatesPageStyles = css`
   .estimate-number {
     font-weight: 600;
     font-size: var(--text-lg);
+    white-space: nowrap;
   }
 
   .estimate-expiry, .estimate-date {
@@ -1601,6 +1645,7 @@ export const estimatesPageStyles = css`
     font-size: var(--text-2xl);
     font-weight: 700;
     margin-bottom: var(--space-xs);
+    word-break: keep-all;
   }
 
   .detail-project-info {
@@ -1635,6 +1680,24 @@ export const estimatesPageStyles = css`
   .line-item-sku {
     font-size: var(--text-sm);
     color: var(--color-text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .line-items-table th,
+    .line-items-table td {
+      padding: var(--space-sm);
+      font-size: var(--text-sm);
+    }
+
+    .line-items-table th:first-child,
+    .line-items-table td:first-child {
+      width: 50%;
+    }
+
+    .line-items-table th:nth-child(n+2),
+    .line-items-table td:nth-child(n+2) {
+      white-space: nowrap;
+    }
   }
 
   .detail-actions-footer {
@@ -1970,6 +2033,24 @@ export const billingPageStyles = css`
   .line-price,
   .line-total {
     text-align: right;
+  }
+
+  @media (max-width: 768px) {
+    .line-items-table th,
+    .line-items-table td {
+      padding: var(--space-sm);
+      font-size: var(--text-sm);
+    }
+
+    .line-items-table th:first-child,
+    .line-items-table td:first-child {
+      width: 50%;
+    }
+
+    .line-items-table th:nth-child(n+2),
+    .line-items-table td:nth-child(n+2) {
+      white-space: nowrap;
+    }
   }
 
   .pagination {
