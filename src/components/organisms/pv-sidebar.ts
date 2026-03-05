@@ -195,6 +195,7 @@ export class PvSidebar extends PvBase {
       { id: 'orders', label: 'Orders', icon: 'package' },
       { id: 'estimates', label: 'Estimates', icon: 'file-text', badge: this.pendingEstimatesCount > 0 ? this.pendingEstimatesCount : undefined },
       { id: 'wallet', label: 'Wallet', icon: 'wallet' },
+      { id: 'docs', label: 'My Docs', icon: 'paperclip' },
       { id: 'team', label: 'Team', icon: 'users' },
       { id: 'settings', label: 'Settings', icon: 'settings' },
     ];
@@ -262,6 +263,9 @@ export class PvSidebar extends PvBase {
       'wallet': html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
         <circle cx="16" cy="12" r="2"></circle>
+      </svg>`,
+      'paperclip': html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
       </svg>`,
       'users': html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>

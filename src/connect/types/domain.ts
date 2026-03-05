@@ -642,3 +642,56 @@ export interface DocsFilterParams {
     page?: number;
     pageSize?: number;
 }
+
+// --- Contractor Docs (My Docs) ---
+
+export interface ContractorFolder {
+    id: number;
+    name: string;
+    createdAt: string;
+}
+
+export interface ContractorDocumentDTO {
+    id: number;
+    fileName: string;
+    fileSize: number;
+    createdAt: string;
+    folderId: number | null;
+    source: 'dealer' | 'contractor';
+    requiresAck?: boolean;
+    acknowledgedAt?: string | null;
+    status?: 'pending' | 'acknowledged';
+    memo?: string | null;
+    attentionTo?: string | null;
+}
+
+export interface ContractorDocsSummary {
+    totalFiles: number;
+    sharedByDealer: number;
+    myUploads: number;
+    pendingAck: number;
+}
+
+export type ContractorDocsTab = 'all' | 'shared' | 'uploads';
+
+export interface ContractorDocsFilterParams {
+    search?: string;
+    tab?: ContractorDocsTab;
+    folderId?: number;
+    sort?: DocsSortOption;
+    page?: number;
+    pageSize?: number;
+}
+
+export interface UploadToDealerPayload {
+    fileName: string;
+    s3Key: string;
+    fileSize: number;
+    fileType: string;
+    memo?: string;
+    attentionTo?: string;
+}
+
+export interface AcknowledgeResponse {
+    acknowledgedAt: string;
+}

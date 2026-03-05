@@ -292,6 +292,7 @@ export type RouteId =
     | 'orders'
     | 'estimates'
     | 'wallet'
+    | 'docs'
     | 'team'
     | 'settings'
     | 'login';

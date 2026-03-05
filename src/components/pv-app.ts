@@ -22,6 +22,7 @@ import './pages/pv-page-estimates.js';
 import './pages/pv-page-billing.js';
 import './pages/pv-page-projects.js';
 import './pages/pv-page-wallet.js';
+import './pages/pv-page-docs.js';
 import './pages/pv-page-team.js';
 import './pages/pv-page-settings.js';
 
@@ -260,6 +261,8 @@ export class PvApp extends PvBase {
         return html`<pv-page-estimates></pv-page-estimates>`;
       case 'wallet':
         return html`<pv-page-wallet></pv-page-wallet>`;
+      case 'docs':
+        return html`<pv-page-docs></pv-page-docs>`;
       case 'team':
         return html`<pv-page-team></pv-page-team>`;
       case 'settings':

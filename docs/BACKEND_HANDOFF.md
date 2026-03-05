@@ -344,3 +344,43 @@ All push actions include:
 - **Loading States**: Buttons show "Saving...", "Paying...", etc. and are disabled during requests.
 - **Error Feedback**: Failed requests trigger `PvToast.show(message, 'error')`.
 - **Optimistic Updates**: Some actions update UI immediately and revert on failure (e.g., notification toggles).
+
+---
+
+## 10. Document Management (Bidirectional Sharing)
+
+The Document Management feature enables bidirectional document sharing between Admin (Dealer) and Contractor portals.
+
+**Full specification:** See [`BACKEND_DOCS_HANDOFF.md`](./BACKEND_DOCS_HANDOFF.md) for:
+- All 16 REST endpoints (7 admin, 9 contractor)
+- Complete DTO schemas with field-level documentation
+- S3 presigned URL 3-step upload flow
+- **S3 CORS configuration requirements**
+- Cross-portal data synchronization rules
+- Database schema guidance
+
+### Quick Reference — Admin Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/admin/documents/summary` | Dashboard summary counts |
+| `GET` | `/admin/documents/shared` | Paginated shared docs |
+| `GET` | `/admin/documents/inbox` | Paginated inbox docs |
+| `POST` | `/admin/documents/presigned-url` | Get S3 upload URL |
+| `POST` | `/admin/documents/share` | Confirm upload & share |
+| `PUT` | `/admin/documents/inbox/{id}/assign` | Assign to admin user |
+| `GET` | `/admin/documents/{id}/view-url` | Get S3 view URL |
+
+### Quick Reference — Contractor Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/documents/my` | Paginated contractor docs |
+| `GET` | `/documents/my/summary` | Summary counts |
+| `GET` | `/documents/{id}/view-url` | Get S3 view URL |
+| `POST` | `/documents/presigned-url` | Get S3 upload URL |
+| `POST` | `/documents/upload-to-dealer` | Confirm upload to dealer |
+| `PUT` | `/documents/{id}/acknowledge` | Acknowledge receipt |
+| `GET` | `/documents/folders` | List folders |
+| `POST` | `/documents/folders` | Create folder |
+| `PUT` | `/documents/{id}/move` | Move doc to folder |
