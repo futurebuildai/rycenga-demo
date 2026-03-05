@@ -8,7 +8,7 @@ import { customElement, state, query } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { AuthService } from '../../connect/services/auth.js';
-import { AccountService } from '../../connect/services/account.js';
+import { PreferencesService } from '../../connect/services/preferences.js';
 import { PvToast } from '../atoms/pv-toast.js';
 import { pageShellStyles } from '../../styles/shared.js';
 import { settingsPageStyles } from '../../styles/pages.js';
@@ -29,9 +29,8 @@ export class PvPageSettings extends PvBase {
   @state() private savingPassword = false;
   @state() private savingNotifications = false;
   @state() private emailNotifications = true;
-  @state() private smsNotifications = false;
+  @state() private smsConsent = false;
   @state() private orderUpdates = true;
-  @state() private accountId: number | null = null;
   @state() private phoneValue = '';
   @state() private currentPassword = '';
   @state() private newPassword = '';
@@ -43,14 +42,17 @@ export class PvPageSettings extends PvBase {
     try {
       this.accountData = await DataService.getAccountData();
       this.phoneValue = this.accountData?.user?.phone ?? '';
-      this.accountId = DataService.getCurrentAccountId();
-      if (this.accountId) {
-        const account = await AccountService.getAccount(this.accountId);
-        this.smsNotifications = !!account.smsConsent;
-      }
     } catch (e) {
       console.error('Failed to load account data', e);
       PvToast.show('Failed to load settings', 'error');
+    }
+    try {
+      const prefs = await PreferencesService.getPreferences();
+      this.emailNotifications = prefs.emailNotifications;
+      this.smsConsent = prefs.smsConsent;
+      this.orderUpdates = prefs.orderUpdates;
+    } catch (e) {
+      console.error('Failed to load notification preferences', e);
     } finally {
       this.loading = false;
     }
@@ -111,34 +113,24 @@ export class PvPageSettings extends PvBase {
   }
 
   private async handleToggleNotification(key: keyof NotificationPreferences) {
-    const userId = this.accountData?.user?.id;
-    if (!userId) return;
-
     // Optimistic UI update
     if (key === 'emailNotifications') this.emailNotifications = !this.emailNotifications;
-    else if (key === 'smsNotifications') this.smsNotifications = !this.smsNotifications;
+    else if (key === 'smsConsent') this.smsConsent = !this.smsConsent;
     else if (key === 'orderUpdates') this.orderUpdates = !this.orderUpdates;
 
     this.savingNotifications = true;
     try {
-      if (key === 'smsNotifications') {
-        if (!this.accountId) {
-          throw new Error('Account ID not found');
-        }
-        await AccountService.updateSMSConsent(this.accountId, this.smsNotifications);
-      } else {
-        await AuthService.updateNotifications(parseInt(userId), {
-          emailNotifications: this.emailNotifications,
-          smsNotifications: this.smsNotifications,
-          orderUpdates: this.orderUpdates,
-        });
-      }
+      await PreferencesService.updatePreferences({
+        emailNotifications: this.emailNotifications,
+        smsConsent: this.smsConsent,
+        orderUpdates: this.orderUpdates,
+      });
       PvToast.show('Notification preference updated', 'success');
     } catch (e) {
       console.error('Failed to update notifications', e);
       // Revert optimistic update
       if (key === 'emailNotifications') this.emailNotifications = !this.emailNotifications;
-      else if (key === 'smsNotifications') this.smsNotifications = !this.smsNotifications;
+      else if (key === 'smsConsent') this.smsConsent = !this.smsConsent;
       else if (key === 'orderUpdates') this.orderUpdates = !this.orderUpdates;
       PvToast.show('Failed to update notification preference', 'error');
     } finally {
@@ -256,8 +248,8 @@ export class PvPageSettings extends PvBase {
             </span>
           </div>
           <div 
-            class="toggle-switch ${this.smsNotifications ? 'active' : ''} ${this.savingNotifications ? 'disabled' : ''}"
-            @click=${() => !this.savingNotifications && this.handleToggleNotification('smsNotifications')}
+            class="toggle-switch ${this.smsConsent ? 'active' : ''} ${this.savingNotifications ? 'disabled' : ''}"
+            @click=${() => !this.savingNotifications && this.handleToggleNotification('smsConsent')}
           ></div>
         </div>
 
