@@ -580,3 +580,85 @@ export interface BulkPreviewAccount {
     invoiceCount: number;
     totalAmount: number;
 }
+
+// --- Document Management (Docs) ---
+
+export interface DocumentDTO {
+    id: number;
+    accountId: number;
+    accountName: string;
+    fileName: string;
+    s3Key: string;
+    fileSize: number | null;
+    mimeType?: string | null;
+    createdAt: string;
+}
+
+export interface SharedDocumentDTO extends DocumentDTO {
+    requiresAck: boolean;
+    acknowledgedAt: string | null;
+}
+
+export interface InboxDocumentDTO extends DocumentDTO {
+    memo: string | null;
+    attentionTo: string | null;
+    assignedUserId: number | null;
+}
+
+export interface DocsSummary {
+    totalShared: number;
+    pendingAck: number;
+    acknowledgedThisMonth: number;
+    inboxNeedsAttention: number;
+}
+
+export type DocsStatusFilter = '' | 'pending' | 'acknowledged';
+export type InboxFilter = '' | 'unassigned';
+export type DocsSortOption = 'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
+
+export interface DocsFilterParams {
+    search?: string;
+    status?: DocsStatusFilter;
+    filter?: InboxFilter;
+    sort?: DocsSortOption;
+    page?: number;
+    pageSize?: number;
+}
+
+// --- Contractor Docs (My Docs) ---
+
+export interface ContractorDocumentDTO {
+    assignmentId: number;
+    fileName: string;
+    fileSize: number | null;
+    mimeType: string | null;
+    createdAt: string;
+    filePath: string | null;
+    intent: 'dealer_shared' | 'contractor_upload';
+    requiresAck?: boolean;
+    acknowledgedAt?: string | null;
+    memo?: string | null;
+    attentionTo?: string | null;
+}
+
+export interface ContractorDocsSummary {
+    totalFiles: number;
+    sharedByDealer: number;
+    myUploads: number;
+    pendingAck: number;
+}
+
+export type ContractorDocsTab = 'all' | 'shared' | 'uploads';
+
+export interface ContractorDocsFilterParams {
+    search?: string;
+    tab?: ContractorDocsTab;
+    filePath?: string;
+    sort?: DocsSortOption;
+    page?: number;
+    pageSize?: number;
+}
+
+export interface AcknowledgeResponse {
+    acknowledgedAt: string;
+}

@@ -22,6 +22,7 @@ import './pages/pv-page-estimates.js';
 import './pages/pv-page-billing.js';
 import './pages/pv-page-projects.js';
 import './pages/pv-page-wallet.js';
+import './pages/pv-page-docs.js';
 import './pages/pv-page-team.js';
 import './pages/pv-page-settings.js';
 
@@ -103,12 +104,32 @@ export class PvApp extends PvBase {
         color: var(--color-text-muted);
       }
 
+      .sidebar-backdrop {
+        display: none;
+      }
+
       @media (max-width: 1023px) {
         .app-main {
           padding: var(--app-main-padding-mobile, var(--app-main-padding, var(--space-2xl)));
           margin: var(--app-main-margin-mobile, var(--app-main-margin, 0));
           border-radius: var(--app-main-radius-mobile, var(--app-main-radius, 0));
           box-shadow: var(--app-main-shadow-mobile, var(--app-main-shadow, none));
+        }
+
+        .sidebar-backdrop {
+          display: block;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 150;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease;
+        }
+
+        .sidebar-backdrop.visible {
+          opacity: 1;
+          pointer-events: auto;
         }
       }
     `,
@@ -223,6 +244,10 @@ export class PvApp extends PvBase {
     this.sidebarOpen = !this.sidebarOpen;
   }
 
+  private closeSidebar() {
+    this.sidebarOpen = false;
+  }
+
   private refreshImpersonationState() {
     const raw = localStorage.getItem('impersonation_session');
     if (!raw) {
@@ -260,6 +285,8 @@ export class PvApp extends PvBase {
         return html`<pv-page-estimates></pv-page-estimates>`;
       case 'wallet':
         return html`<pv-page-wallet></pv-page-wallet>`;
+      case 'docs':
+        return html`<pv-page-docs></pv-page-docs>`;
       case 'team':
         return html`<pv-page-team></pv-page-team>`;
       case 'settings':
@@ -284,12 +311,15 @@ export class PvApp extends PvBase {
         @menu-toggle=${this.handleMenuToggle}
       ></pv-header>
 
+      <div class="sidebar-backdrop ${this.sidebarOpen ? 'visible' : ''}" @click=${this.closeSidebar}></div>
+
       <div class="app-layout">
-        <pv-sidebar 
+        <pv-sidebar
           class="${this.sidebarOpen ? 'open' : ''}"
           .activeRoute=${this.currentRoute}
+          @nav-select=${this.closeSidebar}
         ></pv-sidebar>
-        
+
         <main class="app-main">
           ${this.renderPage()}
         </main>
