@@ -35,7 +35,10 @@ class AdminApiClient {
 
     async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
         const headers = new Headers(options.headers);
-        headers.set('Content-Type', 'application/json');
+        const isFormDataBody = options.body instanceof FormData;
+        if (!isFormDataBody && !headers.has('Content-Type')) {
+            headers.set('Content-Type', 'application/json');
+        }
 
         if (this.token && options.requiresAuth !== false) {
             headers.set('Authorization', `Bearer ${this.token}`);
@@ -78,6 +81,59 @@ class AdminApiClient {
             }
 
             return response.json() as Promise<T>;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
+    async requestBlob(endpoint: string, options: RequestOptions = {}): Promise<{ blob: Blob; contentType: string; contentDisposition: string; }> {
+        const headers = new Headers(options.headers);
+
+        if (this.token && options.requiresAuth !== false) {
+            headers.set('Authorization', `Bearer ${this.token}`);
+        }
+
+        if (import.meta.env.DEV) {
+            const devTenantId = import.meta.env.VITE_DEV_TENANT_ID as string | undefined;
+            if (devTenantId) {
+                headers.set('X-Tenant-ID', devTenantId);
+            }
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
+
+            if (response.status === 401) {
+                if (options.requiresAuth !== false && this.onUnauthorized) {
+                    this.onUnauthorized();
+                }
+                const detail = await this.readErrorDetail(response);
+                const message = detail
+                    ? `API Error: ${detail}`
+                    : `API Error: ${response.status} ${response.statusText}`;
+                throw new Error(message);
+            }
+
+            if (!response.ok) {
+                const detail = await this.readErrorDetail(response);
+                const message = detail
+                    ? `API Error: ${detail}`
+                    : `API Error: ${response.status} ${response.statusText}`;
+                throw new Error(message);
+            }
+
+            return {
+                blob: await response.blob(),
+                contentType: response.headers.get('Content-Type') || '',
+                contentDisposition: response.headers.get('Content-Disposition') || '',
+            };
         } finally {
             clearTimeout(timeoutId);
         }

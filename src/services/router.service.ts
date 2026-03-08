@@ -12,6 +12,7 @@ const VALID_ROUTES: RouteId[] = [
     'orders',
     'estimates',
     'wallet',
+    'docs',
     'team',
     'settings',
     'login',

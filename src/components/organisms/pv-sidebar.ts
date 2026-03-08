@@ -163,17 +163,27 @@ export class PvSidebar extends PvBase {
 
       @media (max-width: 1023px) {
         :host {
-          position: var(--app-sidebar-mobile-position, fixed);
-          left: var(--app-sidebar-mobile-left, -280px);
-          top: var(--app-sidebar-mobile-top, var(--header-height, 80px));
-          width: var(--app-sidebar-mobile-width, var(--sidebar-width, 280px));
-          height: var(--app-sidebar-mobile-height, calc(100vh - var(--header-height, 80px)));
-          z-index: 100;
-          transition: left var(--transition-base);
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(0.95);
+          width: min(320px, calc(100vw - 32px));
+          max-height: calc(100vh - 64px);
+          height: auto;
+          z-index: 200;
+          border-radius: var(--radius-xl, 16px);
+          border-right: none;
+          box-shadow: var(--shadow-xl, 0 20px 60px rgba(0, 0, 0, 0.3));
+          overflow-y: auto;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         :host(.open) {
-          left: var(--app-sidebar-mobile-open-left, 0);
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+          pointer-events: auto;
         }
       }
     `,
@@ -195,6 +205,7 @@ export class PvSidebar extends PvBase {
       { id: 'orders', label: 'Orders', icon: 'package' },
       { id: 'estimates', label: 'Estimates', icon: 'file-text', badge: this.pendingEstimatesCount > 0 ? this.pendingEstimatesCount : undefined },
       { id: 'wallet', label: 'Wallet', icon: 'wallet' },
+      { id: 'docs', label: 'My Docs', icon: 'paperclip' },
       { id: 'team', label: 'Team', icon: 'users' },
       { id: 'settings', label: 'Settings', icon: 'settings' },
     ];
@@ -226,6 +237,10 @@ export class PvSidebar extends PvBase {
 
   private handleNavClick(route: RouteId) {
     RouterService.navigate(route);
+    this.dispatchEvent(new CustomEvent('nav-select', {
+      bubbles: true,
+      composed: true,
+    }));
   }
 
   private handleSignOut() {
@@ -262,6 +277,9 @@ export class PvSidebar extends PvBase {
       'wallet': html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
         <circle cx="16" cy="12" r="2"></circle>
+      </svg>`,
+      'paperclip': html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
       </svg>`,
       'users': html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
