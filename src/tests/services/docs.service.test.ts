@@ -5,6 +5,7 @@ import { client } from '../../connect/client';
 vi.mock('../../connect/client', () => ({
     client: {
         request: vi.fn(),
+        requestBlob: vi.fn(),
     },
 }));
 
@@ -19,7 +20,7 @@ describe('DocsService', () => {
 
         const result = await DocsService.getMyDocs();
 
-        expect(client.request).toHaveBeenCalledWith('/documents/my');
+        expect(client.request).toHaveBeenCalledWith('/files?view=list');
         expect(result).toEqual(mockResponse);
     });
 
@@ -30,20 +31,21 @@ describe('DocsService', () => {
         await DocsService.getMyDocs({
             search: 'invoice',
             tab: 'shared',
-            folderId: 3,
+            filePath: 'Permits',
             sort: 'newest',
             page: 2,
             pageSize: 10,
         });
 
         const calledUrl = vi.mocked(client.request).mock.calls[0][0];
-        expect(calledUrl).toContain('/documents/my?');
+        expect(calledUrl).toContain('/files?');
+        expect(calledUrl).toContain('view=list');
         expect(calledUrl).toContain('search=invoice');
         expect(calledUrl).toContain('tab=shared');
-        expect(calledUrl).toContain('folderId=3');
+        expect(calledUrl).toContain('filePath=Permits');
         expect(calledUrl).toContain('sort=newest');
         expect(calledUrl).toContain('page=2');
-        expect(calledUrl).toContain('pageSize=10');
+        expect(calledUrl).toContain('page_size=10');
     });
 
     it('should not include tab=all in query params', async () => {
@@ -51,7 +53,7 @@ describe('DocsService', () => {
 
         await DocsService.getMyDocs({ tab: 'all' });
 
-        expect(client.request).toHaveBeenCalledWith('/documents/my');
+        expect(client.request).toHaveBeenCalledWith('/files?view=list');
     });
 
     it('should fetch summary', async () => {
@@ -60,52 +62,45 @@ describe('DocsService', () => {
 
         const result = await DocsService.getSummary();
 
-        expect(client.request).toHaveBeenCalledWith('/documents/my/summary');
+        expect(client.request).toHaveBeenCalledWith('/files?view=summary');
         expect(result).toEqual(mockSummary);
     });
 
-    it('should get view URL for a document', async () => {
-        const mockResponse = { viewUrl: 'https://s3.example.com/doc.pdf', contentType: 'application/pdf' };
-        vi.mocked(client.request).mockResolvedValue(mockResponse);
+    it('should fetch folders', async () => {
+        const mockFolders = ['Permits', 'Contracts'];
+        vi.mocked(client.request).mockResolvedValue(mockFolders);
 
-        const result = await DocsService.getViewUrl(42);
+        const result = await DocsService.getFolders();
 
-        expect(client.request).toHaveBeenCalledWith('/documents/42/view-url');
-        expect(result).toEqual(mockResponse);
+        expect(client.request).toHaveBeenCalledWith('/files?view=folders');
+        expect(result).toEqual(mockFolders);
     });
 
-    it('should get presigned upload URL', async () => {
-        const mockResponse = { uploadUrl: 'https://s3.example.com/upload', s3Key: 'docs/abc123.pdf' };
-        vi.mocked(client.request).mockResolvedValue(mockResponse);
+    it('should fetch file content', async () => {
+        const blobResponse = { blob: new Blob(['test']), contentType: 'application/pdf', contentDisposition: '' };
+        vi.mocked(client.requestBlob).mockResolvedValue(blobResponse);
 
-        const result = await DocsService.getPresignedUploadUrl('report.pdf', 'application/pdf');
+        const result = await DocsService.getFileContent(42);
 
-        expect(client.request).toHaveBeenCalledWith('/documents/presigned-url', {
-            method: 'POST',
-            body: JSON.stringify({ fileName: 'report.pdf', fileType: 'application/pdf' }),
-        });
-        expect(result).toEqual(mockResponse);
+        expect(client.requestBlob).toHaveBeenCalledWith('/files/42/content');
+        expect(result).toEqual(blobResponse);
     });
 
-    it('should confirm upload to dealer', async () => {
-        const mockResponse = { id: 99 };
+    it('should upload a file with optional metadata', async () => {
+        const mockResponse = { assignmentId: 5 };
         vi.mocked(client.request).mockResolvedValue(mockResponse);
+        const file = new File(['hello'], 'report.pdf', { type: 'application/pdf' });
 
-        const payload = {
-            fileName: 'report.pdf',
-            s3Key: 'docs/abc123.pdf',
-            fileSize: 1024,
-            fileType: 'application/pdf',
+        const result = await DocsService.uploadFile(file, {
             memo: 'Please review',
             attentionTo: 'Billing',
-        };
-
-        const result = await DocsService.confirmUploadToDealer(payload);
-
-        expect(client.request).toHaveBeenCalledWith('/documents/upload-to-dealer', {
-            method: 'POST',
-            body: JSON.stringify(payload),
+            filePath: 'Permits',
         });
+
+        expect(client.request).toHaveBeenCalledWith('/files', expect.objectContaining({
+            method: 'POST',
+            body: expect.any(FormData),
+        }));
         expect(result).toEqual(mockResponse);
     });
 
@@ -115,47 +110,33 @@ describe('DocsService', () => {
 
         const result = await DocsService.acknowledgeDocument(7);
 
-        expect(client.request).toHaveBeenCalledWith('/documents/7/acknowledge', {
-            method: 'PUT',
+        expect(client.request).toHaveBeenCalledWith('/files/7', {
+            method: 'PATCH',
+            body: JSON.stringify({ acknowledge: true }),
         });
         expect(result).toEqual(mockResponse);
     });
 
-    it('should list folders', async () => {
-        const mockFolders = [
-            { id: 1, name: 'Permits', createdAt: '2026-01-15T00:00:00Z' },
-            { id: 2, name: 'Contracts', createdAt: '2026-02-01T00:00:00Z' },
-        ];
-        vi.mocked(client.request).mockResolvedValue(mockFolders);
+    it('should move a document to a folder by name', async () => {
+        vi.mocked(client.request).mockResolvedValue({ ok: true, id: 5, filePath: 'Contracts' });
 
-        const result = await DocsService.getFolders();
+        const result = await DocsService.moveToFolder(5, 'Contracts');
 
-        expect(client.request).toHaveBeenCalledWith('/documents/folders');
-        expect(result).toEqual(mockFolders);
+        expect(client.request).toHaveBeenCalledWith('/files/5', {
+            method: 'PATCH',
+            body: JSON.stringify({ filePath: 'Contracts' }),
+        });
+        expect(result).toEqual({ ok: true, id: 5, filePath: 'Contracts' });
     });
 
-    it('should create a folder', async () => {
-        const mockFolder = { id: 3, name: 'Invoices', createdAt: '2026-03-05T00:00:00Z' };
-        vi.mocked(client.request).mockResolvedValue(mockFolder);
+    it('should move a document to root by passing null', async () => {
+        vi.mocked(client.request).mockResolvedValue({ ok: true, id: 5, filePath: null });
 
-        const result = await DocsService.createFolder('Invoices');
+        await DocsService.moveToFolder(5, null);
 
-        expect(client.request).toHaveBeenCalledWith('/documents/folders', {
-            method: 'POST',
-            body: JSON.stringify({ name: 'Invoices' }),
+        expect(client.request).toHaveBeenCalledWith('/files/5', {
+            method: 'PATCH',
+            body: JSON.stringify({ filePath: null }),
         });
-        expect(result).toEqual(mockFolder);
-    });
-
-    it('should move a document to a folder', async () => {
-        vi.mocked(client.request).mockResolvedValue({ success: true });
-
-        const result = await DocsService.moveToFolder(5, 2);
-
-        expect(client.request).toHaveBeenCalledWith('/documents/5/move', {
-            method: 'PUT',
-            body: JSON.stringify({ folderId: 2 }),
-        });
-        expect(result).toEqual({ success: true });
     });
 });

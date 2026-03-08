@@ -83,6 +83,7 @@ export class PageDocs extends LitElement {
     private sharedLoadVersion = 0;
     private inboxLoadVersion = 0;
     private inboxLoaded = false;
+    private previewObjectUrl: string | null = null;
 
     async connectedCallback() {
         super.connectedCallback();
@@ -96,6 +97,7 @@ export class PageDocs extends LitElement {
         clearTimeout(this.sharedSearchDebounce);
         clearTimeout(this.inboxSearchDebounce);
         clearTimeout(this.toastTimer);
+        this.revokePreviewObjectUrl();
     }
 
     private handleKeyDown = (e: KeyboardEvent) => {
@@ -296,46 +298,15 @@ export class PageDocs extends LitElement {
         }
 
         this.uploadUploading = true;
-        this.uploadProgress = 0;
+        this.uploadProgress = 25;
 
         try {
-            // 1. Get presigned URL
-            const { uploadUrl, s3Key } = await AdminDocsService.getPresignedUploadUrl(
-                this.uploadFile.name,
-                this.uploadFile.type || 'application/octet-stream'
-            );
-
-            // 2. Upload to S3 via presigned URL
-            const xhr = new XMLHttpRequest();
-            await new Promise<void>((resolve, reject) => {
-                xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        this.uploadProgress = Math.round((e.loaded / e.total) * 100);
-                    }
-                });
-                xhr.addEventListener('load', () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        resolve();
-                    } else {
-                        reject(new Error(`Upload failed: ${xhr.status}`));
-                    }
-                });
-                xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-                xhr.open('PUT', uploadUrl);
-                xhr.setRequestHeader('Content-Type', this.uploadFile!.type || 'application/octet-stream');
-                xhr.send(this.uploadFile);
-            });
-
-            // 3. Confirm upload
-            await AdminDocsService.confirmUploadAndShare({
-                fileName: this.uploadFile.name,
-                s3Key,
-                fileSize: this.uploadFile.size,
-                fileType: this.uploadFile.type || 'application/octet-stream',
+            await AdminDocsService.uploadAndShare(this.uploadFile, {
                 accountId: parseInt(this.uploadAccountId, 10),
                 requiresAck: this.uploadRequiresAck,
                 memo: this.uploadMemo.trim() || undefined,
             });
+            this.uploadProgress = 100;
 
             this.showToast('Document shared successfully.', 'success');
             this.uploadModalOpen = false;
@@ -353,15 +324,17 @@ export class PageDocs extends LitElement {
         this.previewDoc = doc;
         this.previewOpen = true;
         this.previewClosing = false;
+        this.revokePreviewObjectUrl();
         this.previewViewUrl = '';
         this.previewContentType = '';
         this.previewLoading = true;
         this.previewError = false;
 
         try {
-            const { viewUrl, contentType } = await AdminDocsService.getDocumentViewUrl(doc.id);
+            const { blob, contentType } = await AdminDocsService.getDocumentContent(doc.id);
             if (this.previewDoc?.id !== doc.id) return;
-            this.previewViewUrl = viewUrl;
+            this.previewObjectUrl = URL.createObjectURL(blob);
+            this.previewViewUrl = this.previewObjectUrl;
             this.previewContentType = contentType;
         } catch {
             if (this.previewDoc?.id !== doc.id) return;
@@ -375,6 +348,7 @@ export class PageDocs extends LitElement {
     private closePreview() {
         this.previewClosing = true;
         setTimeout(() => {
+            this.revokePreviewObjectUrl();
             this.previewOpen = false;
             this.previewClosing = false;
             this.previewDoc = null;
@@ -415,7 +389,14 @@ export class PageDocs extends LitElement {
         return 'FILE';
     }
 
-    private formatFileSize(bytes: number): string {
+    private revokePreviewObjectUrl() {
+        if (!this.previewObjectUrl) return;
+        URL.revokeObjectURL(this.previewObjectUrl);
+        this.previewObjectUrl = null;
+    }
+
+    private formatFileSize(bytes: number | null | undefined): string {
+        if (!bytes || bytes < 0) return '—';
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -546,7 +527,11 @@ export class PageDocs extends LitElement {
                                     <td>${doc.accountName}</td>
                                     <td class="text-muted">${this.formatDate(doc.createdAt)}</td>
                                     <td class="text-muted">${this.formatFileSize(doc.fileSize)}</td>
-                                    <td><span class="status-badge status-${doc.status}">${doc.status === 'acknowledged' ? 'Acknowledged' : 'Pending'}</span></td>
+                                    <td>
+                                        <span class="status-badge status-${doc.acknowledgedAt ? 'acknowledged' : 'pending'}">
+                                            ${doc.acknowledgedAt ? 'Acknowledged' : 'Pending'}
+                                        </span>
+                                    </td>
                                 </tr>
                             `)}
                         </tbody>

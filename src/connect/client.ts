@@ -22,9 +22,12 @@ class ApiClient {
 
     async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
         const headers = new Headers(options.headers);
+        const isFormDataBody = options.body instanceof FormData;
 
         // Protocol requirements from router.go
-        headers.set('Content-Type', 'application/json');
+        if (!isFormDataBody && !headers.has('Content-Type')) {
+            headers.set('Content-Type', 'application/json');
+        }
         if (this.token && options.requiresAuth !== false) {
             headers.set('Authorization', `Bearer ${this.token}`);
             // If using API Key as well for M2M: headers.set('X-API-Key', API_KEY);

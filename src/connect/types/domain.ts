@@ -582,19 +582,18 @@ export interface BulkPreviewAccount {
 
 export interface DocumentDTO {
     id: number;
-    tenantId: string;
     accountId: number;
     accountName: string;
     fileName: string;
     s3Key: string;
-    fileSize: number;
+    fileSize: number | null;
+    mimeType?: string | null;
     createdAt: string;
 }
 
 export interface SharedDocumentDTO extends DocumentDTO {
     requiresAck: boolean;
     acknowledgedAt: string | null;
-    status: 'pending' | 'acknowledged';
 }
 
 export interface InboxDocumentDTO extends DocumentDTO {
@@ -608,26 +607,6 @@ export interface DocsSummary {
     pendingAck: number;
     acknowledgedThisMonth: number;
     inboxNeedsAttention: number;
-}
-
-export interface PresignedUrlResponse {
-    uploadUrl: string;
-    s3Key: string;
-}
-
-export interface DocumentViewUrlResponse {
-    viewUrl: string;
-    contentType: string;
-}
-
-export interface SharePayload {
-    fileName: string;
-    s3Key: string;
-    fileSize: number;
-    fileType: string;
-    accountId: number;
-    requiresAck: boolean;
-    memo?: string;
 }
 
 export type DocsStatusFilter = '' | 'pending' | 'acknowledged';
@@ -645,22 +624,16 @@ export interface DocsFilterParams {
 
 // --- Contractor Docs (My Docs) ---
 
-export interface ContractorFolder {
-    id: number;
-    name: string;
-    createdAt: string;
-}
-
 export interface ContractorDocumentDTO {
-    id: number;
+    assignmentId: number;
     fileName: string;
-    fileSize: number;
+    fileSize: number | null;
+    mimeType: string | null;
     createdAt: string;
-    folderId: number | null;
-    source: 'dealer' | 'contractor';
+    filePath: string | null;
+    intent: 'dealer_shared' | 'contractor_upload';
     requiresAck?: boolean;
     acknowledgedAt?: string | null;
-    status?: 'pending' | 'acknowledged';
     memo?: string | null;
     attentionTo?: string | null;
 }
@@ -677,19 +650,10 @@ export type ContractorDocsTab = 'all' | 'shared' | 'uploads';
 export interface ContractorDocsFilterParams {
     search?: string;
     tab?: ContractorDocsTab;
-    folderId?: number;
+    filePath?: string;
     sort?: DocsSortOption;
     page?: number;
     pageSize?: number;
-}
-
-export interface UploadToDealerPayload {
-    fileName: string;
-    s3Key: string;
-    fileSize: number;
-    fileType: string;
-    memo?: string;
-    attentionTo?: string;
 }
 
 export interface AcknowledgeResponse {

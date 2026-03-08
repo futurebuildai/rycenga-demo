@@ -1,73 +1,59 @@
-/**
- * Document Management Service
- * Handles shared documents and inbox document operations.
- */
-
 import { adminClient } from './admin-client.js';
 import type {
     DocsSummary,
     SharedDocumentDTO,
     InboxDocumentDTO,
-    PresignedUrlResponse,
-    DocumentViewUrlResponse,
-    SharePayload,
     DocsFilterParams,
 } from '../../connect/types/domain.js';
 
 class AdminDocsServiceImpl {
     async getSummary(): Promise<DocsSummary> {
-        return adminClient.request<DocsSummary>('/admin/documents/summary');
+        return adminClient.request<DocsSummary>('/admin/files?view=summary');
     }
 
     async getSharedDocs(filters: DocsFilterParams = {}): Promise<{ items: SharedDocumentDTO[]; total: number }> {
         const query = new URLSearchParams();
+        query.set('view', 'shared');
         if (filters.search) query.set('search', filters.search);
         if (filters.status) query.set('status', filters.status);
         if (filters.sort) query.set('sort', filters.sort);
         if (filters.page) query.set('page', String(filters.page));
-        if (filters.pageSize) query.set('pageSize', String(filters.pageSize));
-        const qs = query.toString();
-        return adminClient.request<{ items: SharedDocumentDTO[]; total: number }>(
-            `/admin/documents/shared${qs ? `?${qs}` : ''}`
-        );
+        if (filters.pageSize) query.set('page_size', String(filters.pageSize));
+        return adminClient.request<{ items: SharedDocumentDTO[]; total: number }>(`/admin/files?${query.toString()}`);
     }
 
     async getInboxDocs(filters: DocsFilterParams = {}): Promise<{ items: InboxDocumentDTO[]; total: number }> {
         const query = new URLSearchParams();
+        query.set('view', 'inbox');
         if (filters.search) query.set('search', filters.search);
         if (filters.filter) query.set('filter', filters.filter);
         if (filters.sort) query.set('sort', filters.sort);
         if (filters.page) query.set('page', String(filters.page));
-        if (filters.pageSize) query.set('pageSize', String(filters.pageSize));
-        const qs = query.toString();
-        return adminClient.request<{ items: InboxDocumentDTO[]; total: number }>(
-            `/admin/documents/inbox${qs ? `?${qs}` : ''}`
-        );
+        if (filters.pageSize) query.set('page_size', String(filters.pageSize));
+        return adminClient.request<{ items: InboxDocumentDTO[]; total: number }>(`/admin/files?${query.toString()}`);
     }
 
-    async getPresignedUploadUrl(fileName: string, fileType: string): Promise<PresignedUrlResponse> {
-        return adminClient.request<PresignedUrlResponse>('/admin/documents/presigned-url', {
+    async uploadAndShare(file: File, payload: { accountId: number; requiresAck: boolean; memo?: string }): Promise<SharedDocumentDTO> {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('accountId', String(payload.accountId));
+        form.append('requiresAck', String(payload.requiresAck));
+        if (payload.memo) form.append('memo', payload.memo);
+        return adminClient.request<SharedDocumentDTO>('/admin/files', {
             method: 'POST',
-            body: JSON.stringify({ fileName, fileType }),
+            body: form,
         });
     }
 
-    async confirmUploadAndShare(payload: SharePayload): Promise<{ id: number }> {
-        return adminClient.request<{ id: number }>('/admin/documents/share', {
-            method: 'POST',
-            body: JSON.stringify(payload),
+    async assignInboxDocument(docId: number, userId: number): Promise<{ ok: boolean; id: number; assignedUserId: number }> {
+        return adminClient.request<{ ok: boolean; id: number; assignedUserId: number }>(`/admin/files/${docId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ assignedUserId: userId }),
         });
     }
 
-    async assignInboxDocument(docId: number, userId: number): Promise<{ success: boolean }> {
-        return adminClient.request<{ success: boolean }>(`/admin/documents/inbox/${docId}/assign`, {
-            method: 'PUT',
-            body: JSON.stringify({ userId }),
-        });
-    }
-
-    async getDocumentViewUrl(docId: number): Promise<DocumentViewUrlResponse> {
-        return adminClient.request<DocumentViewUrlResponse>(`/admin/documents/${docId}/view-url`);
+    async getDocumentContent(docId: number) {
+        return adminClient.requestBlob(`/admin/files/${docId}/content`);
     }
 }
 

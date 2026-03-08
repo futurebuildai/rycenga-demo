@@ -53,7 +53,7 @@ export const DocumentsService = {
             query.set('idType', idType);
         }
         const queryString = query.toString() ? `?${query.toString()}` : '';
-        const endpoint = `/documents/${options.type}/${encodeURIComponent(String(options.id))}/pdf${queryString}`;
+        const endpoint = `/files/${options.type}/${encodeURIComponent(String(options.id))}/pdf${queryString}`;
 
         const response = await client.requestBlob(endpoint, {
             headers: {

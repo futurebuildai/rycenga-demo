@@ -1,9 +1,9 @@
 /**
  * PvPageDocs - Contractor "My Docs" page
- * View dealer-shared documents, upload files to dealer, manage folders, acknowledge docs
+ * View dealer-shared documents, upload files to dealer, organize persisted folders, acknowledge docs
  */
 
-import { html } from 'lit';
+import { html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DocsService } from '../../connect/services/docs.service.js';
@@ -14,7 +14,6 @@ import type {
     ContractorDocumentDTO,
     ContractorDocsSummary,
     ContractorDocsTab,
-    ContractorFolder,
     DocsSortOption,
 } from '../../connect/types/domain.js';
 
@@ -31,7 +30,7 @@ export class PvPageDocs extends PvBase {
     @state() private activeTab: ContractorDocsTab = 'all';
     @state() private searchQuery = '';
     @state() private sortOption: DocsSortOption = 'newest';
-    @state() private activeFolderId: number | null = null;
+    @state() private activeFolder: string | null = null;
 
     // File list
     @state() private docs: ContractorDocumentDTO[] = [];
@@ -46,7 +45,8 @@ export class PvPageDocs extends PvBase {
     @state() private summaryLoading = true;
 
     // Folders
-    @state() private folders: ContractorFolder[] = [];
+    @state() private folders: string[] = [];
+    @state() private pendingFolders: string[] = [];
 
     // Upload modal
     @state() private uploadModalOpen = false;
@@ -62,12 +62,12 @@ export class PvPageDocs extends PvBase {
     @state() private ackDoc: ContractorDocumentDTO | null = null;
     @state() private ackLoading = false;
 
-    // Folder modals
+    // Folder modal
     @state() private createFolderModalOpen = false;
     @state() private newFolderName = '';
     @state() private moveFolderModalOpen = false;
     @state() private moveDoc: ContractorDocumentDTO | null = null;
-    @state() private selectedFolderId: number | null = null;
+    @state() private selectedFolderName: string | null = null;
 
     // Preview drawer
     @state() private previewOpen = false;
@@ -80,9 +80,12 @@ export class PvPageDocs extends PvBase {
     private debounceTimer?: number;
     private loadVersion = 0;
     private uploadInputRef: HTMLInputElement | null = null;
+    private previewObjectUrl: string | null = null;
+    private static readonly pendingFoldersStorageKey = 'pv-docs-pending-folders';
 
     connectedCallback() {
         super.connectedCallback();
+        this.loadPendingFolders();
         void Promise.all([this.loadDocs(), this.loadSummary(), this.loadFolders()]);
     }
 
@@ -91,6 +94,7 @@ export class PvPageDocs extends PvBase {
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }
+        this.revokePreviewObjectUrl();
     }
 
     // ── Data Loading ──
@@ -104,7 +108,7 @@ export class PvPageDocs extends PvBase {
             const result = await DocsService.getMyDocs({
                 search: this.searchQuery || undefined,
                 tab: this.activeTab,
-                folderId: this.activeFolderId ?? undefined,
+                filePath: this.activeFolder ?? undefined,
                 sort: this.sortOption,
                 page: this.page,
                 pageSize: this.pageSize,
@@ -137,6 +141,7 @@ export class PvPageDocs extends PvBase {
     private async loadFolders() {
         try {
             this.folders = await DocsService.getFolders();
+            this.reconcilePendingFolders();
         } catch (e) {
             console.error('Failed to load folders', e);
         }
@@ -147,7 +152,7 @@ export class PvPageDocs extends PvBase {
     private handleTabChange(tab: ContractorDocsTab) {
         this.activeTab = tab;
         this.page = 1;
-        this.activeFolderId = null;
+        this.activeFolder = null;
         void this.loadDocs();
     }
 
@@ -167,14 +172,24 @@ export class PvPageDocs extends PvBase {
         void this.loadDocs();
     }
 
-    private handleFolderClick(folderId: number) {
-        if (this.activeFolderId === folderId) {
-            this.activeFolderId = null;
+    private handleFolderClick(folderName: string) {
+        if (this.activeFolder === folderName) {
+            this.activeFolder = null;
         } else {
-            this.activeFolderId = folderId;
+            this.activeFolder = folderName;
         }
         this.page = 1;
         void this.loadDocs();
+    }
+
+    private openCreateFolderModal() {
+        this.createFolderModalOpen = true;
+        this.newFolderName = '';
+    }
+
+    private closeCreateFolderModal() {
+        this.createFolderModalOpen = false;
+        this.newFolderName = '';
     }
 
     private handlePrevPage() {
@@ -198,13 +213,15 @@ export class PvPageDocs extends PvBase {
         this.previewOpen = true;
         this.previewLoading = true;
         this.previewError = null;
+        this.revokePreviewObjectUrl();
         this.previewUrl = '';
         this.previewContentType = '';
 
         try {
-            const result = await DocsService.getViewUrl(doc.id);
-            this.previewUrl = result.viewUrl;
-            this.previewContentType = result.contentType;
+            const { blob, contentType } = await DocsService.getFileContent(doc.assignmentId);
+            this.previewObjectUrl = URL.createObjectURL(blob);
+            this.previewUrl = this.previewObjectUrl;
+            this.previewContentType = contentType;
         } catch (e) {
             console.error('Failed to load preview', e);
             this.previewError = 'Failed to load preview.';
@@ -214,9 +231,11 @@ export class PvPageDocs extends PvBase {
     }
 
     private closePreview() {
+        this.revokePreviewObjectUrl();
         this.previewOpen = false;
         this.previewDoc = null;
         this.previewUrl = '';
+        this.previewContentType = '';
     }
 
     // ── Acknowledge ──
@@ -236,7 +255,7 @@ export class PvPageDocs extends PvBase {
         this.ackLoading = true;
 
         try {
-            await DocsService.acknowledgeDocument(this.ackDoc.id);
+            await DocsService.acknowledgeDocument(this.ackDoc.assignmentId);
             PvToast.show('Document acknowledged', 'success');
             this.closeAckModal();
             void this.loadDocs();
@@ -256,6 +275,7 @@ export class PvPageDocs extends PvBase {
         this.uploadFile = null;
         this.uploadMemo = '';
         this.uploadAttentionTo = '';
+        this.selectedFolderName = this.activeFolder;
         this.uploadUploading = false;
         this.uploadProgress = 0;
         this.uploadDragover = false;
@@ -264,6 +284,7 @@ export class PvPageDocs extends PvBase {
     private closeUploadModal() {
         if (this.uploadUploading) return;
         this.uploadModalOpen = false;
+        this.selectedFolderName = null;
     }
 
     private handleUploadDragOver(e: DragEvent) {
@@ -306,39 +327,22 @@ export class PvPageDocs extends PvBase {
     private async submitUpload() {
         if (!this.uploadFile) return;
         this.uploadUploading = true;
-        this.uploadProgress = 10;
+        this.uploadProgress = 25;
 
         try {
-            // Step 1: Get presigned URL
-            const { uploadUrl, s3Key } = await DocsService.getPresignedUploadUrl(
-                this.uploadFile.name,
-                this.uploadFile.type || 'application/octet-stream',
-            );
-            this.uploadProgress = 30;
-
-            // Step 2: Upload to S3
-            await fetch(uploadUrl, {
-                method: 'PUT',
-                body: this.uploadFile,
-                headers: { 'Content-Type': this.uploadFile.type || 'application/octet-stream' },
-            });
-            this.uploadProgress = 70;
-
-            // Step 3: Confirm upload
-            await DocsService.confirmUploadToDealer({
-                fileName: this.uploadFile.name,
-                s3Key,
-                fileSize: this.uploadFile.size,
-                fileType: this.uploadFile.type || 'application/octet-stream',
+            await DocsService.uploadFile(this.uploadFile, {
                 memo: this.uploadMemo || undefined,
                 attentionTo: this.uploadAttentionTo || undefined,
+                filePath: this.selectedFolderName || undefined,
             });
             this.uploadProgress = 100;
+            this.finalizePendingFolder(this.selectedFolderName);
 
             PvToast.show('File uploaded to dealer', 'success');
             this.uploadModalOpen = false;
             void this.loadDocs();
             void this.loadSummary();
+            void this.loadFolders();
         } catch (e) {
             console.error('Upload failed', e);
             PvToast.show('Failed to upload file', 'error');
@@ -347,34 +351,9 @@ export class PvPageDocs extends PvBase {
         }
     }
 
-    // ── Folder Management ──
-
-    private openCreateFolderModal() {
-        this.createFolderModalOpen = true;
-        this.newFolderName = '';
-    }
-
-    private closeCreateFolderModal() {
-        this.createFolderModalOpen = false;
-    }
-
-    private async submitCreateFolder() {
-        if (!this.newFolderName.trim()) return;
-
-        try {
-            await DocsService.createFolder(this.newFolderName.trim());
-            PvToast.show('Folder created', 'success');
-            this.closeCreateFolderModal();
-            void this.loadFolders();
-        } catch (e) {
-            console.error('Failed to create folder', e);
-            PvToast.show('Failed to create folder', 'error');
-        }
-    }
-
     private openMoveFolderModal(doc: ContractorDocumentDTO) {
         this.moveDoc = doc;
-        this.selectedFolderId = doc.folderId;
+        this.selectedFolderName = doc.filePath ?? null;
         this.moveFolderModalOpen = true;
     }
 
@@ -387,10 +366,12 @@ export class PvPageDocs extends PvBase {
         if (!this.moveDoc) return;
 
         try {
-            await DocsService.moveToFolder(this.moveDoc.id, this.selectedFolderId);
+            await DocsService.moveToFolder(this.moveDoc.assignmentId, this.selectedFolderName);
+            this.finalizePendingFolder(this.selectedFolderName);
             PvToast.show('File moved', 'success');
             this.closeMoveFolderModal();
             void this.loadDocs();
+            void this.loadFolders();
         } catch (e) {
             console.error('Failed to move file', e);
             PvToast.show('Failed to move file', 'error');
@@ -399,7 +380,74 @@ export class PvPageDocs extends PvBase {
 
     // ── Helpers ──
 
-    private formatFileSize(bytes: number): string {
+    private revokePreviewObjectUrl() {
+        if (!this.previewObjectUrl) return;
+        URL.revokeObjectURL(this.previewObjectUrl);
+        this.previewObjectUrl = null;
+    }
+
+    private loadPendingFolders() {
+        try {
+            const raw = localStorage.getItem(PvPageDocs.pendingFoldersStorageKey);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return;
+            this.pendingFolders = parsed
+                .map((value) => String(value).trim())
+                .filter((value, index, array) => value && array.indexOf(value) === index);
+        } catch {
+            this.pendingFolders = [];
+        }
+    }
+
+    private persistPendingFolders() {
+        localStorage.setItem(PvPageDocs.pendingFoldersStorageKey, JSON.stringify(this.pendingFolders));
+    }
+
+    private reconcilePendingFolders() {
+        const serverFolders = new Set(this.folders);
+        const nextPending = this.pendingFolders.filter((folder) => !serverFolders.has(folder));
+        if (nextPending.length !== this.pendingFolders.length) {
+            this.pendingFolders = nextPending;
+            this.persistPendingFolders();
+        }
+    }
+
+    private createPendingFolder(name: string) {
+        const normalized = name.trim();
+        if (!normalized || this.folders.includes(normalized) || this.pendingFolders.includes(normalized)) return;
+        this.pendingFolders = [...this.pendingFolders, normalized].sort((a, b) => a.localeCompare(b));
+        this.persistPendingFolders();
+    }
+
+    private finalizePendingFolder(name: string | null) {
+        if (!name) return;
+        const normalized = name.trim();
+        if (!normalized) return;
+        if (!this.pendingFolders.includes(normalized)) return;
+        this.pendingFolders = this.pendingFolders.filter((folder) => folder !== normalized);
+        this.persistPendingFolders();
+    }
+
+    private folderItems() {
+        const merged = new Map<string, { name: string; pending: boolean }>();
+        for (const folder of this.folders) {
+            merged.set(folder, { name: folder, pending: false });
+        }
+        for (const folder of this.pendingFolders) {
+            if (!merged.has(folder)) {
+                merged.set(folder, { name: folder, pending: true });
+            }
+        }
+        return [...merged.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    private folderIconStyle(pending: boolean) {
+        return pending ? 'filter: grayscale(1) opacity(0.45);' : nothing;
+    }
+
+    private formatFileSize(bytes: number | null | undefined): string {
+        if (!bytes || bytes < 0) return '—';
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -452,7 +500,7 @@ export class PvPageDocs extends PvBase {
                 ${this.renderHeader()}
                 ${this.renderSummary()}
                 ${this.renderTabs()}
-                ${this.activeTab === 'all' && this.folders.length > 0 ? this.renderFolderBar() : ''}
+                ${this.activeTab === 'all' && this.folderItems().length > 0 ? this.renderFolderBar() : ''}
                 ${this.renderToolbar()}
                 ${this.renderFileList()}
             </div>
@@ -547,11 +595,12 @@ export class PvPageDocs extends PvBase {
     }
 
     private renderFolderBar() {
+        const folders = this.folderItems();
         return html`
             <div class="docs-folder-bar">
                 <button
-                    class="folder-chip ${this.activeFolderId === null ? 'active' : ''}"
-                    @click=${() => { this.activeFolderId = null; this.page = 1; void this.loadDocs(); }}
+                    class="folder-chip ${this.activeFolder === null ? 'active' : ''}"
+                    @click=${() => { this.activeFolder = null; this.page = 1; void this.loadDocs(); }}
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
@@ -559,15 +608,16 @@ export class PvPageDocs extends PvBase {
                     </svg>
                     All
                 </button>
-                ${this.folders.map(f => html`
+                ${folders.map((folder) => html`
                     <button
-                        class="folder-chip ${this.activeFolderId === f.id ? 'active' : ''}"
-                        @click=${() => this.handleFolderClick(f.id)}
+                        class="folder-chip ${this.activeFolder === folder.name ? 'active' : ''}"
+                        @click=${() => this.handleFolderClick(folder.name)}
+                        title=${folder.pending ? 'Pending until a file is uploaded' : folder.name}
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style=${this.folderIconStyle(folder.pending)}>
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         </svg>
-                        ${f.name}
+                        ${folder.name}
                     </button>
                 `)}
             </div>
@@ -642,7 +692,7 @@ export class PvPageDocs extends PvBase {
     }
 
     private renderFileItem(doc: ContractorDocumentDTO) {
-        const needsAck = doc.source === 'dealer' && doc.requiresAck && !doc.acknowledgedAt;
+        const needsAck = doc.intent === 'dealer_shared' && doc.requiresAck && !doc.acknowledgedAt;
 
         return html`
             <div class="docs-file-item">
@@ -659,9 +709,9 @@ export class PvPageDocs extends PvBase {
                 </div>
                 <div class="docs-file-badges">
                     ${this.activeTab === 'all' ? html`
-                        <span class="source-badge ${doc.source}">${doc.source === 'dealer' ? 'Dealer' : 'Uploaded'}</span>
+                        <span class="source-badge ${doc.intent === 'dealer_shared' ? 'dealer' : 'contractor'}">${doc.intent === 'dealer_shared' ? 'Dealer' : 'Uploaded'}</span>
                     ` : ''}
-                    ${doc.source === 'dealer' && doc.requiresAck ? html`
+                    ${doc.intent === 'dealer_shared' && doc.requiresAck ? html`
                         <span class="ack-badge ${doc.acknowledgedAt ? 'acknowledged' : 'pending'}">
                             ${doc.acknowledgedAt ? 'Acknowledged' : 'Needs Ack'}
                         </span>
@@ -779,6 +829,23 @@ export class PvPageDocs extends PvBase {
                     `}
 
                     <div class="modal-field">
+                        <label>Folder</label>
+                        <input
+                            type="text"
+                            list="docs-folder-options"
+                            placeholder="Root or choose/type a folder"
+                            .value=${this.selectedFolderName ?? ''}
+                            @input=${(e: InputEvent) => {
+                                const value = (e.target as HTMLInputElement).value.trim();
+                                this.selectedFolderName = value || null;
+                            }}
+                        />
+                        <datalist id="docs-folder-options">
+                            ${this.folderItems().map((folder) => html`<option value=${folder.name}></option>`)}
+                        </datalist>
+                    </div>
+
+                    <div class="modal-field">
                         <label>Attention To</label>
                         <select
                             .value=${this.uploadAttentionTo}
@@ -830,7 +897,7 @@ export class PvPageDocs extends PvBase {
                 <div class="modal-panel">
                     <button class="modal-close" @click=${this.closeCreateFolderModal}>&times;</button>
                     <h2 class="modal-title">New Folder</h2>
-                    <p class="modal-subtitle">Create a folder to organize your documents.</p>
+                    <p class="modal-subtitle">Create a folder locally. It will persist after you upload a file into it.</p>
                     <div class="modal-field">
                         <label>Folder Name</label>
                         <input
@@ -838,7 +905,14 @@ export class PvPageDocs extends PvBase {
                             placeholder="e.g. Permits, Contracts..."
                             .value=${this.newFolderName}
                             @input=${(e: InputEvent) => { this.newFolderName = (e.target as HTMLInputElement).value; }}
-                            @keydown=${(e: KeyboardEvent) => { if (e.key === 'Enter') void this.submitCreateFolder(); }}
+                            @keydown=${(e: KeyboardEvent) => {
+                                if (e.key !== 'Enter') return;
+                                const name = this.newFolderName.trim();
+                                if (!name) return;
+                                this.createPendingFolder(name);
+                                this.selectedFolderName = name;
+                                this.closeCreateFolderModal();
+                            }}
                         />
                     </div>
                     <div class="modal-actions">
@@ -846,7 +920,13 @@ export class PvPageDocs extends PvBase {
                         <button
                             class="btn btn-primary"
                             ?disabled=${!this.newFolderName.trim()}
-                            @click=${this.submitCreateFolder}
+                            @click=${() => {
+                                const name = this.newFolderName.trim();
+                                if (!name) return;
+                                this.createPendingFolder(name);
+                                this.selectedFolderName = name;
+                                this.closeCreateFolderModal();
+                            }}
                         >Create Folder</button>
                     </div>
                 </div>
@@ -855,6 +935,7 @@ export class PvPageDocs extends PvBase {
     }
 
     private renderMoveFolderModal() {
+        const folders = this.folderItems();
         return html`
             <div
                 class="modal-overlay"
@@ -868,15 +949,15 @@ export class PvPageDocs extends PvBase {
                     <div class="modal-field">
                         <label>Select Folder</label>
                         <select
-                            .value=${String(this.selectedFolderId ?? '')}
+                            .value=${this.selectedFolderName ?? ''}
                             @change=${(e: Event) => {
                                 const val = (e.target as HTMLSelectElement).value;
-                                this.selectedFolderId = val ? Number(val) : null;
+                                this.selectedFolderName = val || null;
                             }}
                         >
                             <option value="">No Folder (Root)</option>
-                            ${this.folders.map(f => html`
-                                <option value=${f.id}>${f.name}</option>
+                            ${folders.map((folder) => html`
+                                <option value=${folder.name}>${folder.name}</option>
                             `)}
                         </select>
                     </div>
