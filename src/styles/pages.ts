@@ -4028,6 +4028,16 @@ export const docsPageStyles = css`
     border-color: var(--color-primary-light);
   }
 
+  .preview-btn-danger {
+    color: var(--app-danger-color, var(--color-error));
+    border-color: color-mix(in srgb, var(--app-danger-color, var(--color-error)) 20%, var(--color-border));
+  }
+
+  .preview-btn-danger:hover {
+    background: var(--app-danger-bg, rgba(239, 68, 68, 0.1));
+    border-color: var(--app-danger-color, var(--color-error));
+  }
+
   .preview-close {
     width: 32px;
     height: 32px;

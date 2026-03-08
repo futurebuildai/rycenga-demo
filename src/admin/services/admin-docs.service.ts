@@ -55,6 +55,12 @@ class AdminDocsServiceImpl {
     async getDocumentContent(docId: number) {
         return adminClient.requestBlob(`/admin/files/${docId}/content`);
     }
+
+    async deleteDocument(docId: number): Promise<{ ok: boolean; id: number }> {
+        return adminClient.request<{ ok: boolean; id: number }>(`/admin/files/${docId}`, {
+            method: 'DELETE',
+        });
+    }
 }
 
 export const AdminDocsService = new AdminDocsServiceImpl();
