@@ -51,4 +51,9 @@ export const DocsService = {
             method: 'PATCH',
             body: JSON.stringify({ filePath }),
         }),
+
+    deleteDocument: (docId: number): Promise<{ ok: boolean; id: number }> =>
+        client.request<{ ok: boolean; id: number }>(`/files/${docId}`, {
+            method: 'DELETE',
+        }),
 };

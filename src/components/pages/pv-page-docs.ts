@@ -378,6 +378,25 @@ export class PvPageDocs extends PvBase {
         }
     }
 
+    private async deleteDocument(doc: ContractorDocumentDTO) {
+        const confirmed = window.confirm(`Delete "${doc.fileName}"? This cannot be undone.`);
+        if (!confirmed) return;
+
+        try {
+            await DocsService.deleteDocument(doc.assignmentId);
+            if (this.previewDoc?.assignmentId === doc.assignmentId) {
+                this.closePreview();
+            }
+            PvToast.show('File deleted', 'success');
+            void this.loadDocs();
+            void this.loadSummary();
+            void this.loadFolders();
+        } catch (e) {
+            console.error('Failed to delete file', e);
+            PvToast.show('Failed to delete file', 'error');
+        }
+    }
+
     // ── Helpers ──
 
     private revokePreviewObjectUrl() {
@@ -726,6 +745,15 @@ export class PvPageDocs extends PvBase {
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         </svg>
                     </button>
+                    <button class="btn-icon" title="Delete" @click=${() => this.deleteDocument(doc)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6l-1 14H6L5 6"></path>
+                            <path d="M10 11v6"></path>
+                            <path d="M14 11v6"></path>
+                            <path d="M9 6V4h6v2"></path>
+                        </svg>
+                    </button>
                     <button class="btn-icon" title="Preview" @click=${() => this.handlePreviewDoc(doc)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -980,7 +1008,21 @@ export class PvPageDocs extends PvBase {
                 <div class="my-preview-drawer">
                     <div class="my-preview-drawer-header">
                         <h3>${this.previewDoc?.fileName ?? 'Preview'}</h3>
-                        <button class="modal-close" style="position:static" @click=${this.closePreview}>&times;</button>
+                        <div class="preview-actions">
+                            ${this.previewDoc ? html`
+                                <button class="preview-btn-download preview-btn-danger" @click=${() => this.deleteDocument(this.previewDoc!)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6l-1 14H6L5 6"></path>
+                                        <path d="M10 11v6"></path>
+                                        <path d="M14 11v6"></path>
+                                        <path d="M9 6V4h6v2"></path>
+                                    </svg>
+                                    Delete
+                                </button>
+                            ` : ''}
+                            <button class="modal-close" style="position:static" @click=${this.closePreview}>&times;</button>
+                        </div>
                     </div>
                     <div class="my-preview-drawer-body">
                         ${this.previewLoading ? html`

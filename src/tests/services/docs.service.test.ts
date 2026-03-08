@@ -139,4 +139,15 @@ describe('DocsService', () => {
             body: JSON.stringify({ filePath: null }),
         });
     });
+
+    it('should delete a document', async () => {
+        vi.mocked(client.request).mockResolvedValue({ ok: true, id: 7 });
+
+        const result = await DocsService.deleteDocument(7);
+
+        expect(client.request).toHaveBeenCalledWith('/files/7', {
+            method: 'DELETE',
+        });
+        expect(result).toEqual({ ok: true, id: 7 });
+    });
 });
