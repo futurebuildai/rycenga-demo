@@ -103,6 +103,6 @@ jobs:
           kubectl apply -f infra/k8s/ingress-frontend.yaml
 
           kubectl -n "$TARGET_NAMESPACE" set image deployment/velocity-frontend \
-            velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+            velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:latest
 
           kubectl -n "$TARGET_NAMESPACE" rollout status deployment/velocity-frontend --timeout=10m

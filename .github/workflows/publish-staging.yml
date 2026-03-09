@@ -110,6 +110,6 @@ jobs:
           kubectl -n "$TARGET_NAMESPACE" scale deployment/velocity-frontend --replicas=1
 
           kubectl -n "$TARGET_NAMESPACE" set image deployment/velocity-frontend \
-            velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+            velocity-frontend=${{ env.REGISTRY }}/${{ github.repository }}:staging
 
           kubectl -n "$TARGET_NAMESPACE" rollout status deployment/velocity-frontend --timeout=10m
