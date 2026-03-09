@@ -15,9 +15,12 @@ spec:
       labels:
         app: velocity-frontend
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: velocity-frontend
           image: ghcr.io/builderwire-inc/velocity-frontend:main
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 80
