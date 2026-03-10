@@ -5,21 +5,21 @@
 
 /* CSS Custom Properties (Design Tokens) */
 :root {
-  /* Colors - Black & Green (Ritter Lumber) */
-  --color-primary: #1e293b;
+  /* Colors - Black & Grey (Mitchell Lumber) */
+  --color-primary: #1a1a1a;
   /* Charcoal Black (Base) */
   --color-primary-dark: #0f172a;
   /* Deep Black */
   --color-primary-light: #334155;
   /* Lighter Black / Gray */
   --color-accent: #219c53;
-  /* Ritter Green */
+  /* Mitchell Green */
   --color-accent-light: #2eb865;
   /* Light Green */
   --color-accent-dark: #1a7a40;
   /* Dark Green */
   --color-cta: #219c53;
-  /* Ritter Green */
+  /* Mitchell Green */
   --color-cta-hover: #1a7a40;
   /* Dark Green */
   --color-text: #0f172a;
@@ -472,7 +472,8 @@ address {
 }
 
 .quote-count {
-  background: #3b82f6; /* Blue for quotes */
+  background: #3b82f6;
+  /* Blue for quotes */
 }
 
 .menu-toggle {

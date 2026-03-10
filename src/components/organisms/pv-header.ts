@@ -15,7 +15,7 @@ export class PvHeader extends PvBase {
     ...PvBase.styles,
     css`
       :host {
-        --header-height: 100px;
+        --header-height: 120px;
         display: block;
         height: var(--header-height);
         background: var(--app-header-bg, #ffffff);
@@ -79,8 +79,8 @@ export class PvHeader extends PvBase {
       }
 
       .logo.full-logo .logo-icon {
-        width: 380px; 
-        height: 80px;
+        width: 450px; 
+        height: 100px;
         background: transparent;
         display: flex;
         align-items: center;

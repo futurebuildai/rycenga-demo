@@ -4,10 +4,10 @@
    ======================================== */
 
 :root {
-    /* Colors - Black & Green (Ritter Lumber) */
-    --color-primary: #1e293b;
-    --color-primary-dark: #0f172a;
-    --color-primary-light: #334155;
+    /* Colors - Black & Grey (Mitchell Lumber) */
+    --color-primary: #1a1a1a;
+    --color-primary-dark: #000000;
+    --color-primary-light: #333333;
     --color-accent: #219c53;
     --color-accent-light: #2eb865;
     --color-accent-dark: #1a7a40;
@@ -354,7 +354,7 @@
     --app-surface-contrast-bg: #2a2a31;
     --app-control-bg: #46464f;
     --app-header-bg: #111113;
-    --app-logo-filter: brightness(0) invert(1);
+    --app-logo-filter: invert(1);
     --app-logo-text-color: var(--color-text);
     --app-header-link-hover: var(--color-accent-light);
     --app-header-utility-bg: rgba(50, 50, 58, 0.7);

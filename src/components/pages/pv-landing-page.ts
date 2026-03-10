@@ -51,11 +51,10 @@ export class PvLandingPage extends PvBase {
         justify-content: center;
       }
 
-      .ritter-logo {
-        height: 128px; /* Increased by 50% from 85px */
+      .mitchell-logo {
+        height: 180px;
         width: auto;
         max-width: 100%;
-        /* Removed the invert filter so the original colors of the SVG or PNG will show */
       }
 
       .title {
@@ -157,7 +156,7 @@ export class PvLandingPage extends PvBase {
     return html`
       <div class="landing-container">
         <div class="logo-container">
-          <img src="/assets/ritter-source.png" alt="Ritter Lumber Logo" class="ritter-logo" />
+          <img src="/assets/mitchell-logo.png" alt="Mitchell Lumber Logo" class="mitchell-logo" />
         </div>
 
         <h1 class="title">VELOCITY DEMO</h1>

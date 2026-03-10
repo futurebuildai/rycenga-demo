@@ -21,12 +21,12 @@ interface BrandingCacheEnvelope {
 export const BRANDING_REFRESH_SIGNAL_KEY = 'branding_refresh_signal_v1';
 
 const DEFAULT_BRANDING = {
-    companyName: 'BuilderWire',
+    companyName: 'Mitchell Lumber Co.',
     templateId: 1,
     paletteId: 1,
     logoBase64: null,
     logoType: null,
-    contactEmail: 'support@builderwire.com',
+    contactEmail: 'support@mitchelllumberco.com',
     contactPhone: '(555) 000-0000',
 };
 
@@ -167,7 +167,7 @@ class BrandingServiceImpl {
             logoType: logoType ?? DEFAULT_BRANDING.logoType,
             contactEmail: contactEmail ?? DEFAULT_BRANDING.contactEmail,
             contactPhone: contactPhone ?? DEFAULT_BRANDING.contactPhone,
-            logoUrl: '/assets/ritter-source.png',
+            logoUrl: '/assets/mitchell-logo.png',
         };
 
         this.branding = branding;
