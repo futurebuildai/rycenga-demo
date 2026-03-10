@@ -372,12 +372,7 @@ export class PvPaymentModal extends PvBase {
       await BillingService.createPayment(payload);
 
       const count = this.invoices.length || 1;
-      PvToast.show(
-        count > 1
-          ? `Payment successful for ${count} invoices!`
-          : 'Payment successful!',
-        'success',
-      );
+      PvToast.show('Payment approved', 'success');
       this.dispatchEvent(new CustomEvent('payment-success', {
         detail: { paymentRequestId: this.paymentRequestId },
       }));

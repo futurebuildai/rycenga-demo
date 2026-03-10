@@ -293,7 +293,7 @@ export class AdminLayout extends LitElement {
         return html`
             <nav>
                 <div class="logo-area has-full-logo">
-                    <img src="/assets/lmc-logo-white.png" alt="LMC Logo">
+                    <img src="/assets/ritter-source.png" alt="Ritter Lumber Logo">
                     <div class="logo-icon">V</div>
                     <span class="logo-text">${tenantName} Admin</span>
                 </div>

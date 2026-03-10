@@ -17,8 +17,8 @@ export class PvLandingPage extends PvBase {
         flex-direction: column;
         min-height: 100vh;
         width: 100%;
-        background-color: #121212;
-        color: #ffffff;
+        background-color: #f1f5f9;
+        color: #1e293b;
         font-family: 'Inter', sans-serif;
         box-sizing: border-box;
       }
@@ -51,18 +51,18 @@ export class PvLandingPage extends PvBase {
         justify-content: center;
       }
 
-      .lmc-logo {
-        height: 85px; /* Scaled down to match Yoders proportions */
+      .ritter-logo {
+        height: 128px; /* Increased by 50% from 85px */
         width: auto;
         max-width: 100%;
-        filter: brightness(0) invert(1);
+        /* Removed the invert filter so the original colors of the SVG or PNG will show */
       }
 
       .title {
         font-size: 24px;
         font-weight: 700;
         letter-spacing: 0.1em;
-        color: #f59e0b;
+        color: #219c53;
         margin-bottom: var(--space-3xl);
         text-transform: uppercase;
       }
@@ -75,8 +75,8 @@ export class PvLandingPage extends PvBase {
       }
 
       .portal-card {
-        background: #1e1e1e;
-        border: 1px solid #2e2e2e;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
         padding: var(--space-2xl);
         text-align: left;
@@ -88,21 +88,22 @@ export class PvLandingPage extends PvBase {
       }
 
       .portal-card:hover {
-        border-color: #f59e0b;
+        border-color: #219c53;
         transform: translateY(-4px);
-        background: #252525;
+        background: #f8fafc;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       }
 
       .card-title {
         font-size: 20px;
         font-weight: 600;
         margin-bottom: var(--space-md);
-        color: #ffffff;
+        color: #0f172a;
       }
 
       .card-description {
         font-size: 14px;
-        color: #9ca3af;
+        color: #475569;
         line-height: 1.6;
         margin-bottom: var(--space-xl);
         flex-grow: 1;
@@ -111,7 +112,7 @@ export class PvLandingPage extends PvBase {
       .card-link {
         font-size: 14px;
         font-weight: 600;
-        color: #f59e0b;
+        color: #219c53;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -133,55 +134,6 @@ export class PvLandingPage extends PvBase {
         text-decoration: underline;
       }
 
-      .qr-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: var(--space-2xl);
-        padding: var(--space-xl);
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.02));
-        border-radius: 16px;
-        border: 2px solid rgba(245, 158, 11, 0.3);
-        max-width: 350px;
-        margin-left: auto;
-        margin-right: auto;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-
-      .qr-container:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px -10px rgba(245, 158, 11, 0.3);
-        border-color: rgba(245, 158, 11, 0.6);
-      }
-
-      .qr-image {
-        width: 220px;
-        height: 220px;
-        border-radius: 12px;
-        margin-bottom: var(--space-lg);
-        background: white;
-        padding: 8px;
-        box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4);
-      }
-
-      .qr-text {
-        font-size: 22px;
-        font-weight: 800;
-        color: #121212;
-        background: #f59e0b;
-        padding: 10px 28px;
-        border-radius: 30px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0;
-        margin-top: 8px;
-        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
-        transition: background 0.2s ease;
-      }
-      
-      .qr-container:hover .qr-text {
-        background: #fbbf24;
-      }
 
       @media (max-width: 640px) {
         .portal-cards {
@@ -205,7 +157,7 @@ export class PvLandingPage extends PvBase {
     return html`
       <div class="landing-container">
         <div class="logo-container">
-          <img src="/assets/lmc-logo-white.png" alt="LMC Logo" class="lmc-logo" />
+          <img src="/assets/ritter-source.png" alt="Ritter Lumber Logo" class="ritter-logo" />
         </div>
 
         <h1 class="title">VELOCITY DEMO</h1>
@@ -238,10 +190,6 @@ export class PvLandingPage extends PvBase {
           </div>
         </div>
 
-        <div class="qr-container">
-          <img src="/assets/lmc-demo-qr.png" alt="Book a Demo QR Code" class="qr-image" />
-          <div class="qr-text">Book a Demo</div>
-        </div>
 
         <div class="footer">
           Powered by <a href="https://builderwire.com" target="_blank" rel="noopener noreferrer">BuilderWire</a>

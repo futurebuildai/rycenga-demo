@@ -167,7 +167,7 @@ class BrandingServiceImpl {
             logoType: logoType ?? DEFAULT_BRANDING.logoType,
             contactEmail: contactEmail ?? DEFAULT_BRANDING.contactEmail,
             contactPhone: contactPhone ?? DEFAULT_BRANDING.contactPhone,
-            logoUrl: '/assets/lmc-logo.png',
+            logoUrl: '/assets/ritter-source.png',
         };
 
         this.branding = branding;

@@ -5,25 +5,25 @@
 
 /* CSS Custom Properties (Design Tokens) */
 :root {
-  /* Colors - Slate & Ember */
+  /* Colors - Black & Green (Ritter Lumber) */
   --color-primary: #1e293b;
-  /* Slate 800 */
+  /* Charcoal Black (Base) */
   --color-primary-dark: #0f172a;
-  /* Slate 900 */
+  /* Deep Black */
   --color-primary-light: #334155;
-  /* Slate 700 */
-  --color-accent: #f97316;
-  /* Orange 500 */
-  --color-accent-light: #fb923c;
-  /* Orange 400 */
-  --color-accent-dark: #ea580c;
-  /* Orange 600 */
-  --color-cta: #f97316;
-  /* Orange 500 */
-  --color-cta-hover: #ea580c;
-  /* Orange 600 */
+  /* Lighter Black / Gray */
+  --color-accent: #219c53;
+  /* Ritter Green */
+  --color-accent-light: #2eb865;
+  /* Light Green */
+  --color-accent-dark: #1a7a40;
+  /* Dark Green */
+  --color-cta: #219c53;
+  /* Ritter Green */
+  --color-cta-hover: #1a7a40;
+  /* Dark Green */
   --color-text: #0f172a;
-  /* Slate 900 */
+  /* Deep Black */
   --color-text-light: #475569;
   /* Slate 600 */
   --color-text-muted: #94a3b8;
@@ -32,7 +32,7 @@
   --color-bg-alt: #f8fafc;
   /* Slate 50 */
   --color-bg-dark: #0f172a;
-  /* Slate 900 */
+  /* Deep Black */
   --color-border: #e2e8f0;
   /* Slate 200 */
   --color-success: #22c55e;

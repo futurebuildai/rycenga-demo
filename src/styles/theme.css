@@ -4,15 +4,15 @@
    ======================================== */
 
 :root {
-    /* Colors - Slate & Ember */
+    /* Colors - Black & Green (Ritter Lumber) */
     --color-primary: #1e293b;
     --color-primary-dark: #0f172a;
     --color-primary-light: #334155;
-    --color-accent: #f97316;
-    --color-accent-light: #fb923c;
-    --color-accent-dark: #ea580c;
-    --color-cta: #f97316;
-    --color-cta-hover: #ea580c;
+    --color-accent: #219c53;
+    --color-accent-light: #2eb865;
+    --color-accent-dark: #1a7a40;
+    --color-cta: #219c53;
+    --color-cta-hover: #1a7a40;
     --color-text: #0f172a;
     --color-text-light: #475569;
     --color-text-muted: #94a3b8;
@@ -37,8 +37,8 @@
     --status-error-text: #ef4444;
     --status-neutral-bg: rgba(71, 85, 105, 0.1);
     --status-neutral-text: #475569;
-    --status-accent-bg: rgba(249, 115, 22, 0.1);
-    --status-accent-text: #f97316;
+    --status-accent-bg: rgba(33, 156, 83, 0.1);
+    --status-accent-text: #219c53;
     --status-purple-bg: rgba(168, 85, 247, 0.1);
     --status-purple-text: #a855f7;
 

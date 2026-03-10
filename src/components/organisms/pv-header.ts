@@ -79,8 +79,8 @@ export class PvHeader extends PvBase {
       }
 
       .logo.full-logo .logo-icon {
-        width: 180px;
-        height: 60px;
+        width: 380px; 
+        height: 80px;
         background: transparent;
         display: flex;
         align-items: center;
