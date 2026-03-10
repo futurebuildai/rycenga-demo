@@ -4,15 +4,15 @@
    ======================================== */
 
 :root {
-    /* Colors - Black & Grey (Mitchell Lumber) */
+    /* Colors - Black & Grey (Rycenga Building Center) */
     --color-primary: #1a1a1a;
     --color-primary-dark: #000000;
     --color-primary-light: #333333;
-    --color-accent: #219c53;
-    --color-accent-light: #2eb865;
-    --color-accent-dark: #1a7a40;
-    --color-cta: #219c53;
-    --color-cta-hover: #1a7a40;
+    --color-accent: #005a31;
+    --color-accent-light: #007a42;
+    --color-accent-dark: #003b20;
+    --color-cta: #005a31;
+    --color-cta-hover: #003b20;
     --color-text: #0f172a;
     --color-text-light: #475569;
     --color-text-muted: #94a3b8;
@@ -37,8 +37,8 @@
     --status-error-text: #ef4444;
     --status-neutral-bg: rgba(71, 85, 105, 0.1);
     --status-neutral-text: #475569;
-    --status-accent-bg: rgba(33, 156, 83, 0.1);
-    --status-accent-text: #219c53;
+    --status-accent-bg: rgba(0, 90, 49, 0.1);
+    --status-accent-text: #005a31;
     --status-purple-bg: rgba(168, 85, 247, 0.1);
     --status-purple-text: #a855f7;
 

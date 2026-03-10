@@ -21,12 +21,12 @@ interface BrandingCacheEnvelope {
 export const BRANDING_REFRESH_SIGNAL_KEY = 'branding_refresh_signal_v1';
 
 const DEFAULT_BRANDING = {
-    companyName: 'Mitchell Lumber Co.',
+    companyName: 'Rycenga Building Center',
     templateId: 1,
     paletteId: 1,
     logoBase64: null,
     logoType: null,
-    contactEmail: 'support@mitchelllumberco.com',
+    contactEmail: 'support@rycengabuildingcenter.com',
     contactPhone: '(555) 000-0000',
 };
 
@@ -167,7 +167,7 @@ class BrandingServiceImpl {
             logoType: logoType ?? DEFAULT_BRANDING.logoType,
             contactEmail: contactEmail ?? DEFAULT_BRANDING.contactEmail,
             contactPhone: contactPhone ?? DEFAULT_BRANDING.contactPhone,
-            logoUrl: '/assets/mitchell-logo.png',
+            logoUrl: '/assets/rycenga-logo.png',
         };
 
         this.branding = branding;

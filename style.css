@@ -5,22 +5,22 @@
 
 /* CSS Custom Properties (Design Tokens) */
 :root {
-  /* Colors - Black & Grey (Mitchell Lumber) */
+  /* Colors - Black & Grey (Rycenga Building Center) */
   --color-primary: #1a1a1a;
   /* Charcoal Black (Base) */
   --color-primary-dark: #0f172a;
   /* Deep Black */
   --color-primary-light: #334155;
   /* Lighter Black / Gray */
-  --color-accent: #219c53;
-  /* Mitchell Green */
-  --color-accent-light: #2eb865;
+  --color-accent: #005a31;
+  /* Rycenga Green */
+  --color-accent-light: #007a42;
   /* Light Green */
-  --color-accent-dark: #1a7a40;
+  --color-accent-dark: #003b20;
   /* Dark Green */
-  --color-cta: #219c53;
-  /* Mitchell Green */
-  --color-cta-hover: #1a7a40;
+  --color-cta: #005a31;
+  /* Rycenga Green */
+  --color-cta-hover: #003b20;
   /* Dark Green */
   --color-text: #0f172a;
   /* Deep Black */

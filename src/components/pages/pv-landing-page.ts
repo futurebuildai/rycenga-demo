@@ -51,7 +51,7 @@ export class PvLandingPage extends PvBase {
         justify-content: center;
       }
 
-      .mitchell-logo {
+      .rycenga-logo {
         height: 180px;
         width: auto;
         max-width: 100%;
@@ -61,7 +61,7 @@ export class PvLandingPage extends PvBase {
         font-size: 24px;
         font-weight: 700;
         letter-spacing: 0.1em;
-        color: #219c53;
+        color: var(--color-accent);
         margin-bottom: var(--space-3xl);
         text-transform: uppercase;
       }
@@ -87,7 +87,7 @@ export class PvLandingPage extends PvBase {
       }
 
       .portal-card:hover {
-        border-color: #219c53;
+        border-color: var(--color-accent);
         transform: translateY(-4px);
         background: #f8fafc;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -111,7 +111,7 @@ export class PvLandingPage extends PvBase {
       .card-link {
         font-size: 14px;
         font-weight: 600;
-        color: #219c53;
+        color: var(--color-accent);
         display: flex;
         align-items: center;
         gap: 8px;
@@ -156,7 +156,7 @@ export class PvLandingPage extends PvBase {
     return html`
       <div class="landing-container">
         <div class="logo-container">
-          <img src="/assets/mitchell-logo.png" alt="Mitchell Lumber Logo" class="mitchell-logo" />
+          <img src="/assets/rycenga-logo.png" alt="Rycenga Building Center Logo" class="rycenga-logo" />
         </div>
 
         <h1 class="title">VELOCITY DEMO</h1>
