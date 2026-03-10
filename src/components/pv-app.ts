@@ -22,6 +22,7 @@ import './pages/pv-page-estimates.js';
 import './pages/pv-page-billing.js';
 import './pages/pv-page-projects.js';
 import './pages/pv-page-wallet.js';
+import './pages/pv-page-docs.js';
 import './pages/pv-page-team.js';
 import './pages/pv-page-settings.js';
 import './pages/pv-landing-page.js';

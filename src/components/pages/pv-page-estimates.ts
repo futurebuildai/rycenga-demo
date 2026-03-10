@@ -8,7 +8,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
-import { DocumentsService } from '../../services/documents.service.js';
+import { DocumentsService } from '../../connect/services/documents.js';
 import { PvToast } from '../atoms/pv-toast.js';
 import '../atoms/pv-page-tour-modal.js';
 import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles, paginationStyles } from '../../styles/shared.js';
@@ -424,9 +424,9 @@ export class PvPageEstimates extends PvBase {
     return html`
       <pv-page-tour-modal 
           pageId="customer-estimates"
-          heading="Estimates & Quick Quoting"
+          heading="Estimates & Quotes"
           .features=${[
-        { title: 'AI Quick Quoting', description: 'Turn any rough list of materials into a structured, priced quote instantly using our AI tool.' },
+        { title: 'Estimate Review', description: 'Browse all quotes sent by the dealer, filter by status, and drill into line-item details.' },
         { title: 'Quote Conversion', description: 'Review detailed estimates and click "Accept & Convert" to easily turn quotes into live orders.' },
         { title: 'Download & Share', description: 'Download polished, professional PDF versions of estimates to share with your clients.' }
       ]}

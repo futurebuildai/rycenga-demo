@@ -5,7 +5,6 @@ import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccount } from '../services/admin-data.service.js';
 import type { AdminAccountSort } from '../services/admin-data.service.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
-import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import { adminAccountsPageStyles } from '../../styles/pages.js';
 import '../../components/atoms/pv-page-tour-modal.js';
 

@@ -14,7 +14,6 @@ import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles,
 import { ordersPageStyles } from '../../styles/pages.js';
 import type { Order } from '../../types/index.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
-import '../../features/orders/components/pv-order-lines.js';
 import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-orders')

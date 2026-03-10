@@ -14,7 +14,6 @@ import { overviewPageStyles } from '../../styles/pages.js';
 import type { AccountData } from '../../types/index.js';
 import '../../features/billing/components/pv-payment-modal.js';
 import '../../features/estimates/components/pv-quick-quote-modal.js';
-import { pvState } from '../../store/pv-state.js';
 import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-overview')

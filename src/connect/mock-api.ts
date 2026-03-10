@@ -81,7 +81,7 @@ const mockDataStore = {
     ],
     documents: [
         { id: 100, accountId: 1, accountName: "Summit Construction Corp", fileName: "Jan-2024-Statement.pdf", s3Key: "stmts/1/2024-01.pdf", fileSize: 245000, mimeType: "application/pdf", createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), intent: 'dealer_shared' },
-        { id: 101, accountId: 1, accountName: "Summit Construction Corp", fileName: "Project-Specifications.docx", s3Key: "docs/1/specs.docx", fileSize: 1200000, mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), intent: 'dealer_shared' },
+        { id: 101, accountId: 1, accountName: "Summit Construction Corp", fileName: "Project-Specifications.docx", s3Key: "docs/1/specs.docx", fileSize: 1200000, mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), intent: 'dealer_shared', requiresAck: true, acknowledgedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
         { id: 200, accountId: 1, accountName: "Summit Construction Corp", fileName: "Site-Delivery-Downtown.jpg", s3Key: "docs/1/delivery.jpg", fileSize: 1540000, mimeType: "image/jpeg", createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), intent: 'dealer_shared', requiresAck: true },
         { id: 201, accountId: 1, accountName: "Summit Construction Corp", fileName: "Foundation-Inspection.jpg", s3Key: "docs/1/foundation.jpg", fileSize: 2100000, mimeType: "image/jpeg", createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), intent: 'dealer_shared' },
         { id: 202, accountId: 1, accountName: "Summit Construction Corp", fileName: "Skyline-Blueprints.pdf", s3Key: "docs/1/blueprints.pdf", fileSize: 4500000, mimeType: "application/pdf", createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), intent: 'dealer_shared', requiresAck: true }
@@ -124,7 +124,43 @@ const mockDataStore = {
             createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
             updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
         }
-    ]
+    ],
+    messages: (() => {
+        const now = Date.now();
+        const h = (hours: number) => new Date(now - hours * 3600000).toISOString();
+        return [
+            // Thread 1: Summit Construction - Dave Miller (conversationId: 1001)
+            { id: 5001, accountId: 1, conversationId: 1001, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15551234567', recipient: '+18885550199', body: 'Hey, just checking on the status of order ORD-2001. The framing crew starts Monday.', status: 'delivered', createdAt: h(26) },
+            { id: 5002, accountId: 1, conversationId: 1001, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15551234567', body: 'Hi Dave! ORD-2001 is confirmed and being pulled now. Should be ready for pickup tomorrow morning.', status: 'delivered', createdAt: h(25) },
+            { id: 5003, accountId: 1, conversationId: 1001, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15551234567', recipient: '+18885550199', body: 'Perfect, we will send a truck around 7am. Can you add 20 sheets of 1/2" CDX plywood to that order?', status: 'delivered', createdAt: h(24) },
+            { id: 5004, accountId: 1, conversationId: 1001, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15551234567', body: 'Done! Added 20 sheets CDX plywood to ORD-2001. New total is $47,340. See you at 7am.', status: 'delivered', createdAt: h(23) },
+            { id: 5005, accountId: 1, conversationId: 1001, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15551234567', recipient: '+18885550199', body: 'Great, thanks Sarah! Also wanted to ask about pricing on TJI joists for the Riverside project.', status: 'delivered', createdAt: h(4) },
+
+            // Thread 2: Riverside Development - Tony Reyes (conversationId: 1002)
+            { id: 5010, accountId: 2, conversationId: 1002, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15559876543', body: 'Hi Tony, this is Sarah from Empire Building Materials. Your estimate EST-3001 for the Riverside Phase 2 project is ready for review in the portal.', status: 'delivered', createdAt: h(48) },
+            { id: 5011, accountId: 2, conversationId: 1002, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15559876543', recipient: '+18885550199', body: 'Thanks Sarah! I saw it. The pricing on the engineered lumber looks good. Can we lock that in for 30 days?', status: 'delivered', createdAt: h(47) },
+            { id: 5012, accountId: 2, conversationId: 1002, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15559876543', body: 'Absolutely, I have extended the estimate expiration to 30 days. Let me know when you are ready to convert it to an order.', status: 'delivered', createdAt: h(46) },
+            { id: 5013, accountId: 2, conversationId: 1002, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15559876543', recipient: '+18885550199', body: 'Will do. Also, we have a payment coming through for INV-1002 this week. Should clear by Friday.', status: 'delivered', createdAt: h(8) },
+            { id: 5014, accountId: 2, conversationId: 1002, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15559876543', body: 'Noted, thanks Tony! You can also make payments directly through the portal if that is easier.', status: 'delivered', createdAt: h(7) },
+
+            // Thread 3: Metro Builders - Lisa Chen (conversationId: 1003)
+            { id: 5020, accountId: 3, conversationId: 1003, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15554567890', body: 'Hi Lisa, friendly reminder that invoice INV-1003 ($28,000) is now 45 days past due. Please let us know if you need to discuss payment options.', status: 'delivered', createdAt: h(72) },
+            { id: 5021, accountId: 3, conversationId: 1003, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15554567890', recipient: '+18885550199', body: 'Hi Sarah, sorry about that. We had a delay with our GC payment. Can we set up a payment plan?', status: 'delivered', createdAt: h(70) },
+            { id: 5022, accountId: 3, conversationId: 1003, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15554567890', body: 'Of course. I can set up 3 monthly payments of $9,333. Would that work for your cash flow?', status: 'delivered', createdAt: h(69) },
+            { id: 5023, accountId: 3, conversationId: 1003, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15554567890', recipient: '+18885550199', body: 'That would be great. Let us do that. When does the first payment need to go through?', status: 'delivered', createdAt: h(2) },
+            { id: 5024, accountId: 3, conversationId: 1003, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15554567890', body: 'First payment is due by end of this week. You can pay through the portal or I can send a payment link. Which do you prefer?', status: 'delivered', createdAt: h(1) },
+
+            // Thread 4: Summit Construction - Delivery follow-up (conversationId: 1004)
+            { id: 5030, accountId: 1, conversationId: 1004, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15551239999', recipient: '+18885550199', body: 'Hi, this is Mike from Summit Construction. The delivery for the Downtown Office Plaza is showing 3 pallets but we ordered 4. Can you check?', status: 'delivered', createdAt: h(6) },
+            { id: 5031, accountId: 1, conversationId: 1004, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15551239999', body: 'Hi Mike, let me pull up that order. One moment...', status: 'delivered', createdAt: h(5.5) },
+            { id: 5032, accountId: 1, conversationId: 1004, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15551239999', body: 'You are right, the 4th pallet of OSB was backordered. It should ship out tomorrow. I will send you tracking as soon as it does.', status: 'delivered', createdAt: h(5) },
+            { id: 5033, accountId: 1, conversationId: 1004, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15551239999', recipient: '+18885550199', body: 'OK thanks for checking. That works for our timeline.', status: 'delivered', createdAt: h(4.5) },
+
+            // Thread 5: New lead (conversationId: 1005)
+            { id: 5040, accountId: undefined, conversationId: 1005, direction: 'inbound', channel: 'sms', provider: 'bird', originator: '+15557778888', recipient: '+18885550199', body: 'Hi, I found your company online. We are a commercial GC looking for a new lumber supplier. Do you offer volume pricing?', status: 'delivered', createdAt: h(3) },
+            { id: 5041, accountId: undefined, conversationId: 1005, direction: 'outbound', channel: 'sms', provider: 'bird', originator: '+18885550199', recipient: '+15557778888', body: 'Welcome! Yes we do. We offer tiered volume pricing and credit terms for commercial accounts. Can I get your company name to set up a quote?', status: 'delivered', createdAt: h(2.5) },
+        ];
+    })()
 };
 
 // --- INTERCEPTOR LOGIC ---
@@ -224,7 +260,55 @@ export class MockApi {
             };
         }
         if (path === '/admin/files') {
-            return paginate(mockDataStore.documents);
+            const view = params.view || '';
+            const allDocs = mockDataStore.documents as any[];
+
+            if (view === 'summary') {
+                const now = new Date();
+                return {
+                    totalShared: allDocs.filter(d => d.intent === 'dealer_shared').length,
+                    pendingAck: allDocs.filter(d => d.intent === 'dealer_shared' && d.requiresAck && !d.acknowledgedAt).length,
+                    acknowledgedThisMonth: allDocs.filter(d => {
+                        if (!d.acknowledgedAt) return false;
+                        const ackDate = new Date(d.acknowledgedAt);
+                        return ackDate.getMonth() === now.getMonth() && ackDate.getFullYear() === now.getFullYear();
+                    }).length
+                };
+            }
+
+            let filtered = [...allDocs];
+
+            if (view === 'shared') {
+                filtered = filtered.filter(d => d.intent === 'dealer_shared');
+                if (params.status === 'pending') {
+                    filtered = filtered.filter(d => d.requiresAck && !d.acknowledgedAt);
+                } else if (params.status === 'acknowledged') {
+                    filtered = filtered.filter(d => d.acknowledgedAt);
+                }
+            } else if (view === 'inbox') {
+                filtered = filtered.filter(d => d.intent === 'contractor_uploaded');
+            }
+
+            if (params.search) {
+                const s = params.search.toLowerCase();
+                filtered = filtered.filter(d => d.fileName.toLowerCase().includes(s) || (d.accountName || '').toLowerCase().includes(s));
+            }
+
+            if (params.sort) {
+                filtered.sort((a, b) => {
+                    if (params.sort === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    if (params.sort === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    if (params.sort === 'name-asc') return a.fileName.localeCompare(b.fileName);
+                    if (params.sort === 'name-desc') return b.fileName.localeCompare(a.fileName);
+                    if (params.sort === 'size-desc') return (b.fileSize || 0) - (a.fileSize || 0);
+                    if (params.sort === 'size-asc') return (a.fileSize || 0) - (b.fileSize || 0);
+                    return 0;
+                });
+            } else {
+                filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            }
+
+            return paginate(filtered);
         }
         if (path === '/admin/accounts' || path.endsWith('/admin/accounts')) {
             return paginate(mockDataStore.accounts);
@@ -234,9 +318,9 @@ export class MockApi {
         if (path === '/admin/ar/summary') {
             return {
                 totalOutstanding: mockDataStore.accounts.reduce((sum, a) => sum + a.balance, 0),
-                openRequests: mockDataStore.accounts.filter(a => a.balance > 0).length,
-                paidThisMonth: 12500.50,
-                overdueCount: mockDataStore.accountFinancials.filter(f => f.pastDueBalance > 0).length,
+                accountsWithBalanceCount: mockDataStore.accounts.filter(a => a.balance > 0).length,
+                collectedMTD: 12500.50,
+                overdueInvoiceCount: mockDataStore.accountFinancials.filter(f => f.pastDueBalance > 0).length,
             };
         }
         if (path === '/admin/ar/accounts') {
@@ -460,13 +544,49 @@ export class MockApi {
             }
 
             // Default list view
-            const filtered = filterByAccount(mockDataStore.documents);
+            let filtered = filterByAccount(mockDataStore.documents);
+
+            if (params.tab && params.tab !== 'all') {
+                if (params.tab === 'shared') {
+                    filtered = filtered.filter(d => d.intent === 'dealer_shared');
+                } else if (params.tab === 'uploads') {
+                    filtered = filtered.filter(d => d.intent === 'contractor_uploaded');
+                }
+            }
+            if (params.search) {
+                const s = params.search.toLowerCase();
+                filtered = filtered.filter(d => d.fileName.toLowerCase().includes(s));
+            }
+            if (params.filePath) {
+                if (params.filePath === 'null' || params.filePath === '') {
+                    filtered = filtered.filter(d => !d.filePath);
+                } else {
+                    filtered = filtered.filter(d => d.filePath === params.filePath);
+                }
+            }
+
             // Map to ContractorDocumentDTO expected by UI
             const items = filtered.map(d => ({
                 ...d,
                 assignmentId: d.id,
                 intent: d.intent || 'dealer_shared'
             }));
+
+            // Handle sort
+            if (params.sort) {
+                items.sort((a, b) => {
+                    if (params.sort === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    if (params.sort === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    if (params.sort === 'name-asc') return a.fileName.localeCompare(b.fileName);
+                    if (params.sort === 'name-desc') return b.fileName.localeCompare(a.fileName);
+                    if (params.sort === 'size-desc') return (b.fileSize || 0) - (a.fileSize || 0);
+                    if (params.sort === 'size-asc') return (a.fileSize || 0) - (b.fileSize || 0);
+                    return 0;
+                });
+            } else {
+                items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            }
+
             return paginate(items);
         }
 
@@ -497,6 +617,38 @@ export class MockApi {
                 if (body.filePath !== undefined) doc.filePath = body.filePath;
                 return { ok: true, id };
             }
+        }
+
+        // --- COMMUNICATIONS / MESSAGING ---
+        if (path === '/communications/messages' && (!options.method || options.method === 'GET')) {
+            const channel = params['channel'] || '';
+            const limit = parseInt(params['limit'] || '200');
+            const offset = parseInt(params['offset'] || '0');
+            let msgs = (mockDataStore as any).messages as any[];
+            if (channel) {
+                msgs = msgs.filter((m: any) => m.channel === channel);
+            }
+            const sliced = msgs.slice(offset, offset + limit);
+            return { items: sliced, total: msgs.length };
+        }
+
+        if (path === '/communications/messages' && options.method === 'POST') {
+            const body = JSON.parse(options.body as string);
+            const newMsg = {
+                id: Date.now(),
+                accountId: body.accountId,
+                conversationId: null,
+                direction: 'outbound',
+                channel: body.channel || 'sms',
+                provider: 'bird',
+                originator: '+18885550199',
+                recipient: body.to,
+                body: body.message,
+                status: 'delivered',
+                createdAt: new Date().toISOString(),
+            };
+            (mockDataStore as any).messages.unshift(newMsg);
+            return newMsg;
         }
 
         // Fallback catch-all
