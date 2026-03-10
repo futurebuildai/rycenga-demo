@@ -14,6 +14,7 @@ import { pageShellStyles } from '../../styles/shared.js';
 import { settingsPageStyles } from '../../styles/pages.js';
 import type { AccountData } from '../../types/index.js';
 import type { NotificationPreferences } from '../../connect/types/domain.js';
+import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-settings')
 export class PvPageSettings extends PvBase {
@@ -147,6 +148,15 @@ export class PvPageSettings extends PvBase {
     const company = this.accountData?.company;
 
     return html`
+      <pv-page-tour-modal 
+          pageId="customer-settings"
+          heading="Account Settings"
+          .features=${[
+        { title: 'Profile Information', description: 'Update your contact information, phone numbers, and view your basic company details.' },
+        { title: 'Security', description: 'Change your account password securely from within this portal.' },
+        { title: 'Notification Preferences', description: 'Opt-in to SMS alerts, email notifications, and specific order updates to stay informed.' }
+      ]}
+      ></pv-page-tour-modal>
       <div class="section-header">
         <h1 class="section-title">Settings</h1>
         <p class="section-subtitle">Manage your account preferences</p>

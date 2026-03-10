@@ -13,6 +13,7 @@ import { PvToast } from '../atoms/pv-toast.js';
 import { pageShellStyles } from '../../styles/shared.js';
 import { teamPageStyles } from '../../styles/pages.js';
 import type { TeamMember, TeamMemberRole, InviteMemberPayload, UserRole } from '../../connect/types/domain.js';
+import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-team')
 export class PvPageTeam extends PvBase {
@@ -185,6 +186,15 @@ export class PvPageTeam extends PvBase {
     }
 
     return html`
+      <pv-page-tour-modal 
+          pageId="customer-team"
+          heading="Team Management"
+          .features=${[
+        { title: 'Role-Based Access', description: 'Assign Owner, Purchaser, or Viewer roles to team members to control their access and purchasing abilities.' },
+        { title: 'Invite Members', description: 'Easily send email invitations to new team members to join your company account.' },
+        { title: 'Manage Users', description: 'Edit roles, resend invitations, or manage existing users all from this centralized dashboard.' }
+      ]}
+      ></pv-page-tour-modal>
       <div class="section-header">
         <div>
           <h1 class="section-title">Team</h1>

@@ -16,9 +16,10 @@ const VALID_ROUTES: RouteId[] = [
     'team',
     'settings',
     'login',
+    'landing',
 ];
 
-const DEFAULT_ROUTE: RouteId = 'overview';
+const DEFAULT_ROUTE: RouteId = 'landing';
 
 class RouterServiceImpl {
     private currentRoute: RouteId = DEFAULT_ROUTE;

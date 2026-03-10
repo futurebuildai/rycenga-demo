@@ -8,6 +8,7 @@ import '../components/messaging/thread-list.js';
 import '../components/messaging/chat-window.js';
 import '../components/messaging/new-thread-modal.js';
 import { pageMessagingStyles } from '../../styles/admin-messaging.js';
+import '../../components/atoms/pv-page-tour-modal.js';
 
 @customElement('admin-page-messaging')
 export class PageMessaging extends LitElement {
@@ -350,6 +351,15 @@ export class PageMessaging extends LitElement {
 
     render() {
         return html`
+            <pv-page-tour-modal 
+                pageId="admin-messaging"
+                heading="Unified Messaging"
+                .features=${[
+                { title: 'Omnichannel Inbox', description: 'Manage SMS and email conversations with contractors from a single interface.' },
+                { title: 'Thread Assignment', description: 'Assign specific conversations to team members for streamlined handling.' },
+                { title: 'File Sharing', description: 'Easily drag and drop quotes, invoices, and spec sheets directly into the chat.' }
+            ]}
+            ></pv-page-tour-modal>
             <div class="messaging-container">
                 <messaging-thread-list
                     .threads=${this.threads}

@@ -22,9 +22,10 @@ import './pages/pv-page-estimates.js';
 import './pages/pv-page-billing.js';
 import './pages/pv-page-projects.js';
 import './pages/pv-page-wallet.js';
-import './pages/pv-page-docs.js';
 import './pages/pv-page-team.js';
 import './pages/pv-page-settings.js';
+import './pages/pv-landing-page.js';
+import './pv-demo-welcome-modal.js';
 
 @customElement('pv-app')
 export class PvApp extends PvBase {
@@ -273,6 +274,8 @@ export class PvApp extends PvBase {
 
   private renderPage() {
     switch (this.currentRoute) {
+      case 'landing':
+        return html`<pv-landing-page></pv-landing-page>`;
       case 'overview':
         return html`<pv-page-overview></pv-page-overview>`;
       case 'billing':
@@ -292,7 +295,7 @@ export class PvApp extends PvBase {
       case 'settings':
         return html`<pv-page-settings></pv-page-settings>`;
       default:
-        return html`<pv-page-overview></pv-page-overview>`;
+        return html`<pv-landing-page></pv-landing-page>`;
     }
   }
 
@@ -307,6 +310,7 @@ export class PvApp extends PvBase {
 
   private renderShell() {
     return html`
+      <pv-demo-welcome-modal portalType="customer"></pv-demo-welcome-modal>
       <pv-header 
         @menu-toggle=${this.handleMenuToggle}
       ></pv-header>
@@ -328,6 +332,11 @@ export class PvApp extends PvBase {
   }
 
   render() {
+    // Show landing page regardless of auth state
+    if (this.currentRoute === 'landing') {
+      return html`<pv-landing-page></pv-landing-page>`;
+    }
+
     // Show login if not authenticated
     if (!this.isAuthenticated) {
       return html`<pv-login @login-success=${this.handleLoginSuccess}></pv-login>`;
@@ -342,7 +351,7 @@ export class PvApp extends PvBase {
         </div>
       ` : ''}
       <div class="${this.isImpersonating ? 'has-impersonation' : ''}">
-      ${this.renderShell()}
+      ${this.currentRoute === 'landing' ? this.renderPage() : this.renderShell()}
       </div>
     `;
   }

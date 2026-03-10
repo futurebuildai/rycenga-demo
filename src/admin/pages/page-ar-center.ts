@@ -4,6 +4,7 @@ import { ARCenterService, formatDate, formatCurrency } from '../services/ar-cent
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import { overviewPageStyles } from '../../styles/pages.js';
 import { arCenterPageStyles } from '../../styles/pages.js';
+import '../../components/atoms/pv-page-tour-modal.js';
 import type {
     ARAccountContactPayload,
     ARAccountInvoice,
@@ -541,8 +542,8 @@ export class PageArCenter extends LitElement {
                         </thead>
                         <tbody>
                             ${this.accounts.map((account) => {
-                                const status = this.getAccountStatus(account);
-                                return html`
+            const status = this.getAccountStatus(account);
+            return html`
                                     <tr @click=${() => this.openDrawer(account)}>
                                         <td><a href="/admin/accounts/${account.accountId}" class="link-primary" @click=${(e: Event) => e.stopPropagation()}>${account.accountName}</a></td>
                                         <td>${account.openInvoiceCount}</td>
@@ -556,7 +557,7 @@ export class PageArCenter extends LitElement {
                                         </td>
                                     </tr>
                                 `;
-                            })}
+        })}
                         </tbody>
                     </table>
 
@@ -567,10 +568,10 @@ export class PageArCenter extends LitElement {
                         <div class="pagination-actions">
                             <button class="pagination-btn" ?disabled=${this.accountsPage === 1 || this.accountsLoading} @click=${() => this.handlePageChange(this.accountsPage - 1)}>Previous</button>
                             ${buildPaginationTokens(this.accountsPage, totalPages).map((token) =>
-                                token === 'ellipsis'
-                                    ? html`<span class="pagination-ellipsis">...</span>`
-                                    : html`<button class="pagination-btn ${this.accountsPage === token ? 'active' : ''}" ?disabled=${this.accountsLoading} @click=${() => this.handlePageChange(token as number)}>${token}</button>`
-                            )}
+            token === 'ellipsis'
+                ? html`<span class="pagination-ellipsis">...</span>`
+                : html`<button class="pagination-btn ${this.accountsPage === token ? 'active' : ''}" ?disabled=${this.accountsLoading} @click=${() => this.handlePageChange(token as number)}>${token}</button>`
+        )}
                             <button class="pagination-btn" ?disabled=${this.accountsPage >= totalPages || this.accountsLoading} @click=${() => this.handlePageChange(this.accountsPage + 1)}>Next</button>
                         </div>
                     </div>
@@ -883,6 +884,15 @@ export class PageArCenter extends LitElement {
 
     render() {
         return html`
+            <pv-page-tour-modal 
+                pageId="admin-ar-center"
+                heading="AR Center"
+                .features=${[
+                { title: 'Collection Playbooks', description: 'Set up automated SMS and email reminders based on invoice aging (e.g., 3 days past due).' },
+                { title: 'Bulk Contact', description: 'Send targeted messages to lists of segmented accounts with one click.' },
+                { title: 'Payment Tracking', description: 'View a consolidated timeline of all communications and payments for any account.' }
+            ]}
+            ></pv-page-tour-modal>
             <div class="page-header">
                 <div>
                     <h2>AR Center</h2>

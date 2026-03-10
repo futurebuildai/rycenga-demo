@@ -184,6 +184,8 @@ export interface Quote {
     total: number;
     status: QuoteStatus;
     jobId?: number;
+    jobName?: string;
+    jobNumber?: string;
 }
 
 export interface QuoteLine {

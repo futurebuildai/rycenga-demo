@@ -12,6 +12,7 @@ import { pageShellStyles } from '../../styles/shared.js';
 import { walletPageStyles } from '../../styles/pages.js';
 import type { PaymentMethod } from '../../connect/types/domain.js';
 import '../../features/billing/components/pv-add-payment-modal.js';
+import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-wallet')
 export class PvPageWallet extends PvBase {
@@ -145,6 +146,15 @@ export class PvPageWallet extends PvBase {
     }
 
     return html`
+      <pv-page-tour-modal 
+          pageId="customer-wallet"
+          heading="Wallet & Payment Methods"
+          .features=${[
+        { title: 'Secure Storage', description: 'Securely save credit cards and bank accounts for fast, seamless checkout on orders and invoices.' },
+        { title: 'Manage Funding Sources', description: 'Add, edit, or remove linked bank accounts and credit cards directly from this dashboard.' },
+        { title: 'Default Options', description: 'Coming soon: mark specific payment methods as default for recurring billing or automatic payments.' }
+      ]}
+      ></pv-page-tour-modal>
       <div class="section-header">
         <div>
           <h1 class="section-title">Wallet</h1>

@@ -6,6 +6,7 @@ import { AdminBrandingService, type DealerBranding, DEFAULT_BRANDING } from '../
 import { BRANDING_REFRESH_SIGNAL_KEY } from '../../services/branding.service.js';
 import type { UserRole } from '../../connect/types/domain.js';
 import '../components/logo-upload.js';
+import '../../components/atoms/pv-page-tour-modal.js';
 
 @customElement('admin-page-settings')
 export class PageSettings extends LitElement {
@@ -361,6 +362,14 @@ export class PageSettings extends LitElement {
 
     render() {
         return html`
+            <pv-page-tour-modal 
+                pageId="admin-settings"
+                heading="Portal Settings"
+                .features=${[
+                { title: 'White-Label Branding', description: 'Customize the portal with your dealership logo, colors, and support contact information.' },
+                { title: 'Team Management', description: 'Invite internal staff to access the administrative side of the portal.' }
+            ]}
+            ></pv-page-tour-modal>
             <div style="margin-bottom: 2rem;">
                 <h2>Settings</h2>
                 <p class="subtitle">Manage your dealer portal branding and team.</p>

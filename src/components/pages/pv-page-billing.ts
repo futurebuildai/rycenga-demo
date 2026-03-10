@@ -20,8 +20,11 @@ import { billingPageStyles } from '../../styles/pages.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import '../../features/billing/components/pv-payment-history-table.js';
 import '../../features/billing/components/pv-payment-modal.js';
+import '../atoms/pv-page-tour-modal.js';
 
 const MAX_API_PAGE_SIZE = 200;
+
+type TabId = 'invoices' | 'payments' | 'statements';
 
 @customElement('pv-page-billing')
 export class PvPageBilling extends PvBase {
@@ -587,7 +590,8 @@ export class PvPageBilling extends PvBase {
               </div>
               <div class="invoice-info">
                 <span class="invoice-number">${invoice.invoiceNumber}</span>
-                <span class="invoice-project">Due: ${this.formatDate(invoice.dueDate || '')}</span>
+                <span class="invoice-project">${invoice.jobName ? invoice.jobName : `Due: ${this.formatDate(invoice.dueDate || '')}`}</span>
+                ${invoice.jobName ? html`<span class="invoice-project">Due: ${this.formatDate(invoice.dueDate || '')}</span>` : ''}
               </div>
               <div class="invoice-amount">${this.formatCurrency(invoice.amountDue)}</div>
               <span class="status-badge ${this.getStatusClass(invoice.status)}">${invoice.status}</span>
@@ -746,8 +750,17 @@ export class PvPageBilling extends PvBase {
     }
 
     return html`
-      <div class="section-header">
-        <div>
+            <pv-page-tour-modal 
+                pageId="customer-billing"
+                heading="Billing & Payments"
+                .features=${[
+        { title: 'Invoice Automation', description: 'Select multiple open invoices to pay them simultaneously using saved methods.' },
+        { title: 'Filtered Views', description: 'Easily toggle between All, Paid, Open, and Overdue invoices.' },
+        { title: 'Statements & History', description: 'Access your payment history and download past account statements in the tabs.' }
+      ]}
+            ></pv-page-tour-modal>
+            <div class="page-header">
+                <div>
           <h1 class="section-title">Billing</h1>
           <p class="section-subtitle">${this.filterJobName ? `Filtered by project: ${this.filterJobName}` : 'Manage invoices and payments'}</p>
         </div>

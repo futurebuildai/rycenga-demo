@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminDashboardSummary } from '../services/admin-data.service.js';
+import '../../components/atoms/pv-page-tour-modal.js';
 
 @customElement('admin-page-dashboard')
 export class PageDashboard extends LitElement {
@@ -94,6 +95,15 @@ export class PageDashboard extends LitElement {
         const s = this.summary;
 
         return html`
+            <pv-page-tour-modal 
+                pageId="admin-dashboard"
+                heading="Admin Dashboard"
+                .features=${[
+                { title: 'Quick Insights', description: 'Get a high-level view of your customer base, including total accounts, active orders, and total credit.' },
+                { title: 'Risk Management', description: 'Instantly spot overdue or at-risk accounts with the highlighted risk metric card.' },
+                { title: 'Pulse Check', description: 'Monitor the daily health of your dealer operations at a glance.' }
+            ]}
+            ></pv-page-tour-modal>
             <h2>Admin Dashboard</h2>
             <p class="subtitle">Welcome to the control plane.</p>
 

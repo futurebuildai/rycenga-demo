@@ -5,6 +5,7 @@ import { AdminAuthService } from './services/admin-auth.service.js';
 import { BrandingService } from '../services/branding.service.js';
 import './layouts/admin-layout.js';
 import './pages/page-login.js';
+import '../components/pv-demo-welcome-modal.js';
 
 @customElement('pv-admin-app')
 export class PvAdminApp extends LitElement {
@@ -59,6 +60,7 @@ export class PvAdminApp extends LitElement {
         }
 
         return html`
+            <pv-demo-welcome-modal portalType="admin"></pv-demo-welcome-modal>
             <admin-layout>
                 <div id="outlet"></div>
             </admin-layout>

@@ -14,6 +14,8 @@ import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles,
 import { ordersPageStyles } from '../../styles/pages.js';
 import type { Order } from '../../types/index.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
+import '../../features/orders/components/pv-order-lines.js';
+import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-orders')
 export class PvPageOrders extends PvBase {
@@ -412,6 +414,15 @@ export class PvPageOrders extends PvBase {
     }
 
     return html`
+      <pv-page-tour-modal 
+          pageId="customer-orders"
+          heading="Order Management"
+          .features=${[
+        { title: 'Order Tracking', description: 'Track the status of all your active and past orders submitted to the dealer.' },
+        { title: 'Order Details', description: 'Expand an order to see the exact lines, quantities shipped vs ordered, and pricing.' },
+        { title: 'Delivery Status', description: 'Monitor delivery types (pickup vs delivery) and estimated delivery dates.' }
+      ]}
+      ></pv-page-tour-modal>
       <div class="section-header">
         <div>
           <h1 class="section-title">Orders</h1>

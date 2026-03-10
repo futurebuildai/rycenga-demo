@@ -4,6 +4,7 @@ import { AdminDataService } from '../services/admin-data.service.js';
 import { AdminAuthService } from '../services/admin-auth.service.js';
 import type { AdminUser } from '../services/admin-data.service.js';
 import type { UserRole } from '../../connect/types/domain.js';
+import '../../components/atoms/pv-page-tour-modal.js';
 
 @customElement('admin-page-users')
 export class PageUsers extends LitElement {
@@ -385,6 +386,15 @@ export class PageUsers extends LitElement {
     render() {
         const maxPage = Math.max(1, Math.ceil(this.totalCount / this.pageSize));
         return html`
+            <pv-page-tour-modal 
+                pageId="admin-users"
+                heading="User Management"
+                .features=${[
+                { title: 'Impersonation', description: 'Log in as any contractor user to see exactly what they see.' },
+                { title: 'Role Assignment', description: 'Create new users and assign them specific roles and account access.' },
+                { title: 'Status Control', description: 'Enable or disable user access instantly.' }
+            ]}
+            ></pv-page-tour-modal>
             <div class="header">
                 <div>
                     <h2>Users</h2>
@@ -430,8 +440,8 @@ export class PageUsers extends LitElement {
                     </thead>
                     <tbody>
                         ${this.users.length === 0
-                            ? html`<tr><td colspan="6">No users found.</td></tr>`
-                            : this.users.map((user) => html`
+                    ? html`<tr><td colspan="6">No users found.</td></tr>`
+                    : this.users.map((user) => html`
                                 <tr>
                                     <td>
                                         <a class="link" href="/admin/users/${user.id}">

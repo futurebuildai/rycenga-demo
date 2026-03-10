@@ -94,4 +94,11 @@ export const BillingService = {
      */
     getStatements: (): Promise<Statement[]> =>
         client.request<Statement[]>('/statements'),
+
+    /**
+     * Get account financials
+     * MAPS TO: GET /accounts/{id}/financials
+     */
+    getAccountFinancials: (accountId: number): Promise<AccountFinancials> =>
+        client.request<AccountFinancials>(`/accounts/${accountId}/financials`),
 };

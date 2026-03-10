@@ -15,8 +15,9 @@ export class PvHeader extends PvBase {
     ...PvBase.styles,
     css`
       :host {
+        --header-height: 100px;
         display: block;
-        height: var(--header-height, 80px);
+        height: var(--header-height);
         background: var(--app-header-bg, #ffffff);
         border-bottom: var(--app-header-border-bottom, 1px solid var(--color-border));
         box-shadow: var(--app-header-shadow, none);
@@ -75,6 +76,19 @@ export class PvHeader extends PvBase {
         place-items: center;
         font-size: var(--app-header-logo-font-size, 1.25rem);
         line-height: 1;
+      }
+
+      .logo.full-logo .logo-icon {
+        width: 180px;
+        height: 60px;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo.full-logo .logo-name {
+        display: none;
       }
 
       .logo-image {
@@ -238,9 +252,9 @@ export class PvHeader extends PvBase {
 
   render() {
     const tenantName = this.branding.tenantName || 'Velocity';
-    const logoUrl = this.branding.logoBase64 && this.branding.logoType
+    const logoUrl = this.branding.logoUrl || (this.branding.logoBase64 && this.branding.logoType
       ? `data:${this.branding.logoType};base64,${this.branding.logoBase64}`
-      : null;
+      : null);
     return html`
       <div class="header-inner">
         <div class="header-left">
@@ -252,7 +266,7 @@ export class PvHeader extends PvBase {
           </a>
         </div>
 
-        <a href="/" class="logo">
+        <a href="/" class="logo ${this.branding.logoUrl ? 'full-logo' : ''}">
           <div class="logo-icon">
             ${logoUrl
         ? html`<img class="logo-image" src="${logoUrl}" alt="${tenantName} logo">`

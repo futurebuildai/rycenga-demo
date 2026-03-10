@@ -53,14 +53,15 @@ interface BackendARAccountInvoicesResponse {
     total: number;
 }
 
-function formatDate(iso: string | undefined): string {
+function formatDate(iso: string | undefined | null): string {
     if (!iso) return '';
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function formatCurrency(amount: number): string {
+function formatCurrency(amount: number | undefined | null): string {
+    if (amount === undefined || amount === null || isNaN(amount)) return '0.00';
     return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 

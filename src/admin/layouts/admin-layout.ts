@@ -25,15 +25,21 @@ export class AdminLayout extends LitElement {
         }
 
         .logo-area {
-            padding: 24px 24px;
-            font-family: var(--font-heading, 'Space Grotesk', sans-serif);
-            font-weight: 700;
-            font-size: 20px;
-            color: #ffffff;
+            padding: 32px 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            letter-spacing: -0.02em;
+            justify-content: flex-start;
+        }
+
+        .logo-area.has-full-logo .logo-icon,
+        .logo-area.has-full-logo .logo-text {
+            display: none;
+        }
+
+        .logo-area img {
+            max-width: 140px;
+            height: auto;
+            display: block;
         }
 
         .logo-icon {
@@ -194,8 +200,6 @@ export class AdminLayout extends LitElement {
             color: var(--admin-signout-hover-color, #ef4444);
         }
 
-
-
         main {
             overflow-y: auto;
             padding: 32px 40px;
@@ -288,9 +292,10 @@ export class AdminLayout extends LitElement {
 
         return html`
             <nav>
-                <div class="logo-area">
+                <div class="logo-area has-full-logo">
+                    <img src="/assets/lmc-logo-white.png" alt="LMC Logo">
                     <div class="logo-icon">V</div>
-                    ${tenantName} Admin
+                    <span class="logo-text">${tenantName} Admin</span>
                 </div>
                 <div class="nav-links">
                     <div class="nav-category">Overview</div>

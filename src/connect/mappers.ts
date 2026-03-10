@@ -44,6 +44,8 @@ export const mapQuoteToEstimate = (quote: Quote): Estimate => ({
     })(),
     total: quote.total,
     validUntil: quote.expiresOn || new Date(Date.now() + 86400000 * 30).toISOString(),
+    jobName: quote.jobName,
+    jobNumber: quote.jobNumber,
 });
 
 /**
@@ -79,6 +81,8 @@ export const mapInvoiceToLegacy = (invoice: BackendInvoice): Invoice => ({
     amountDue: invoice.balanceDue,
     amountPaid: invoice.total - invoice.balanceDue,
     createdAt: invoice.invoiceDate,
+    jobName: invoice.jobName,
+    jobNumber: invoice.jobNumber,
 });
 
 /**

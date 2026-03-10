@@ -2,6 +2,20 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+    plugins: [
+        {
+            name: 'admin-rewrites',
+            configureServer(server) {
+                server.middlewares.use((req, res, next) => {
+                    const url = req.url || '';
+                    if (url.startsWith('/admin') && !url.includes('.') && req.headers.accept?.includes('text/html')) {
+                        req.url = '/admin.html';
+                    }
+                    next();
+                });
+            }
+        }
+    ],
     root: '.',
     build: {
         target: 'esnext',

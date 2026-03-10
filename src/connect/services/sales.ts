@@ -92,4 +92,11 @@ export const SalesService = {
     // Maps to GET /v1/orders/{id}/lines
     getOrderLines: (orderId: number) =>
         client.request<OrderLine[]>(`/orders/${orderId}/lines`),
+
+    // Maps to POST /v1/quotes/{id}/convert
+    convertEstimate: (estimateId: number, paymentMethodId: number | 'account') =>
+        client.request<void>(`/quotes/${estimateId}/convert`, {
+            method: 'POST',
+            body: JSON.stringify({ paymentMethodId }),
+        }),
 };

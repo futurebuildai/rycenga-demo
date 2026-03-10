@@ -5,7 +5,9 @@ import { AdminDataService } from '../services/admin-data.service.js';
 import type { AdminAccount } from '../services/admin-data.service.js';
 import type { AdminAccountSort } from '../services/admin-data.service.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
+import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import { adminAccountsPageStyles } from '../../styles/pages.js';
+import '../../components/atoms/pv-page-tour-modal.js';
 
 @customElement('admin-page-accounts')
 export class PageAccounts extends LitElement {
@@ -107,6 +109,15 @@ export class PageAccounts extends LitElement {
         const { start, end } = getPaginationBounds(this.page, this.pageSize, this.totalCount);
 
         return html`
+            <pv-page-tour-modal 
+                pageId="admin-accounts"
+                heading="Accounts Dashboard"
+                .features=${[
+                { title: 'Global Directory', description: 'Search, filter, and view all registered contractor accounts.' },
+                { title: 'Receivables Overview', description: 'Quickly identify accounts with open invoices, high balances, and past-due amounts.' },
+                { title: 'Detailed Drilling', description: 'Click into any account to view their specific orders, invoices, users, and detailed settings.' }
+            ]}
+            ></pv-page-tour-modal>
             ${this.accountsLoading ? html`
                 <div style="margin-bottom: 0.75rem; color: var(--color-text-muted); font-size: 0.875rem;">Updating accounts...</div>
             ` : ''}

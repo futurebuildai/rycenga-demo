@@ -10,6 +10,7 @@ export interface BrandingInfo {
     logoType: string | null;
     contactEmail: string;
     contactPhone: string;
+    logoUrl?: string;
 }
 
 interface BrandingCacheEnvelope {
@@ -166,6 +167,7 @@ class BrandingServiceImpl {
             logoType: logoType ?? DEFAULT_BRANDING.logoType,
             contactEmail: contactEmail ?? DEFAULT_BRANDING.contactEmail,
             contactPhone: contactPhone ?? DEFAULT_BRANDING.contactPhone,
+            logoUrl: '/assets/lmc-logo.png',
         };
 
         this.branding = branding;

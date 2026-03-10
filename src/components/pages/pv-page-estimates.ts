@@ -8,12 +8,14 @@ import { customElement, state } from 'lit/decorators.js';
 import { PvBase } from '../pv-base.js';
 import { DataService } from '../../services/data.service.js';
 import { RouterService } from '../../services/router.service.js';
-import { DocumentsService } from '../../connect/services/documents.js';
+import { DocumentsService } from '../../services/documents.service.js';
 import { PvToast } from '../atoms/pv-toast.js';
+import '../atoms/pv-page-tour-modal.js';
 import { activeFilterStyles, detailViewStyles, listStateStyles, pageShellStyles, paginationStyles } from '../../styles/shared.js';
 import { estimatesPageStyles } from '../../styles/pages.js';
 import type { Estimate } from '../../types/index.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
+import '../../features/billing/components/pv-convert-estimate-modal.js';
 
 @customElement('pv-page-estimates')
 export class PvPageEstimates extends PvBase {
@@ -41,6 +43,10 @@ export class PvPageEstimates extends PvBase {
   @state() private totalCount = 0;
   @state() private filterJobId: number | null = null;
   @state() private filterJobName: string | null = null;
+
+  // Conversion Modal State
+  @state() private convertModalOpen = false;
+  @state() private convertingEstimate: Estimate | null = null;
 
   private filters = ['All', 'Pending', 'Accepted', 'Expired'];
   private unsubscribeRouter?: () => void;
@@ -204,8 +210,21 @@ export class PvPageEstimates extends PvBase {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
+  private openConvertModal(estimate: Estimate) {
+    this.convertingEstimate = estimate;
+    this.convertModalOpen = true;
+  }
+
+  private handleConvertSuccess() {
+    PvToast.show('Refreshing estimates...', 'info');
+    this.loadEstimates();
+    if (this.selectedEstimate && this.convertingEstimate?.id === this.selectedEstimate.id) {
+      this.selectedEstimate = { ...this.selectedEstimate, status: 'converted' };
+    }
+  }
+
   private getProjectName(estimate: Estimate): string {
-    // Backend may not provide project name directly in Quote object yet
+    if (estimate.jobName) return estimate.jobName;
     return estimate.projectId ? `Project #${estimate.projectId}` : 'No Project Assigned';
   }
 
@@ -272,10 +291,6 @@ export class PvPageEstimates extends PvBase {
                   <span class="estimate-summary">${estimate.lines?.length || 0} products</span>
                 </div>
               </div>
-              <div class="estimate-total">
-                <span class="total-label">Estimate Total</span>
-                <span class="total-value">${this.formatCurrency(estimate.total)}</span>
-              </div>
             </div>
             <div class="estimate-actions">
               <button class="btn btn-outline" @click=${() => this.viewEstimateDetail(estimate)}>View Details</button>
@@ -312,6 +327,9 @@ export class PvPageEstimates extends PvBase {
           Back to List
         </button>
         <div class="estimate-actions-group">
+          ${estimate.status === 'pending' || estimate.status === 'sent' ? html`
+            <button class="btn btn-cta btn-sm" @click=${() => this.openConvertModal(estimate)}>Accept & Convert</button>
+          ` : ''}
           <button class="btn btn-outline btn-sm" @click=${() => this.downloadEstimatePdf(estimate)}>Download PDF</button>
           <button class="btn btn-outline btn-sm" @click=${() => PvToast.show('Data export coming soon', 'info')}>Export Data</button>
         </div>
@@ -404,6 +422,15 @@ export class PvPageEstimates extends PvBase {
     }
 
     return html`
+      <pv-page-tour-modal 
+          pageId="customer-estimates"
+          heading="Estimates & Quick Quoting"
+          .features=${[
+        { title: 'AI Quick Quoting', description: 'Turn any rough list of materials into a structured, priced quote instantly using our AI tool.' },
+        { title: 'Quote Conversion', description: 'Review detailed estimates and click "Accept & Convert" to easily turn quotes into live orders.' },
+        { title: 'Download & Share', description: 'Download polished, professional PDF versions of estimates to share with your clients.' }
+      ]}
+      ></pv-page-tour-modal>
       <div class="section-header">
         <div>
           <h1 class="section-title">Estimates</h1>
@@ -422,6 +449,14 @@ export class PvPageEstimates extends PvBase {
       ` : ''}
 
       ${this.currentView === 'list' ? this.renderListView() : this.renderDetailView()}
+
+      <pv-convert-estimate-modal
+        .open=${this.convertModalOpen}
+        .estimate=${this.convertingEstimate}
+        .accountId=${1 /* Demo account ID */}
+        @close=${() => this.convertModalOpen = false}
+        @converted=${this.handleConvertSuccess}
+      ></pv-convert-estimate-modal>
     `;
   }
 }

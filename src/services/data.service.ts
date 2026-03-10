@@ -20,6 +20,7 @@ import { JobsService } from '../connect/services/jobs.js';
 import { DashboardService } from '../connect/services/dashboard.js';
 import { AccountService, type AccountFinancials } from '../connect/services/account.js';
 import { BillingService } from '../connect/services/billing.js';
+import { client } from '../connect/client.js';
 import { BrandingService } from './branding.service.js';
 import { AuthService } from './auth.service.js';
 import type { Account, JobSummary } from '../connect/types/domain.js';
@@ -254,6 +255,26 @@ class DataServiceImpl {
         } finally {
             this.pendingDashboardSummary = undefined;
         }
+    }
+
+    /**
+     * Structure raw material list via AI
+     */
+    async structureMaterialList(input: string, type: 'upload' | 'manual' | 'voice'): Promise<any[]> {
+        return client.request<any[]>('/v1/estimates/structure', {
+            method: 'POST',
+            body: JSON.stringify({ input, type })
+        });
+    }
+
+    /**
+     * Submit a quick quote
+     */
+    async submitQuickQuote(lines: any[], total: number): Promise<{ estimateId: number }> {
+        return client.request<{ estimateId: number }>('/v1/estimates/quick-submit', {
+            method: 'POST',
+            body: JSON.stringify({ lines, total })
+        });
     }
 
     /**

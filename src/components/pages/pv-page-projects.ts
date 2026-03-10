@@ -12,6 +12,7 @@ import { DataService } from '../../services/data.service.js';
 import { pageShellStyles } from '../../styles/shared.js';
 import { projectsPageStyles } from '../../styles/pages.js';
 import type { Project, Address } from '../../types/index.js';
+import '../atoms/pv-page-tour-modal.js';
 
 interface ProjectCard {
   id: string;
@@ -122,6 +123,15 @@ export class PvPageProjects extends PvBase {
 
   render() {
     return html`
+      <pv-page-tour-modal 
+          pageId="customer-projects"
+          heading="Project Management"
+          .features=${[
+        { title: 'Project Organization', description: 'View all your active, completed, and archived projects in one place.' },
+        { title: 'Project Statistics', description: 'See the total number of orders, total amount spent, and open invoices for each project.' },
+        { title: 'Contextual Actions', description: 'Quickly navigate to filtered views of Orders, Estimates, and Invoices for a specific project.' }
+      ]}
+      ></pv-page-tour-modal>
       <div class="section-header">
         <div>
           <h1 class="section-title">Projects</h1>

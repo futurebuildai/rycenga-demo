@@ -1,10 +1,13 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AdminDocsService } from '../services/admin-docs.service.js';
+import { AdminDataService } from '../services/admin-data.service.js';
+import type { AdminAccount } from '../services/admin-data.service.js';
 import { buildPaginationTokens, getPaginationBounds } from '../../utils/pagination.js';
 import { overviewPageStyles } from '../../styles/pages.js';
 import { arCenterPageStyles } from '../../styles/pages.js';
 import { docsPageStyles } from '../../styles/pages.js';
+import '../../components/atoms/pv-page-tour-modal.js';
 import type {
     SharedDocumentDTO,
     InboxDocumentDTO,
@@ -60,6 +63,7 @@ export class PageDocs extends LitElement {
     @state() private uploadMemo = '';
     @state() private uploadProgress = 0;
     @state() private uploadUploading = false;
+    @state() private availableAccounts: AdminAccount[] = [];
 
     // Toast
     @state() private toastMessage = '';
@@ -88,7 +92,7 @@ export class PageDocs extends LitElement {
     async connectedCallback() {
         super.connectedCallback();
         document.addEventListener('keydown', this.handleKeyDown);
-        await Promise.all([this.loadSummary(), this.loadSharedDocs()]);
+        await Promise.all([this.loadSummary(), this.loadSharedDocs(), this.fetchAvailableAccounts()]);
     }
 
     disconnectedCallback() {
@@ -184,6 +188,15 @@ export class PageDocs extends LitElement {
         } finally {
             if (version !== this.inboxLoadVersion) return;
             this.inboxLoading = false;
+        }
+    }
+
+    private async fetchAvailableAccounts() {
+        try {
+            const { items } = await AdminDataService.getAccounts(200, 0, false, 'name');
+            this.availableAccounts = items;
+        } catch (e) {
+            console.error('Failed to fetch accounts for doc sharing', e);
         }
     }
 
@@ -562,10 +575,10 @@ export class PageDocs extends LitElement {
                         <div class="pagination-actions">
                             <button class="pagination-btn" ?disabled=${this.sharedPage === 1 || this.sharedLoading} @click=${() => this.handleSharedPageChange(this.sharedPage - 1)}>Previous</button>
                             ${buildPaginationTokens(this.sharedPage, totalPages).map((token) =>
-                                token === 'ellipsis'
-                                    ? html`<span class="pagination-ellipsis">...</span>`
-                                    : html`<button class="pagination-btn ${this.sharedPage === token ? 'active' : ''}" ?disabled=${this.sharedLoading} @click=${() => this.handleSharedPageChange(token as number)}>${token}</button>`
-                            )}
+            token === 'ellipsis'
+                ? html`<span class="pagination-ellipsis">...</span>`
+                : html`<button class="pagination-btn ${this.sharedPage === token ? 'active' : ''}" ?disabled=${this.sharedLoading} @click=${() => this.handleSharedPageChange(token as number)}>${token}</button>`
+        )}
                             <button class="pagination-btn" ?disabled=${this.sharedPage >= totalPages || this.sharedLoading} @click=${() => this.handleSharedPageChange(this.sharedPage + 1)}>Next</button>
                         </div>
                     </div>
@@ -654,10 +667,10 @@ export class PageDocs extends LitElement {
                         <div class="pagination-actions">
                             <button class="pagination-btn" ?disabled=${this.inboxPage === 1 || this.inboxLoading} @click=${() => this.handleInboxPageChange(this.inboxPage - 1)}>Previous</button>
                             ${buildPaginationTokens(this.inboxPage, totalPages).map((token) =>
-                                token === 'ellipsis'
-                                    ? html`<span class="pagination-ellipsis">...</span>`
-                                    : html`<button class="pagination-btn ${this.inboxPage === token ? 'active' : ''}" ?disabled=${this.inboxLoading} @click=${() => this.handleInboxPageChange(token as number)}>${token}</button>`
-                            )}
+            token === 'ellipsis'
+                ? html`<span class="pagination-ellipsis">...</span>`
+                : html`<button class="pagination-btn ${this.inboxPage === token ? 'active' : ''}" ?disabled=${this.inboxLoading} @click=${() => this.handleInboxPageChange(token as number)}>${token}</button>`
+        )}
                             <button class="pagination-btn" ?disabled=${this.inboxPage >= totalPages || this.inboxLoading} @click=${() => this.handleInboxPageChange(this.inboxPage + 1)}>Next</button>
                         </div>
                     </div>
@@ -707,7 +720,16 @@ export class PageDocs extends LitElement {
 
                     <div class="form-group-inline">
                         <label>Recipient Account <span style="color: var(--color-error);">*</span></label>
-                        <input class="form-input" type="text" placeholder="Search or select contractor..." .value=${this.uploadAccountId} @input=${(e: Event) => { this.uploadAccountId = (e.target as HTMLInputElement).value; }} />
+                        <select 
+                            class="form-input" 
+                            .value=${this.uploadAccountId} 
+                            @change=${(e: Event) => { this.uploadAccountId = (e.target as HTMLSelectElement).value; }}
+                        >
+                            <option value="">Select an account...</option>
+                            ${this.availableAccounts.map(acc => html`
+                                <option value="${acc.id}">${acc.name} (${acc.id})</option>
+                            `)}
+                        </select>
                     </div>
 
                     <div class="ack-toggle-row">
@@ -830,6 +852,15 @@ export class PageDocs extends LitElement {
         const inboxCount = this.summary?.inboxNeedsAttention ?? 0;
 
         return html`
+            <pv-page-tour-modal 
+                pageId="admin-docs"
+                heading="Document Hub"
+                .features=${[
+                { title: 'Secure Sharing', description: 'Upload and distribute statements, price sheets, and catalogs to specific accounts.' },
+                { title: 'Required Acknowledgments', description: 'Force users to digitally sign off on critical documents.' },
+                { title: 'Contractor Inbox', description: 'Receive and review documents explicitly submitted by your customers.' }
+            ]}
+            ></pv-page-tour-modal>
             <div class="page-header">
                 <div>
                     <h2>Document Management</h2>

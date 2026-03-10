@@ -188,6 +188,10 @@ export interface Invoice {
     amountDue: number;
     erpInvoiceId?: string;
     createdAt?: string;
+    jobId?: number; // Added per instruction
+    jobName?: string;
+    jobNumber?: string;
+    pdfUrl?: string; // Potential future field
     lines?: InvoiceLine[];
 }
 
@@ -225,6 +229,8 @@ export interface Estimate {
     erpQuoteId?: string | null;
     createdAt?: string;
     lines?: OrderLine[];
+    jobName?: string;
+    jobNumber?: string;
 }
 
 // ============================================
@@ -295,7 +301,8 @@ export type RouteId =
     | 'docs'
     | 'team'
     | 'settings'
-    | 'login';
+    | 'login'
+    | 'landing';
 
 // ============================================
 // Toast Events

@@ -13,6 +13,9 @@ import { pageShellStyles } from '../../styles/shared.js';
 import { overviewPageStyles } from '../../styles/pages.js';
 import type { AccountData } from '../../types/index.js';
 import '../../features/billing/components/pv-payment-modal.js';
+import '../../features/estimates/components/pv-quick-quote-modal.js';
+import { pvState } from '../../store/pv-state.js';
+import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-overview')
 export class PvPageOverview extends PvBase {
@@ -33,6 +36,9 @@ export class PvPageOverview extends PvBase {
   // Payment Modal
   @state() private paymentModalOpen = false;
   @state() private paymentAmount = 0;
+
+  // Quick Quote Modal
+  @state() private quickQuoteModalOpen = false;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -133,6 +139,15 @@ export class PvPageOverview extends PvBase {
           </div>
           <button class="stat-link" @click=${() => RouterService.navigate('estimates')}>Review →</button>
         </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Quick Quote</span>
+            <span class="stat-value">Start New</span>
+            <span class="stat-meta">Upload list or manual entry</span>
+          </div>
+          <button class="stat-link" @click=${() => this.quickQuoteModalOpen = true}>Start Now →</button>
+        </div>
       </div>
 
       <pv-payment-modal
@@ -142,6 +157,15 @@ export class PvPageOverview extends PvBase {
         @close=${() => this.paymentModalOpen = false}
         @payment-success=${this.handlePaymentSuccess}
       ></pv-payment-modal>
+
+      <pv-quick-quote-modal
+        .open=${this.quickQuoteModalOpen}
+        @close=${() => this.quickQuoteModalOpen = false}
+        @submitted=${() => {
+        this.quickQuoteModalOpen = false;
+        this.refreshDashboard();
+      }}
+      ></pv-quick-quote-modal>
     `;
   }
 }

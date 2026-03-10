@@ -16,6 +16,7 @@ import type {
     ContractorDocsTab,
     DocsSortOption,
 } from '../../connect/types/domain.js';
+import '../atoms/pv-page-tour-modal.js';
 
 @customElement('pv-page-docs')
 export class PvPageDocs extends PvBase {
@@ -515,6 +516,15 @@ export class PvPageDocs extends PvBase {
 
     render() {
         return html`
+            <pv-page-tour-modal 
+                pageId="customer-docs"
+                heading="Document Management"
+                .features=${[
+                { title: 'Dealer Documents', description: 'View and download catalogs, price lists, and resources shared by the dealer.' },
+                { title: 'My Documents', description: 'Securely upload your own documents (certificates, specs) and organize them into folders.' },
+                { title: 'Document Acknowledgment', description: 'Sign off on required documents or policies with one click.' }
+            ]}
+            ></pv-page-tour-modal>
             <div class="docs-page-shell">
                 ${this.renderHeader()}
                 ${this.renderSummary()}
@@ -864,9 +874,9 @@ export class PvPageDocs extends PvBase {
                             placeholder="Root or choose/type a folder"
                             .value=${this.selectedFolderName ?? ''}
                             @input=${(e: InputEvent) => {
-                                const value = (e.target as HTMLInputElement).value.trim();
-                                this.selectedFolderName = value || null;
-                            }}
+                const value = (e.target as HTMLInputElement).value.trim();
+                this.selectedFolderName = value || null;
+            }}
                         />
                         <datalist id="docs-folder-options">
                             ${this.folderItems().map((folder) => html`<option value=${folder.name}></option>`)}
@@ -934,13 +944,13 @@ export class PvPageDocs extends PvBase {
                             .value=${this.newFolderName}
                             @input=${(e: InputEvent) => { this.newFolderName = (e.target as HTMLInputElement).value; }}
                             @keydown=${(e: KeyboardEvent) => {
-                                if (e.key !== 'Enter') return;
-                                const name = this.newFolderName.trim();
-                                if (!name) return;
-                                this.createPendingFolder(name);
-                                this.selectedFolderName = name;
-                                this.closeCreateFolderModal();
-                            }}
+                if (e.key !== 'Enter') return;
+                const name = this.newFolderName.trim();
+                if (!name) return;
+                this.createPendingFolder(name);
+                this.selectedFolderName = name;
+                this.closeCreateFolderModal();
+            }}
                         />
                     </div>
                     <div class="modal-actions">
@@ -949,12 +959,12 @@ export class PvPageDocs extends PvBase {
                             class="btn btn-primary"
                             ?disabled=${!this.newFolderName.trim()}
                             @click=${() => {
-                                const name = this.newFolderName.trim();
-                                if (!name) return;
-                                this.createPendingFolder(name);
-                                this.selectedFolderName = name;
-                                this.closeCreateFolderModal();
-                            }}
+                const name = this.newFolderName.trim();
+                if (!name) return;
+                this.createPendingFolder(name);
+                this.selectedFolderName = name;
+                this.closeCreateFolderModal();
+            }}
                         >Create Folder</button>
                     </div>
                 </div>
@@ -979,9 +989,9 @@ export class PvPageDocs extends PvBase {
                         <select
                             .value=${this.selectedFolderName ?? ''}
                             @change=${(e: Event) => {
-                                const val = (e.target as HTMLSelectElement).value;
-                                this.selectedFolderName = val || null;
-                            }}
+                const val = (e.target as HTMLSelectElement).value;
+                this.selectedFolderName = val || null;
+            }}
                         >
                             <option value="">No Folder (Root)</option>
                             ${folders.map((folder) => html`
